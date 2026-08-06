@@ -1,4 +1,5 @@
 import { useDemoSession } from "@/features/demo/application/useDemoSession";
+import { cenarios } from "@/mocks/scenarios";
 import { useMockDb } from "@/mocks/store";
 import { isDemoMode } from "@/shared/lib/env";
 import { toast } from "@/shared/ui";
@@ -9,10 +10,13 @@ import { useNavigate } from "react-router-dom";
 export function DemoBar() {
   const navigate = useNavigate();
   const clientes = useMockDb((s) => s.clientes);
+  const carregarCenario = useMockDb((s) => s.carregarCenario);
   const personaId = useDemoSession((s) => s.personaId);
   const papel = useDemoSession((s) => s.papel);
+  const cenarioAtivo = useDemoSession((s) => s.cenarioAtivo);
   const setPersona = useDemoSession((s) => s.setPersona);
   const setPapel = useDemoSession((s) => s.setPapel);
+  const setCenario = useDemoSession((s) => s.setCenario);
   const resetarDemo = useMockDb((s) => s.resetarDemo);
 
   if (!isDemoMode) return null;
@@ -31,7 +35,21 @@ export function DemoBar() {
 
   function handleReset() {
     resetarDemo();
+    setCenario("padrao");
     toast.success("Demo resetada para o estado inicial.");
+  }
+
+  function handleCenario(id: string) {
+    const cenario = cenarios.find((c) => c.id === id);
+    if (!cenario) return;
+
+    carregarCenario(cenario.seedExtra ?? (() => ({})));
+    setCenario(cenario.id);
+    setPapel(cenario.papel);
+    if (cenario.personaId) setPersona(cenario.personaId);
+
+    navigate(cenario.papel === "admin" ? "/admin" : "/portal");
+    toast.success(`Cenário "${cenario.nome}" carregado.`);
   }
 
   return (
@@ -66,12 +84,16 @@ export function DemoBar() {
         <label className="hidden items-center gap-1.5 md:flex">
           <span className="text-white/50">Cenário:</span>
           <select
-            disabled
-            defaultValue="padrao"
-            title="Cenários adicionais chegam em E05-S02"
-            className="rounded border border-white/10 bg-navy-900 px-2 py-1 text-white/50"
+            value={cenarioAtivo}
+            onChange={(e) => handleCenario(e.target.value)}
+            title="Carrega um preset de dados para a apresentação"
+            className="rounded border border-white/20 bg-navy-900 px-2 py-1 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
           >
-            <option value="padrao">Padrão</option>
+            {cenarios.map((c) => (
+              <option key={c.id} value={c.id} title={c.descricao}>
+                {c.nome}
+              </option>
+            ))}
           </select>
         </label>
 

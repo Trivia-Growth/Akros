@@ -89,7 +89,7 @@ interface MockDbState {
   carregarCenario: (fabrica: () => Partial<MockDbSeed>) => void;
 }
 
-interface MockDbSeed {
+export interface MockDbSeed {
   leads: Lead[];
   clientes: Cliente[];
   jornadas: Jornada[];
