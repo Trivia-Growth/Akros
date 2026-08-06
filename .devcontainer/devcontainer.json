@@ -1,0 +1,21 @@
+{
+  "name": "Akros — Demo Codespace",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {}
+  },
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@9.0.0 --activate && pnpm install",
+  "postStartCommand": "echo 'Rode: pnpm --filter @akros/web dev'",
+  "forwardPorts": [5173],
+  "portsAttributes": {
+    "5173": {
+      "label": "Akros — Demo (Vite)",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "biomejs.biome", "bradlc.vscode-tailwindcss"]
+    }
+  }
+}
