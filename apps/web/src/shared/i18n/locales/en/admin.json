@@ -1,3 +1,85 @@
 {
-  "_scaffold": "Admin panel namespace — full content added in E03-S01..S05."
+  "kanban": {
+    "title": "Leads",
+    "subtitle": "Manage the sales funnel by dragging cards between columns.",
+    "columns": {
+      "lead": "Lead",
+      "qualificado": "Qualified",
+      "reuniao_agendada": "Meeting Scheduled",
+      "em_negociacao": "In Negotiation",
+      "fechado": "Closed",
+      "descartado": "Discarded"
+    },
+    "moveTo": "Move to",
+    "addNote": "Add note",
+    "notePlaceholder": "Write a note about this lead...",
+    "notes": "Notes",
+    "noNotes": "No notes yet.",
+    "convertToClient": "Convert to Client",
+    "converted": "Lead converted to client successfully!",
+    "noteAdded": "Note added."
+  },
+  "clientes": {
+    "title": "Clients",
+    "subtitle": "Client base with 360 view.",
+    "search": "Search client...",
+    "phase": "Current phase",
+    "health_em_dia": "On track",
+    "health_atencao": "Attention",
+    "health_atrasado": "Overdue",
+    "tabs": {
+      "data": "Data",
+      "journey": "Journey",
+      "documents": "Documents",
+      "payments": "Payments",
+      "meetings": "Meetings",
+      "conversations": "Conversations",
+      "history": "History"
+    },
+    "unlockNextPhase": "Unlock next phase",
+    "unlockConfirmTitle": "Confirm phase unlock",
+    "unlockConfirmDescription": "This will unlock \"{{fase}}\" for the client in the portal.",
+    "unlockedSuccess": "Phase unlocked successfully!",
+    "currentPhaseIncomplete": "The current phase hasn't been completed yet. Unlock anyway?",
+    "allPhasesUnlocked": "All phases have already been unlocked.",
+    "noHistory": "No history entries yet.",
+    "backToList": "← Back to list"
+  },
+  "proposals": {
+    "title": "Proposals",
+    "subtitle": "Create and send commercial proposals.",
+    "new": "New proposal",
+    "scope": "Service scope",
+    "scopePlaceholder": "Describe the scope of service...",
+    "visaType": "Visa type",
+    "value": "Value",
+    "conditions": "Conditions / installments",
+    "conditionsPlaceholder": "E.g.: down payment + 4 installments",
+    "create": "Create proposal (draft)",
+    "send": "Send proposal",
+    "markAccepted": "Mark as accepted",
+    "markRejected": "Mark as rejected",
+    "status_rascunho": "Draft",
+    "status_enviada": "Sent",
+    "status_aceita": "Accepted",
+    "status_recusada": "Rejected",
+    "sentSuccess": "Proposal sent!",
+    "createdSuccess": "Proposal created as draft.",
+    "noProposals": "No proposals yet."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of the funnel, clients, and operations.",
+    "funnelTitle": "Lead funnel",
+    "clientsByPhaseTitle": "Clients by phase",
+    "caseHealthTitle": "Case health",
+    "revenueTitle": "Revenue",
+    "revenuePaid": "Paid",
+    "revenuePending": "Pending",
+    "revenueOverdue": "Overdue",
+    "upcomingMeetingsTitle": "Upcoming meetings",
+    "recentActivityTitle": "Recent activity",
+    "noActivity": "No recent activity.",
+    "conversionRate": "Conversion rate (Lead → Closed)"
+  }
 }

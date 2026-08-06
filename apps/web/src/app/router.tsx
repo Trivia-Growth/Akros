@@ -1,5 +1,9 @@
 import { AgendaPage } from "@/features/agenda/interfaces/AgendaPage";
+import { AdminDashboardPage } from "@/features/crm/interfaces/AdminDashboardPage";
+import { Clientes360Page } from "@/features/crm/interfaces/Clientes360Page";
+import { KanbanPage } from "@/features/crm/interfaces/KanbanPage";
 import { PerfilPage } from "@/features/crm/interfaces/PerfilPage";
+import { PropostasPage } from "@/features/crm/interfaces/PropostasPage";
 import { DocumentosPage } from "@/features/documentos/interfaces/DocumentosPage";
 import { DashboardPage } from "@/features/jornada/interfaces/DashboardPage";
 import { JornadaPage } from "@/features/jornada/interfaces/JornadaPage";
@@ -50,10 +54,10 @@ export const router = createBrowserRouter([
     path: "/admin",
     element: <AdminLayout />,
     children: [
-      { index: true, element: <Placeholder title="Dashboard" story="E03-S05" /> },
-      { path: "leads", element: <Placeholder title="Leads (Kanban)" story="E03-S01" /> },
-      { path: "clientes", element: <Placeholder title="Clientes" story="E03-S02" /> },
-      { path: "propostas", element: <Placeholder title="Propostas" story="E03-S04" /> },
+      { index: true, element: <AdminDashboardPage /> },
+      { path: "leads", element: <KanbanPage /> },
+      { path: "clientes", element: <Clientes360Page /> },
+      { path: "propostas", element: <PropostasPage /> },
       { path: "comunicacao", element: <Placeholder title="Comunicação" story="E04-S01" /> },
     ],
   },

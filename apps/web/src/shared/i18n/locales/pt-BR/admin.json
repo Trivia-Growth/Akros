@@ -1,3 +1,85 @@
 {
-  "_scaffold": "Namespace do painel admin — conteúdo completo adicionado em E03-S01..S05."
+  "kanban": {
+    "title": "Leads",
+    "subtitle": "Gerencie o funil comercial arrastando os cards entre as colunas.",
+    "columns": {
+      "lead": "Lead",
+      "qualificado": "Qualificado",
+      "reuniao_agendada": "Reunião Agendada",
+      "em_negociacao": "Em Negociação",
+      "fechado": "Fechado",
+      "descartado": "Descartado"
+    },
+    "moveTo": "Mover para",
+    "addNote": "Adicionar nota",
+    "notePlaceholder": "Escreva uma nota sobre este lead...",
+    "notes": "Notas",
+    "noNotes": "Nenhuma nota ainda.",
+    "convertToClient": "Converter em Cliente",
+    "converted": "Lead convertido em cliente com sucesso!",
+    "noteAdded": "Nota adicionada."
+  },
+  "clientes": {
+    "title": "Clientes",
+    "subtitle": "Base de clientes com visão 360.",
+    "search": "Buscar cliente...",
+    "phase": "Fase atual",
+    "health_em_dia": "Em dia",
+    "health_atencao": "Atenção",
+    "health_atrasado": "Atrasado",
+    "tabs": {
+      "data": "Dados",
+      "journey": "Jornada",
+      "documents": "Documentos",
+      "payments": "Pagamentos",
+      "meetings": "Reuniões",
+      "conversations": "Conversas",
+      "history": "Histórico"
+    },
+    "unlockNextPhase": "Liberar próxima fase",
+    "unlockConfirmTitle": "Confirmar liberação de fase",
+    "unlockConfirmDescription": "Isso vai desbloquear \"{{fase}}\" para o cliente no portal.",
+    "unlockedSuccess": "Fase liberada com sucesso!",
+    "currentPhaseIncomplete": "A fase atual ainda não foi concluída. Deseja liberar mesmo assim?",
+    "allPhasesUnlocked": "Todas as fases já foram liberadas.",
+    "noHistory": "Nenhum registro no histórico ainda.",
+    "backToList": "← Voltar para a lista"
+  },
+  "proposals": {
+    "title": "Propostas",
+    "subtitle": "Crie e envie propostas comerciais.",
+    "new": "Nova proposta",
+    "scope": "Escopo do serviço",
+    "scopePlaceholder": "Descreva o escopo da assessoria...",
+    "visaType": "Tipo de visto",
+    "value": "Valor",
+    "conditions": "Condições / parcelamento",
+    "conditionsPlaceholder": "Ex: entrada + 4 parcelas",
+    "create": "Criar proposta (rascunho)",
+    "send": "Enviar proposta",
+    "markAccepted": "Marcar como aceita",
+    "markRejected": "Marcar como recusada",
+    "status_rascunho": "Rascunho",
+    "status_enviada": "Enviada",
+    "status_aceita": "Aceita",
+    "status_recusada": "Recusada",
+    "sentSuccess": "Proposta enviada!",
+    "createdSuccess": "Proposta criada como rascunho.",
+    "noProposals": "Nenhuma proposta ainda."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Visão geral do funil, clientes e operação.",
+    "funnelTitle": "Funil de leads",
+    "clientsByPhaseTitle": "Clientes por fase",
+    "caseHealthTitle": "Saúde dos casos",
+    "revenueTitle": "Receita",
+    "revenuePaid": "Pago",
+    "revenuePending": "Pendente",
+    "revenueOverdue": "Atrasado",
+    "upcomingMeetingsTitle": "Próximas reuniões",
+    "recentActivityTitle": "Atividade recente",
+    "noActivity": "Nenhuma atividade recente.",
+    "conversionRate": "Taxa de conversão (Lead → Fechado)"
+  }
 }
