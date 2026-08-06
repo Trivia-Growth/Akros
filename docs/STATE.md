@@ -39,7 +39,7 @@ modo de impersonação obrigatório.
 - **impeccable** obrigatório em toda story com UI (Definition-of-Done seção 7).
 - **Migração futura:** mocks atrás de portas (ADR-0002) → trocar por Supabase sem reescrever UI.
 - Specs sem tasks.md (E01–E05, exceto E00): `@sm` gera na execução usando a seção "Notas de implementação".
-- Stories de E03-S05, E04-S02/S03/S04 ainda com spec pendente (⏳ no ROADMAP) — gerar quando priorizadas.
+- **Todas as specs geradas** (E00–E05, incluindo E03-S05, E04-S02/S03/S04). Nenhuma spec pendente.
 
 ---
 *Atualizar este arquivo ao pausar a sessão. Use `/handoff` para semiautomatizar.*

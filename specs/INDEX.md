@@ -28,10 +28,11 @@ Stories de fundação (E00) incluem `tasks.md`. As demais: `@sm` gera `tasks.md`
   `E02-S05-pagamentos/`, `E02-S06-agenda/`, `E02-S07-perfil/`
 
 ## E03 — Painel Admin
-- `E03-S01-kanban/`, `E03-S02-clientes-360/`, `E03-S03-gestao-jornada/`, `E03-S04-proposta/`
+- `E03-S01-kanban/`, `E03-S02-clientes-360/`, `E03-S03-gestao-jornada/`, `E03-S04-proposta/`,
+  `E03-S05-dashboard-admin/`
 
 ## E04 — Integrações (mock)
-- `E04-S01-whatsapp/`
+- `E04-S01-whatsapp/`, `E04-S02-agentes-ia/`, `E04-S03-agenda-integrada/`, `E04-S04-fireflies/`
 
 ## E05 — Demo & Impersonação
 - `E05-S01-impersonacao/`, `E05-S02-cenarios/`

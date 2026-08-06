@@ -55,16 +55,16 @@ Legenda spec: ✅ spec gerada · ⏳ spec pendente
 | E03-S02 | Base de clientes + Visão 360 | Lista de clientes + tela 360 (dados, histórico, docs, conversas, reuniões, pagamentos, jornada) | — | ⬜ | ✅ |
 | E03-S03 | Gestão de jornada | Admin libera fases dos clientes (gate da gamificação), acompanha progresso | — | ⬜ | ✅ |
 | E03-S04 | Proposta comercial | Criar/enviar proposta (escopo + valores) a lead/cliente | — | ⬜ | ✅ |
-| E03-S05 | Dashboard admin | Métricas (leads por estágio, clientes por fase, receita, reuniões) | — | ⬜ | ⏳ |
+| E03-S05 | Dashboard admin | Métricas (leads por estágio, clientes por fase, receita, reuniões) | — | ⬜ | ✅ |
 
 ## E04 — Integrações (mockadas, UI realista) `[prioridade 5]`
 
 | Story | Título | Descrição | Owner | Status | Spec |
 |-------|--------|-----------|-------|--------|------|
 | E04-S01 | Inbox WhatsApp | Conversas (oficial + Evolution), threads, histórico anexado ao cliente | — | ⬜ | ✅ |
-| E04-S02 | Agentes IA | Config de agente (primeiro atendimento, horários, tópicos), preview de conversa | — | ⬜ | ⏳ |
-| E04-S03 | Agenda (Gmail/Outlook) | Visão de agenda integrada, reuniões, sincronização mockada | — | ⬜ | ⏳ |
-| E04-S04 | Transcrições (Fireflies) | Lista de transcrições de reuniões como evidência, anexadas à visão 360 | — | ⬜ | ⏳ |
+| E04-S02 | Agentes IA | Config de agente (primeiro atendimento, horários, tópicos), preview de conversa | — | ⬜ | ✅ |
+| E04-S03 | Agenda (Gmail/Outlook) | Visão de agenda integrada, reuniões, sincronização mockada | — | ⬜ | ✅ |
+| E04-S04 | Transcrições (Fireflies) | Lista de transcrições de reuniões como evidência, anexadas à visão 360 | — | ⬜ | ✅ |
 
 ## E05 — Demo & Impersonação `[cross-cutting, habilitar cedo]`
 
