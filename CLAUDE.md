@@ -14,10 +14,21 @@ Leia este arquivo antes de qualquer implementação. **É a fonte de verdade que
 runtime**.
 
 ## Contexto do projeto
-- **O que é:** [A COMPLETAR: descrever negócio/domínio]
-- **Módulos (bounded contexts):** [A COMPLETAR: listar contextos]
-- **Stack:** React 19 + Vite + TypeScript + Tailwind; Supabase (Postgres + Edge Functions + Storage); Netlify; [outros externos]
-- **Papéis:** [A COMPLETAR: matriz de permissão]
+- **O que é:** Plataforma digital da **Akros Immigration Solutions** (consultoria de imigração EUA,
+  foco EB-2 NIW). Três frentes: **site institucional** + **portal do cliente gamificado** +
+  **painel admin**. Ver `docs/PROJECT.md`.
+- **FASE ATUAL:** protótipo **visual** para demo ao cliente — **dados 100% mockados**, **sem login
+  real**, **sem banco**, roda em **localhost**. Modo de **impersonação** para o time navegar como
+  qualquer cliente/cenário. Arquitetura isola dados atrás de **portas/adapters** (mock agora,
+  Supabase depois). Ver `docs/ARCHITECTURE.md`.
+- **Módulos (bounded contexts):** `site`, `jornada`, `documentos`, `pagamentos`, `agenda`, `crm`,
+  `comunicacao`, `demo`. Ver `docs/ARCHITECTURE.md`.
+- **Idioma da plataforma:** bilíngue **PT-BR (default) + EN** via i18n. Nenhum texto hardcoded.
+- **Identidade visual:** navy `#0D2240`, gold `#C6A254`, cream `#F5F4F0`. Logos em `Akros identidade/`.
+  Toda UI segue a skill **impeccable** (`.claude/skills/impeccable/`).
+- **Stack:** React 19 + Vite + TypeScript + Tailwind + React Router + react-i18next.
+  (Supabase/Netlify apenas na fase futura — não agora.)
+- **Papéis (mockados nesta fase):** visitante (site) · cliente (portal) · admin (backoffice).
 
 ## Regras aprendidas em sessões anteriores (leia sempre)
 
