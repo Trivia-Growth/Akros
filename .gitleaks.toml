@@ -1,0 +1,12 @@
+title = "gitleaks config — Sinérgica SO"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Vendored e lockfiles gerados. deno.lock contém hashes SHA-256 de módulos remotos que podem coincidir com generic-api-key; não contém credenciais."
+paths = [
+  '''\.triviaiox-core/''',
+  '''\.triviaiox/''',
+  '''^deno\.lock$''',
+]
