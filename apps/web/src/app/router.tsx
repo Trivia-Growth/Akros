@@ -1,4 +1,6 @@
+import { AdminAgendaPage } from "@/features/agenda/interfaces/AdminAgendaPage";
 import { AgendaPage } from "@/features/agenda/interfaces/AgendaPage";
+import { ComunicacaoPage } from "@/features/comunicacao/interfaces/ComunicacaoPage";
 import { AdminDashboardPage } from "@/features/crm/interfaces/AdminDashboardPage";
 import { Clientes360Page } from "@/features/crm/interfaces/Clientes360Page";
 import { KanbanPage } from "@/features/crm/interfaces/KanbanPage";
@@ -17,7 +19,6 @@ import { QuemSomosPage } from "@/features/site/interfaces/QuemSomosPage";
 import { ServicosPage } from "@/features/site/interfaces/ServicosPage";
 import { VistosPage } from "@/features/site/interfaces/VistosPage";
 import { AdminLayout } from "@/shared/layout/AdminLayout";
-import { Placeholder } from "@/shared/layout/Placeholder";
 import { PortalLayout } from "@/shared/layout/PortalLayout";
 import { PublicLayout } from "@/shared/layout/PublicLayout";
 import { UiShowcase } from "@/shared/ui/UiShowcase";
@@ -58,7 +59,8 @@ export const router = createBrowserRouter([
       { path: "leads", element: <KanbanPage /> },
       { path: "clientes", element: <Clientes360Page /> },
       { path: "propostas", element: <PropostasPage /> },
-      { path: "comunicacao", element: <Placeholder title="Comunicação" story="E04-S01" /> },
+      { path: "comunicacao", element: <ComunicacaoPage /> },
+      { path: "agenda", element: <AdminAgendaPage /> },
     ],
   },
   {

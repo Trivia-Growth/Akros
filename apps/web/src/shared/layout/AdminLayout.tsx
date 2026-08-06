@@ -2,6 +2,7 @@ import { DemoBar } from "@/features/demo/interfaces/DemoBar";
 import { LanguageSwitcher } from "@/shared/i18n/LanguageSwitcher";
 import { cn } from "@/shared/ui/utils/cn";
 import {
+  CalendarClock,
   KanbanSquare,
   LayoutDashboard,
   Menu,
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { to: "/admin/clientes", icon: Users, label: "Clientes" },
   { to: "/admin/propostas", icon: ScrollText, label: "Propostas" },
   { to: "/admin/comunicacao", icon: MessageCircle, label: "Comunicação" },
+  { to: "/admin/agenda", icon: CalendarClock, label: "Agenda" },
 ];
 
 function SidebarContent({
