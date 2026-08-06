@@ -1,3 +1,9 @@
+---
+name: checklist-impeccable-E00-S02-design-system-evidence
+description: Checklist impeccable preenchido para a story.
+alwaysApply: false
+---
+
 # Checklist Impeccable — Design System (E00-S02)
 
 **Story:** E00-S02 · **Componentes:** Button, Card, Badge, Input, Textarea, Select, Modal, Tabs,

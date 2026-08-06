@@ -21,7 +21,7 @@ try {
     file.includes('.tsx') && file.includes('apps/web')
   );
 
-  if (!hasUI) return process.exit(0);
+  if (!hasUI) process.exit(0);
 
   // Se toca UI, verifica se tasks.md menciona impeccable
   const taskFiles = [
@@ -42,7 +42,7 @@ try {
     } catch {}
   }
 
-  if (!foundTask) return process.exit(0);
+  if (!foundTask) process.exit(0);
 
   // Avisa sobre impeccable
   console.log('\n');

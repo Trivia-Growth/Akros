@@ -3,6 +3,7 @@ name: SPEC
 description: Agenda integrada (Gmail/Outlook) — visão admin, sincronização mockada.
 story: E04-S03
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Agenda Integrada Gmail/Outlook (E04-S03)

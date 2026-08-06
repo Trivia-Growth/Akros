@@ -1,6 +1,7 @@
 ---
 name: SPECS-INDEX
 description: Índice das specs geradas para o protótipo Akros. Mapeia story → diretório de spec.
+alwaysApply: false
 ---
 
 # Índice de Specs — Akros (protótipo visual, dados mockados)

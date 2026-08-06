@@ -3,6 +3,7 @@ name: SPEC
 description: Layout shells (público/portal/admin) + routing das 3 frentes.
 story: E00-S05
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Layout shells + routing (E00-S05)

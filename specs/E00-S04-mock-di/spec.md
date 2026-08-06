@@ -3,6 +3,7 @@ name: SPEC
 description: Camada de mock (portas/adapters), fixtures, personas, DI container.
 story: E00-S04
 tier: arquitetural
+alwaysApply: false
 ---
 
 # SPEC — Camada de mock + DI (E00-S04)

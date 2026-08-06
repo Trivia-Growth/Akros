@@ -3,6 +3,7 @@ name: SPEC
 description: Homepage institucional (recriação com layout premium).
 story: E01-S01
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Homepage (E01-S01)

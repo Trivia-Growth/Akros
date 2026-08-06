@@ -3,6 +3,7 @@ name: SPEC
 description: Design System Akros (impeccable) — tokens + componentes base.
 story: E00-S02
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Design System impeccable (E00-S02)

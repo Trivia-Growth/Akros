@@ -1,3 +1,9 @@
+---
+name: checklist-impeccable-E01-S02-quem-somos-evidence
+description: Checklist impeccable preenchido para a story.
+alwaysApply: false
+---
+
 # Checklist Impeccable — Quem Somos, Vistos, Metodologia, Serviços, Blog (E01-S02/S03/S04/S05/S06)
 
 Checklist consolidado — as 5 páginas seguem o mesmo padrão visual estabelecido em E01-S01/E00-S02.

@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato técnico (AC). Escrito por @pm, é o oráculo de teste.
 story: E01-S01
+alwaysApply: false
 ---
 
 # SPEC — Bulk Approve Ordens (E01-S01)

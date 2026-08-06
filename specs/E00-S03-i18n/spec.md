@@ -3,6 +3,7 @@ name: SPEC
 description: i18n PT-BR + EN com react-i18next.
 story: E00-S03
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — i18n PT-BR + EN (E00-S03)

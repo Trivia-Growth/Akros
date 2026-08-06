@@ -3,6 +3,7 @@ name: SPEC
 description: Página Quem Somos.
 story: E01-S02
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Quem Somos (E01-S02)

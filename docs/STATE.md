@@ -1,6 +1,7 @@
 ---
 name: STATE
 description: Estado volátil do trabalho. Atualizar ao pausar/retomar (use /handoff).
+alwaysApply: false
 ---
 
 # STATE.md — Estado de Trabalho Akros

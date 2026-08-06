@@ -2,6 +2,7 @@
 name: TASKS
 description: Decomposição dos shells + routing.
 story: E00-S05
+alwaysApply: false
 ---
 
 # TASKS — Layout + Routing (E00-S05)

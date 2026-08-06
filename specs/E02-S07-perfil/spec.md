@@ -3,6 +3,7 @@ name: SPEC
 description: Perfil do cliente (dados pessoais, contatos, preferências).
 story: E02-S07
 tier: trivial
+alwaysApply: false
 ---
 
 # SPEC — Perfil do Cliente (E02-S07)

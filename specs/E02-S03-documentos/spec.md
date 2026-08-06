@@ -3,6 +3,7 @@ name: SPEC
 description: Documentos & Checklists do cliente (upload, consulta, status).
 story: E02-S03
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Documentos & Checklists (E02-S03)

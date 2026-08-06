@@ -2,6 +2,7 @@
 name: TASKS
 description: Decomposição do i18n.
 story: E00-S03
+alwaysApply: false
 ---
 
 # TASKS — i18n (E00-S03)

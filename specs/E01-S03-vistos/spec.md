@@ -3,6 +3,7 @@ name: SPEC
 description: Página de Vistos (todos os tipos).
 story: E01-S03
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Vistos (E01-S03)

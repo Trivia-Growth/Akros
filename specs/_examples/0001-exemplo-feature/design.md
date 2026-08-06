@@ -2,6 +2,7 @@
 name: DESIGN
 description: Design de sistema (como). Escrito por @architect (tier arquitetural).
 story: E01-S01
+alwaysApply: false
 ---
 
 # DESIGN — Bulk Approve (E01-S01)

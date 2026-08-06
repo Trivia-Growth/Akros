@@ -2,6 +2,7 @@
 name: DESIGN
 description: Contratos de porta, entidades de domínio e fluxo de DI da camada mock.
 story: E00-S04
+alwaysApply: false
 ---
 
 # DESIGN — Camada de mock + DI (E00-S04)

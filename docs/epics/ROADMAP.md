@@ -1,6 +1,7 @@
 ---
 name: ROADMAP
 description: Épicos, stories e status. Atualizar ao concluir stories. Owner de story marca aqui antes de codar.
+alwaysApply: false
 ---
 
 # ROADMAP — Akros

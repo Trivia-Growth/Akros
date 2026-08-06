@@ -3,6 +3,7 @@ name: SPEC
 description: Assinatura digital de documentos (fluxo mockado).
 story: E02-S04
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Assinatura Digital (E02-S04)

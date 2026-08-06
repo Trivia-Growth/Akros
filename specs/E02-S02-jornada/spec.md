@@ -3,6 +3,7 @@ name: SPEC
 description: Jornada gamificada (Introdução + 5 fases) com unlock sequencial.
 story: E02-S02
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Jornada Gamificada (E02-S02)

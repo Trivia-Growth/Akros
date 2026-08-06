@@ -3,6 +3,7 @@ name: SPEC
 description: Agentes IA — config de primeiro atendimento + preview de conversa (mock).
 story: E04-S02
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Agentes IA (E04-S02)

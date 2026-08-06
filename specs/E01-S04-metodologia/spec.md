@@ -3,6 +3,7 @@ name: SPEC
 description: Página Metodologia (7 passos).
 story: E01-S04
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Metodologia (E01-S04)

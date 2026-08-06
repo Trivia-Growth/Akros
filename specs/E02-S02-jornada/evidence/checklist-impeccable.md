@@ -1,3 +1,9 @@
+---
+name: checklist-impeccable-E02-S02-jornada-evidence
+description: Checklist impeccable preenchido para a story.
+alwaysApply: false
+---
+
 # Checklist Impeccable — Jornada Gamificada (E02-S02)
 
 ## 1. Spacing & Alignment

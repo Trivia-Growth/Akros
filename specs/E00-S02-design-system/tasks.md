@@ -2,6 +2,7 @@
 name: TASKS
 description: Decomposição do design system.
 story: E00-S02
+alwaysApply: false
 ---
 
 # TASKS — Design System (E00-S02)

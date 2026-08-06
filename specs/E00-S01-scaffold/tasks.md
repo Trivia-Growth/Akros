@@ -2,6 +2,7 @@
 name: TASKS
 description: Decomposição do scaffold. 1 task por AC + gate.
 story: E00-S01
+alwaysApply: false
 ---
 
 # TASKS — Scaffold (E00-S01)

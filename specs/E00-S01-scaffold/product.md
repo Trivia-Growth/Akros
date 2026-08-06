@@ -2,6 +2,7 @@
 name: PRODUCT
 description: Por quê/para quem do scaffold do app.
 story: E00-S01
+alwaysApply: false
 ---
 
 # PRODUCT — Scaffold do app (E00-S01)

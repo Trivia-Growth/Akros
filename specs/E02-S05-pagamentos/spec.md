@@ -3,6 +3,7 @@ name: SPEC
 description: Pagamentos do cliente (status, faturas, plano).
 story: E02-S05
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Pagamentos (E02-S05)

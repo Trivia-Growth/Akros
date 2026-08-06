@@ -3,6 +3,7 @@ name: SPEC
 description: Dashboard admin (métricas do negócio).
 story: E03-S05
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Dashboard Admin (E03-S05)

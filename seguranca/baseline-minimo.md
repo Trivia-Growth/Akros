@@ -1,6 +1,7 @@
 ---
 name: BASELINE-MINIMO
 description: Checklist mínimo de segurança obrigatório em TODO código produção.
+alwaysApply: false
 ---
 
 # Baseline de Segurança Mínima — Akros

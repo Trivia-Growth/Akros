@@ -3,6 +3,7 @@ name: SPEC
 description: Impersonação / seletor de persona + alternância Cliente↔Admin (demo mode).
 story: E05-S01
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Impersonação (E05-S01)

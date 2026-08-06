@@ -1,3 +1,9 @@
+---
+name: checklist-impeccable-E02-S01-dashboard-evidence
+description: Checklist impeccable preenchido para a story.
+alwaysApply: false
+---
+
 # Checklist Impeccable — Dashboard do Cliente (E02-S01)
 
 ## 1. Spacing & Alignment

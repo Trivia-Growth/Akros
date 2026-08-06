@@ -3,6 +3,7 @@ name: SPEC
 description: Gestão de jornada pelo admin (liberar fases — o gate da gamificação).
 story: E03-S03
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Gestão de Jornada (E03-S03)

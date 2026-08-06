@@ -1,3 +1,9 @@
+---
+name: checklist-impeccable-E03-S01-kanban-evidence
+description: Checklist impeccable preenchido para a story.
+alwaysApply: false
+---
+
 # Checklist Impeccable — Painel Admin completo (E03-S01/S02/S03/S04/S05)
 
 Checklist consolidado — as 5 telas do admin seguem o padrão navy-950 sidebar já estabelecido em E00-S05.

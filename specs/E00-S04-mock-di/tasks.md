@@ -2,6 +2,7 @@
 name: TASKS
 description: Decomposição da camada mock + DI.
 story: E00-S04
+alwaysApply: false
 ---
 
 # TASKS — Mock + DI (E00-S04)

@@ -3,6 +3,7 @@ name: SPEC
 description: Transcrições de reuniões (Fireflies) como evidência, anexadas à visão 360.
 story: E04-S04
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Transcrições Fireflies (E04-S04)

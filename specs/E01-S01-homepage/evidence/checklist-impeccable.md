@@ -1,3 +1,9 @@
+---
+name: checklist-impeccable-E01-S01-homepage-evidence
+description: Checklist impeccable preenchido para a story.
+alwaysApply: false
+---
+
 # Checklist Impeccable — Homepage (E01-S01)
 
 ## 1. Spacing & Alignment

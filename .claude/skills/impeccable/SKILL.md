@@ -1,7 +1,6 @@
 ---
 name: impeccable
 description: Polishing UI to look human-made, not AI-generated. Refine design, spacing, typography, interactions, consistency.
-alwaysApply: false
 ---
 
 # impeccable — UI Polish & Design Consistency

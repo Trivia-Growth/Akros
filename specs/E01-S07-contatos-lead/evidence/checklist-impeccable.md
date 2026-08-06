@@ -1,3 +1,9 @@
+---
+name: checklist-impeccable-E01-S07-contatos-lead-evidence
+description: Checklist impeccable preenchido para a story.
+alwaysApply: false
+---
+
 # Checklist Impeccable — Contatos + Form Lead (E01-S07)
 
 ## 1. Spacing & Alignment

@@ -3,6 +3,7 @@ name: SPEC
 description: Inbox WhatsApp (oficial + Evolution) mockado, anexado ao cliente.
 story: E04-S01
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Inbox WhatsApp (E04-S01)

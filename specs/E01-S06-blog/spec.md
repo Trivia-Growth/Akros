@@ -3,6 +3,7 @@ name: SPEC
 description: Blog (lista + post) com conteúdo mockado.
 story: E01-S06
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Blog (E01-S06)

@@ -3,6 +3,7 @@ name: SPEC
 description: Contrato do scaffold do app.
 story: E00-S01
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Scaffold do app (E00-S01)

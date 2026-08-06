@@ -3,6 +3,7 @@ name: SPEC
 description: Página de contatos + formulário de captação de lead (alimenta o kanban).
 story: E01-S07
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Contatos + Formulário de Lead (E01-S07)

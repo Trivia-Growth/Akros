@@ -1,3 +1,9 @@
+---
+name: checklist-impeccable-E02-S03-documentos-evidence
+description: Checklist impeccable preenchido para a story.
+alwaysApply: false
+---
+
 # Checklist Impeccable — Documentos, Assinatura, Pagamentos, Agenda, Perfil (E02-S03/S04/S05/S06/S07)
 
 Checklist consolidado — as 5 telas seguem o mesmo padrão visual do portal (E02-S01/S02).

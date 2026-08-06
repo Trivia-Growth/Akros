@@ -2,6 +2,7 @@
 name: TASKS
 description: Decomposição de spec em tasks. Cada task = 1 AC + gate executável. Escrito por @sm.
 story: E01-S01
+alwaysApply: false
 ---
 
 # TASKS — Bulk Approve Ordens (E01-S01)

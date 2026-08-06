@@ -1,3 +1,9 @@
+---
+name: checklist-impeccable-E04-S01-whatsapp-evidence
+description: Checklist impeccable preenchido para a story.
+alwaysApply: false
+---
+
 # Checklist Impeccable — Integrações mockadas (E04-S01/S02/S03/S04)
 
 Checklist consolidado — WhatsApp Inbox, Agente IA, Agenda integrada, Transcrições Fireflies.

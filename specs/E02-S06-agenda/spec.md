@@ -3,6 +3,7 @@ name: SPEC
 description: Agendamento de reuniões (mock Calendly/Gmail/Outlook).
 story: E02-S06
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Agendamento de Reuniões (E02-S06)

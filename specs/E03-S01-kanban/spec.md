@@ -3,6 +3,7 @@ name: SPEC
 description: Kanban de leads (6 colunas) com drag-drop.
 story: E03-S01
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Kanban de Leads (E03-S01)

@@ -3,6 +3,7 @@ name: SPEC
 description: Base de clientes + Visão 360.
 story: E03-S02
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Base de Clientes + Visão 360 (E03-S02)

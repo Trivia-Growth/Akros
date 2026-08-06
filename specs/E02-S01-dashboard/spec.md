@@ -3,6 +3,7 @@ name: SPEC
 description: Dashboard do cliente (visão geral da jornada gamificada).
 story: E02-S01
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Dashboard do Cliente (E02-S01)

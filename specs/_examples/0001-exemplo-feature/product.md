@@ -1,6 +1,7 @@
 ---
 name: PRODUCT
 description: Visão de produto (por quê, para quem). Escrito por @pm/@analyst.
+alwaysApply: false
 ---
 
 # PRODUCT — Exemplo Feature (E01-S01)

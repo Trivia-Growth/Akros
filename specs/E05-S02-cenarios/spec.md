@@ -3,6 +3,7 @@ name: SPEC
 description: Cenários de demo (presets que populam o app em estados específicos).
 story: E05-S02
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Cenários de Demo (E05-S02)

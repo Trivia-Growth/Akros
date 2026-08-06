@@ -3,6 +3,7 @@ name: SPEC
 description: Página Outros Serviços (categorias).
 story: E01-S05
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Outros Serviços (E01-S05)

@@ -3,6 +3,7 @@ name: SPEC
 description: Proposta comercial (criar/enviar).
 story: E03-S04
 tier: pequeno
+alwaysApply: false
 ---
 
 # SPEC — Proposta Comercial (E03-S04)
