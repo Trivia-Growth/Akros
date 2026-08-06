@@ -6,6 +6,7 @@ import "@fontsource/fraunces/600.css";
 import "@fontsource/fraunces/600-italic.css";
 
 import { App } from "@/app/App";
+import "@/shared/i18n/config";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";

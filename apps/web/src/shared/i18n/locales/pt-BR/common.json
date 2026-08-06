@@ -1,0 +1,66 @@
+{
+  "app": {
+    "name": "Akros",
+    "tagline": "Immigration Solutions"
+  },
+  "nav": {
+    "home": "Início",
+    "about": "Quem Somos",
+    "services": "Outros Serviços",
+    "methodology": "Metodologia",
+    "visas": "Vistos",
+    "blog": "Blog",
+    "contact": "Contatos",
+    "portal": "Portal do Cliente",
+    "admin": "Painel Admin"
+  },
+  "actions": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "send": "Enviar",
+    "close": "Fechar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "back": "Voltar",
+    "next": "Avançar",
+    "learnMore": "Saiba mais",
+    "talkToSpecialist": "Falar com especialista",
+    "scheduleCall": "Agendar reunião",
+    "download": "Baixar",
+    "upload": "Enviar arquivo",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "clearSelection": "Limpar seleção",
+    "resetDemo": "Resetar demo"
+  },
+  "status": {
+    "pending": "Pendente",
+    "sent": "Enviado",
+    "underReview": "Em análise",
+    "approved": "Aprovado",
+    "needsChanges": "Ajustes",
+    "paid": "Pago",
+    "overdue": "Atrasado",
+    "locked": "Bloqueada",
+    "unlocked": "Liberada",
+    "inProgress": "Em andamento",
+    "completed": "Concluída"
+  },
+  "language": {
+    "pt-BR": "Português",
+    "en": "English",
+    "switch": "Idioma"
+  },
+  "footer": {
+    "rights": "Todos os direitos reservados.",
+    "privacy": "Política de Privacidade",
+    "terms": "Termos e Condições"
+  },
+  "form": {
+    "requiredField": "Este campo é obrigatório",
+    "invalidEmail": "Digite um e-mail válido",
+    "success": "Enviado com sucesso!",
+    "error": "Algo deu errado. Tente novamente."
+  }
+}
