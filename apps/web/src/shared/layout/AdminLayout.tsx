@@ -1,3 +1,4 @@
+import { DemoBar } from "@/features/demo/interfaces/DemoBar";
 import { LanguageSwitcher } from "@/shared/i18n/LanguageSwitcher";
 import { cn } from "@/shared/ui/utils/cn";
 import {
@@ -84,45 +85,49 @@ export function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-cream-200">
-      <aside className="hidden w-64 shrink-0 flex-col bg-navy-950 px-4 py-6 lg:flex">
-        <SidebarContent />
-      </aside>
+    <div className="flex min-h-screen flex-col">
+      <div className="flex flex-1 bg-cream-200">
+        <aside className="hidden w-64 shrink-0 flex-col bg-navy-950 px-4 py-6 lg:flex">
+          <SidebarContent />
+        </aside>
 
-      {menuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label="Fechar menu"
-            className="absolute inset-0 bg-navy-950/50"
-            onClick={() => setMenuOpen(false)}
-          />
-          <aside className="relative flex h-full w-64 flex-col bg-navy-950 px-4 py-6">
-            <SidebarContent
-              onNavigate={() => setMenuOpen(false)}
-              onClose={() => setMenuOpen(false)}
+        {menuOpen && (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <button
+              type="button"
+              aria-label="Fechar menu"
+              className="absolute inset-0 bg-navy-950/50"
+              onClick={() => setMenuOpen(false)}
             />
-          </aside>
-        </div>
-      )}
+            <aside className="relative flex h-full w-64 flex-col bg-navy-950 px-4 py-6">
+              <SidebarContent
+                onNavigate={() => setMenuOpen(false)}
+                onClose={() => setMenuOpen(false)}
+              />
+            </aside>
+          </div>
+        )}
 
-      <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-border bg-white px-6">
-          <button
-            type="button"
-            className="p-2 text-navy lg:hidden"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Abrir menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <span className="hidden text-sm font-medium text-ink-soft lg:block">Painel Admin</span>
-          <LanguageSwitcher />
-        </header>
-        <main className="flex-1 px-6 py-8">
-          <Outlet />
-        </main>
+        <div className="flex flex-1 flex-col">
+          <header className="flex h-16 items-center justify-between border-b border-border bg-white px-6">
+            <button
+              type="button"
+              className="p-2 text-navy lg:hidden"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Abrir menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <span className="hidden text-sm font-medium text-ink-soft lg:block">Painel Admin</span>
+            <LanguageSwitcher />
+          </header>
+          <main className="flex-1 px-6 py-8">
+            <Outlet />
+          </main>
+        </div>
       </div>
+
+      <DemoBar />
     </div>
   );
 }

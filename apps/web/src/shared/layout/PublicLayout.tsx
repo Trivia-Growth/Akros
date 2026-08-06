@@ -1,3 +1,4 @@
+import { DemoBar } from "@/features/demo/interfaces/DemoBar";
 import { LanguageSwitcher } from "@/shared/i18n/LanguageSwitcher";
 import { Button } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
@@ -140,6 +141,8 @@ export function PublicLayout() {
           </div>
         </div>
       </footer>
+
+      <DemoBar />
     </div>
   );
 }
