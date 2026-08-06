@@ -14,6 +14,7 @@ Uma feature **não está pronta** até passar em TODOS os gates abaixo. Não é 
 - [ ] tasks.md existe com **1 task por AC** (mapear T-N → AC-N)
 - [ ] Cada task tem um **gate executável** (comando ou script)
 - [ ] Nenhum `SPEC_DEVIATION` pendente em tasks.md ou código
+- [ ] **SE tem UI:** impeccable checklist preenchido (ver seção 7 abaixo)
 
 ## 2. Code & Tests
 
@@ -58,6 +59,53 @@ Uma feature **não está pronta** até passar em TODOS os gates abaixo. Não é 
 - [ ] Borda cases tentadas: erro parcial, timeout, concorrência, abuso
 - [ ] Spec buraco encontrado? → ADR ou spec atualizada
 - [ ] `/revisao-adversarial` rodou e retornou verde
+
+## 7. UI Polish — impeccable (OBRIGATÓRIO se feature tem UI)
+
+Se feature toca frontend (`apps/web/src/interfaces/` ou componentes), deve passar por impeccable.
+
+**Checklist — 5 Pilares:**
+
+### Spacing & Alignment
+- [ ] Spacing intencional (não grid 8px everywhere)
+- [ ] Whitespace agrupa conceitos
+- [ ] Sem "branco vazio" no meio
+
+### Typography
+- [ ] Font não-genérica (com personalidade)
+- [ ] Tamanhos seguem escala harmônica (12→14→16→18→20→24→32→40→48)
+- [ ] Line-height varia por tamanho (pequeno: 1.5, grande: 1.2)
+- [ ] Font-weight intencional
+- [ ] Maiúsculas tem letter-spacing
+
+### Color & Contrast
+- [ ] Paleta coerente (não 12 tons de azul)
+- [ ] Contrast suficiente (WCAG AA)
+- [ ] Cor tem razão (não "porque ficou bonito")
+- [ ] Dark mode é intentional (não auto-gerado)
+
+### Interaction & Animation
+- [ ] Animações têm propósito (feedback, reveal, etc)
+- [ ] Duração apropriada (250ms feedback, 600ms reveal)
+- [ ] Easing natural (não linear)
+- [ ] Hover/focus/active distintos visualmente
+- [ ] prefers-reduced-motion respeitado
+
+### Consistency & Details
+- [ ] Ícones mesma set (não misturar Feather + Heroicons)
+- [ ] Border-radius escala (4px→8px→12px)
+- [ ] Shadows profundidade clara (1-2 níveis)
+- [ ] Form fields mesma height/padding
+- [ ] Empty/loading/error states designados
+
+**Gate:**
+```bash
+# Screenshots antes/depois (side-by-side)
+# Cada mudança tem razão documentada (não "porque ficou melhor")
+# Peer review passou (outro olho humano)
+```
+
+---
 
 ## 8. DevOps / Merge
 

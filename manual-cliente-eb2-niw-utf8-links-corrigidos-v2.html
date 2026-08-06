@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual do Cliente EB2-NIW — Akros Immigration Solutions</title>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#F5F4F0;color:#1a1a1a;font-size:16px;line-height:1.7}
+a{color:#C6A254;text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:780px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+.hero{background:#0D2240;border-radius:16px;padding:2.5rem 2rem;margin-bottom:2rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:260px;height:260px;border-radius:50%;border:1px solid rgba(198,162,84,0.15)}
+.hero::after{content:'';position:absolute;bottom:-80px;right:30px;width:320px;height:320px;border-radius:50%;border:1px solid rgba(198,162,84,0.08)}
+.hero-label{font-size:11px;letter-spacing:2px;color:#C6A254;text-transform:uppercase;margin-bottom:.6rem}
+.hero-title{font-size:30px;font-weight:500;color:#fff;line-height:1.2;margin-bottom:.4rem}
+.hero-sub{font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:1.5rem}
+.hero-contact{display:flex;gap:1.5rem;flex-wrap:wrap}
+.hero-contact span{font-size:12px;color:rgba(255,255,255,0.55)}
+.hero-contact a{color:#C6A254;font-size:12px}
+.progress-bar{display:flex;align-items:flex-start;background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem}
+.prog-step{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;position:relative}
+.prog-step:not(:last-child)::after{content:'';position:absolute;top:13px;left:50%;width:100%;height:1px;background:#e0ddd5;z-index:0}
+.prog-dot{width:28px;height:28px;border-radius:50%;background:#fff;border:1px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#999;z-index:1;position:relative}
+.prog-dot.done{background:#0D2240;color:#fff;border-color:#0D2240}
+.prog-dot.gold{background:#C6A254;color:#fff;border-color:#C6A254}
+.prog-label{font-size:10px;color:#999;text-align:center}
+.nav{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap}
+.nav-btn{padding:8px 18px;border-radius:8px;border:0.5px solid #ccc;background:#fff;font-size:13px;cursor:pointer;color:#666;transition:all .15s;font-family:inherit}
+.nav-btn:hover{background:#f0ede6}
+.nav-btn.active{background:#0D2240;color:#fff;border-color:#0D2240}
+.section{display:none}
+.section.visible{display:block}
+.section-title{font-size:11px;letter-spacing:2px;color:#C6A254;text-transform:uppercase;margin-bottom:1.25rem;display:flex;align-items:center;gap:10px}
+.section-title::after{content:'';flex:1;height:0.5px;background:#e0ddd5}
+.intro-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:560px){.intro-grid,.doc-grid,.salary-grid,.viab-grid{grid-template-columns:1fr!important}}
+.info-card{background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;padding:1.25rem}
+.info-card h3{font-size:11px;font-weight:500;color:#C6A254;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:1px}
+.info-card p{font-size:14px;color:#555;line-height:1.8}
+.cert-box{background:#f5f4f0;border-left:3px solid #C6A254;border-radius:0 8px 8px 0;padding:1rem 1.25rem;margin-top:1rem}
+.cert-box pre{font-family:'Courier New',monospace;font-size:12px;color:#555;white-space:pre-wrap;line-height:1.7}
+.step{background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;overflow:hidden;margin-bottom:8px}
+.step-header{display:flex;align-items:center;gap:12px;padding:1rem 1.25rem;cursor:pointer;user-select:none}
+.step-header:hover{background:#fafaf8}
+.step-num{width:32px;height:32px;border-radius:50%;background:#0D2240;color:#fff;font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-title{font-size:15px;font-weight:500;color:#1a1a1a;flex:1}
+.step-badge{font-size:11px;padding:3px 10px;border-radius:100px;background:#f5f0e8;color:#7a5e20;white-space:nowrap}
+.step-arrow{font-size:20px;color:#aaa;transition:transform .2s;line-height:1}
+.step.open .step-arrow{transform:rotate(90deg)}
+.step-body{display:none;padding:1rem 1.25rem 1.25rem;border-top:0.5px solid #e0ddd5}
+.step.open .step-body{display:block}
+.step-desc{font-size:14px;color:#555;line-height:1.8;margin-bottom:.75rem}
+.step-time{font-size:12px;color:#999;border-top:0.5px solid #e0ddd5;padding-top:.75rem;margin-top:.75rem}
+.doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.75rem}
+.doc-item{background:#f5f4f0;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#555;border:0.5px solid #e0ddd5;line-height:1.7}
+.doc-item strong{display:block;font-size:11px;color:#C6A254;font-weight:500;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+.salary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:.75rem}
+.salary-card{background:#f5f4f0;border-radius:8px;padding:1rem;border:0.5px solid #e0ddd5}
+.salary-card h4{font-size:11px;font-weight:500;color:#888;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px}
+.salary-card ul{list-style:none;font-size:13px;color:#555;line-height:1.8}
+.salary-card ul li::before{content:"– ";color:#C6A254}
+.viab-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:.75rem}
+.viab-card{background:#f5f4f0;border-radius:8px;padding:.75rem;border:0.5px solid #e0ddd5}
+.viab-card h4{font-size:11px;font-weight:500;color:#C6A254;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px}
+.viab-card ul{list-style:none;font-size:12px;color:#555;line-height:1.8}
+.viab-card ul li::before{content:"· ";color:#C6A254;font-weight:bold}
+.notice{background:#f5f4f0;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#555;border:0.5px solid #e0ddd5;margin-top:.75rem;line-height:1.7}
+.notice-gold{background:#fffaf2;border-left:3px solid #C6A254;border-radius:0 8px 8px 0;padding:.75rem 1rem;font-size:13px;color:#555;margin-top:.75rem;line-height:1.7}
+.cta-box{margin-top:1.5rem;background:#0D2240;border-radius:12px;padding:1.5rem;text-align:center}
+.cta-label{font-size:11px;letter-spacing:2px;color:#C6A254;text-transform:uppercase;margin-bottom:.5rem}
+.cta-title{font-size:15px;color:#fff;margin-bottom:1rem}
+.cta-links{display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap}
+.cta-links a{font-size:13px;color:#C6A254}
+.cta-links span{font-size:13px;color:rgba(255,255,255,0.45)}
+.footer{margin-top:2.5rem;padding-top:1.5rem;border-top:0.5px solid #e0ddd5;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.footer-logo{font-size:13px;font-weight:500;color:#1a1a1a}
+.footer-logo span{color:#C6A254}
+.footer-info{font-size:12px;color:#aaa}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<h2 class="sr-only">Manual do Cliente EB2-NIW — Akros Immigration Solutions</h2>
+
+<div class="hero">
+  <div class="hero-label">Akros Immigration Solutions</div>
+  <div class="hero-title">Manual do Cliente</div>
+  <div class="hero-sub">EB-2 National Interest Waiver — Guia completo do seu processo</div>
+  <div class="hero-contact">
+    <span>✉ <a href="mailto:casemanager@akrosimmigration.com">casemanager@akrosimmigration.com</a></span>
+    <span>🌐 <a href="https://akrosimmigration.com" target="_blank">akrosimmigration.com</a></span>
+    <span><a href="https://calendly.com/nataliaakrosimmigration/reuniao-de-atendimento-service-meeting" target="_blank">Agendar reunião →</a></span>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <div class="prog-step"><div class="prog-dot done">1</div><div class="prog-label">Início</div></div>
+  <div class="prog-step"><div class="prog-dot done">2</div><div class="prog-label">Etapa 1</div></div>
+  <div class="prog-step"><div class="prog-dot done">3</div><div class="prog-label">Etapa 2</div></div>
+  <div class="prog-step"><div class="prog-dot done">4</div><div class="prog-label">Etapa 3</div></div>
+  <div class="prog-step"><div class="prog-dot gold">5</div><div class="prog-label">Envio</div></div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection('intro',this)">Introdução</button>
+  <button class="nav-btn" onclick="showSection('etapa1',this)">Etapa 1</button>
+  <button class="nav-btn" onclick="showSection('etapa2',this)">Etapa 2</button>
+  <button class="nav-btn" onclick="showSection('etapa3',this)">Etapa 3</button>
+  <button class="nav-btn" onclick="showSection('etapa4',this)">Etapa 4</button>
+</div>
+
+<!-- INTRODUÇÃO -->
+<div id="intro" class="section visible">
+  <div class="section-title">Bem-vindo ao seu processo</div>
+
+  <div class="info-card" style="margin-bottom:12px">
+    <h3>Uma palavra de boas-vindas</h3>
+    <p>É com grande satisfação que damos início à sua jornada rumo ao Green Card pelo EB-2 National Interest Waiver. Este manual foi preparado especialmente para você e reúne, de forma clara e organizada, tudo o que você precisa saber sobre cada etapa do processo — dos documentos necessários aos prazos esperados.</p>
+    <br>
+    <p>Nossa equipe estará ao seu lado em cada fase, garantindo que você se sinta seguro, informado e bem assessorado. Leia este material com atenção e, sempre que tiver dúvidas, não hesite em nos contatar.</p>
+  </div>
+
+  <div class="intro-grid">
+    <div class="info-card">
+      <h3>Canais de comunicação</h3>
+      <p>Todo o nosso atendimento referente ao andamento do caso é conduzido por e-mail, o que nos permite manter um histórico completo e organizado de cada etapa do seu processo. Solicitamos que o histórico das mensagens seja sempre preservado e que toda a equipe seja mantida em cópia.</p>
+      <br>
+      <p>Os e-mails são respondidos em até <strong>5 dias úteis</strong>. Mensagens recebidas nos fins de semana têm sua contagem iniciada a partir da segunda-feira.</p>
+      <br>
+      <p>Para dúvidas sobre <strong>pagamento</strong> ou <strong>agendamento de reuniões</strong>, entre em contato com nossa equipe de suporte pelo WhatsApp: <a href="https://wa.me/16893224429" target="_blank">+1 (689) 322-4429</a>.</p>
+      <br>
+      <p>Sempre que precisar, <a href="https://calendly.com/nataliaakrosimmigration/reuniao-de-atendimento-service-meeting" target="_blank">agende uma reunião neste link</a>.</p>
+    </div>
+    <div class="info-card">
+      <h3>Envio de documentos</h3>
+      <p>Todos os documentos em versão final devem ser encaminhados em formato <strong>PDF</strong>, seja por e-mail ou por meio do drive compartilhado. Por questões de qualidade e legibilidade, não aceitamos fotos de documentos nem arquivos em formato Word como versão definitiva.</p>
+      <br>
+      <p><strong>Não aceitamos documentos enviados por WhatsApp.</strong> Utilize exclusivamente o e-mail ou o drive compartilhado para o envio de qualquer arquivo relacionado ao seu processo.</p>
+    </div>
+  </div>
+
+  <div class="info-card" style="margin-top:12px">
+    <h3>Traduções certificadas</h3>
+    <p>Todo documento que não esteja originalmente redigido em inglês deverá ser traduzido por um profissional qualificado. As traduções devem ser <strong>certificadas</strong> — não são necessárias traduções juramentadas.</p>
+    <br>
+    <p>Caso não possua uma empresa de tradução de sua preferência, contamos com uma parceria especializada nesse serviço, com custo de <strong>R$40 por lauda</strong> — sendo uma lauda equivalente a <strong>1.000 caracteres</strong>. Podemos realizar a solicitação diretamente em seu nome e encaminhar o orçamento para sua aprovação antes de prosseguir.</p>
+    <br>
+    <p>Independentemente da empresa escolhida, a certificação deverá seguir o modelo abaixo:</p>
+    <div class="cert-box">
+      <pre>Certification by Translator
+
+I, [name], certify that I am fluent in the English and Portuguese languages,
+and that the above/attached document is an accurate and complete translation
+of the document attached entitled [document's name].
+
+[Signature] · [Name] · [Address] · [Date]</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ETAPA 1 -->
+<div id="etapa1" class="section">
+  <div class="section-title">Etapa 1 — Documentação e currículo</div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">1</div>
+      <div class="step-title">Formalização do contrato e pagamento inicial</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">O primeiro passo consiste na assinatura eletrônica do contrato de prestação de serviços e no pagamento do valor referente à entrada. Com esses procedimentos concluídos, sua assessoria estará formalmente iniciada e nossa equipe passará a acompanhar o seu caso de perto.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">2</div>
+      <div class="step-title">Reunião de início do processo (Kick-off)</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Após a leitura cuidadosa deste manual, convidamos você a agendar uma reunião inicial <a href="https://calendly.com/nataliaakrosimmigration/reuniao-de-atendimento-service-meeting" target="_blank">por este link</a>.</p>
+      <br>
+      <p class="step-desc">Nessa primeira reunião, trataremos exclusivamente dos documentos da Etapa 1. Sabemos que o processo pode parecer extenso à primeira vista, mas abordar tudo de uma só vez tende a gerar mais ansiedade do que clareza. Preferimos avançar com calma, etapa por etapa — assim você se sentirá mais seguro e preparado a cada passo. Vamos por partes!</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">3</div>
+      <div class="step-title">Elaboração do currículo especializado</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Ao término da reunião de abertura, daremos início à construção do currículo elaborado especificamente para o seu caso junto à USCIS. Diferente de um currículo convencional, este documento é estrategicamente estruturado para evidenciar suas contribuições profissionais e qualificações excepcionais. Para isso, solicitamos:</p>
+      <div class="doc-grid" style="grid-template-columns:1fr">
+        <div class="doc-item"><strong>3.1</strong>Encaminhe por e-mail a versão mais atualizada do seu currículo profissional.</div>
+        <div class="doc-item"><strong>3.2</strong>Preencha o formulário de coleta de informações (Microsoft Forms) que será enviado por e-mail. Verifique também sua caixa de spam.</div>
+        <div class="doc-item"><strong>3.3</strong>Caso necessário, agendaremos uma reunião complementar para aprofundar detalhes relevantes da sua trajetória profissional.</div>
+      </div>
+      <div class="notice-gold" style="margin-top:.75rem">Lembre-se: quanto mais informações e detalhes você compartilhar conosco, mais sólido e estratégico poderá ficar o seu currículo. Dedique-se a essa etapa — ela é a base de todo o processo.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">4</div>
+      <div class="step-title">Organização dos documentos comprobatórios</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Esta etapa envolve o envio dos documentos que comprovam suas qualificações e diferenciais profissionais. Ao concluir o envio de todos os itens ao drive ou por e-mail, por favor nos notifique para que possamos iniciar a análise e preparar o Checklist #1, identificando eventuais pendências ou ajustes necessários.</p>
+      <div class="notice" style="margin-bottom:.75rem">Se optar por enviar os documentos por e-mail, reúna todos em uma única mensagem. Se preferir o drive, pode ir acrescentando os arquivos aos poucos. A análise será realizada somente após o envio completo de todos os documentos desta fase. <strong>Lembre-se: todos os documentos devem ser verdadeiros.</strong></div>
+      <div class="doc-grid">
+        <div class="doc-item"><strong>Formação acadêmica</strong>Diploma de Bacharelado, Mestrado e/ou Doutorado, acompanhado dos respectivos históricos escolares. O diploma de ensino médio não é necessário. MBAs são considerados apenas quando realizados na modalidade stricto sensu.</div>
+        <div class="doc-item"><strong>Certificados e especializações</strong>Certificados de pós-graduação, participação em congressos e cursos de curta duração. Todos devem ser reunidos em um único arquivo PDF, acompanhados de suas respectivas traduções certificadas.</div>
+        <div class="doc-item"><strong>Licença e certificações profissionais</strong>Carteira profissional e/ou declaração oficial emitida pelo conselho de classe correspondente (CREA, OAB, CREFITO, entre outros). Em áreas como tecnologia, pode ser substituída por certificações reconhecidas, como Oracle, Microsoft ou CPA-20.</div>
+        <div class="doc-item"><strong>Associações profissionais</strong>Documentos que comprovem sua participação em associações da sua área de atuação. Associações com critérios mais rigorosos de admissão têm maior peso no processo, mas qualquer vínculo associativo relevante é bem-vindo.</div>
+        <div class="doc-item"><strong>Reconhecimentos e contribuições</strong>Materiais que evidenciem o impacto do seu trabalho: reportagens, entrevistas, artigos publicados, palestras, patentes, premiações, menções honrosas e trabalhos voluntários na sua área de expertise. Demonstrar que você é um profissional diferenciado é fundamental neste processo. Caso ainda não possua esses materiais, considere a possibilidade de obtê-los — isso pode fortalecer consideravelmente o seu perfil.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ETAPA 2 -->
+<div id="etapa2" class="section">
+  <div class="section-title">Etapa 2 — Business Plan e cartas</div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">5</div>
+      <div class="step-title">Reunião de alinhamento intermediário (Checkpoint I)</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Com o currículo finalizado, aprovado por você e o Checklist #1 devidamente enviado, agendaremos uma reunião de alinhamento para apresentar os próximos documentos da Etapa 2 e esclarecer eventuais dúvidas antes de avançarmos. Esta reunião também será gravada.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">6</div>
+      <div class="step-title">Plano de negócios (Business Plan)</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">O Business Plan é um dos documentos mais importantes da sua petição. Trata-se de um plano detalhado do projeto que você pretende implementar nos Estados Unidos, apresentado diretamente à USCIS. O documento contempla a descrição da proposta de negócio, os serviços ou produtos a serem oferecidos, a análise do mercado norte-americano, o estudo de viabilidade financeira e o impacto econômico esperado.</p>
+      <div class="notice">Após a aprovação do currículo, enviaremos um e-mail explicando nossa estratégia e visão para o seu Business Plan. Se necessário, agendaremos uma reunião com o Bruno, da Scopimos — parceiro responsável pela elaboração desse documento. Por se tratar de uma peça central e altamente personalizada, não há um prazo fixo estabelecido para sua conclusão.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">7</div>
+      <div class="step-title">Cartas de recomendação</div>
+      <div class="step-badge">~15 dias úteis</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">As cartas de recomendação são redigidas por profissionais que conhecem de perto a sua trajetória e podem atestar, com autoridade, a sua qualificação e os resultados que você obteve ao longo da carreira. Cada carta é elaborada de forma personalizada para reforçar os pilares da sua petição junto à USCIS.</p>
+      <div class="notice">Assim que você tiver definido a lista de cinco pessoas que assinarão as cartas — acompanhada das histórias e contextos que cada uma pode abordar —, prepararemos um questionário detalhado sobre cada um dos recomendantes. Isso nos permitirá reunir todas as informações necessárias para construir cartas realmente sólidas e estratégicas.</div>
+      <div class="notice-gold">Todas as assinaturas devem ser manuscritas (manuais). As cartas serão enviadas em Word para que qualquer ajuste necessário possa ser feito diretamente por você ou pelo signatário antes da assinatura. Ao final, <strong>envie todas as cartas assinadas em um único e-mail</strong>.</div>
+      <div class="step-time">Prazo médio: 15 dias úteis após a reunião de briefing.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">8</div>
+      <div class="step-title">Cartas de comprovação de experiência profissional</div>
+      <div class="step-badge">~10 dias úteis</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Nossa equipe elaborará os rascunhos das cartas de experiência profissional — documentos que comprovam o tempo de atuação e as responsabilidades exercidas em cada empresa em que você trabalhou. As minutas serão enviadas em Word para que eventuais ajustes possam ser feitos diretamente por você ou pelo representante da empresa antes da assinatura.</p>
+      <div class="notice-gold">Todas as assinaturas devem ser manuscritas (manuais). Após a coleta, encaminhe os documentos assinados devidamente digitalizados por e-mail.</div>
+      <div class="step-time">Prazo médio: 10 dias úteis após a aprovação do currículo pelo cliente.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">9</div>
+      <div class="step-title">Avaliação educacional (Educational Evaluation)</div>
+      <div class="step-badge">~15 dias úteis</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">A avaliação educacional é o documento que comprova a equivalência da sua formação acadêmica junto ao sistema educacional norte-americano, demonstrando que o seu diploma de Bacharelado ou Mestrado corresponde ao mesmo grau obtido nos Estados Unidos. Tão logo recebermos o diploma e o histórico escolar devidamente traduzidos, realizaremos a solicitação diretamente junto à empresa credenciada responsável por este serviço.</p>
+      <div class="step-time">Prazo médio: 15 dias úteis.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ETAPA 3 -->
+<div id="etapa3" class="section">
+  <div class="section-title">Etapa 3 — Viabilidade econômica e formulários</div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">10</div>
+      <div class="step-title">Reunião de alinhamento intermediário (Checkpoint II)</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Com o Business Plan aprovado, as cartas de experiência encaminhadas para assinatura e a solicitação da avaliação educacional em andamento, realizaremos uma nova reunião para apresentar os documentos da Etapa 3 e garantir que você esteja plenamente preparado para os próximos passos. Esta reunião também será gravada.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">11</div>
+      <div class="step-title">Comprovação de viabilidade econômica e comprometimento empresarial</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Com o Business Plan concluído, passamos à etapa de comprovação da sua capacidade financeira para colocar o projeto em prática, bem como dos elementos que demonstram seu real comprometimento com a implementação da empresa nos Estados Unidos. A USCIS avalia não apenas a qualidade do plano, mas também a seriedade da intenção de executá-lo.</p>
+      <div class="viab-grid">
+        <div class="viab-card">
+          <h4>Recursos financeiros próprios</h4>
+          <ul>
+            <li>Extratos bancários recentes</li>
+            <li>Extratos de fundos de investimento</li>
+            <li>Declaração de imposto de renda (quando houver bens declarados)</li>
+          </ul>
+        </div>
+        <div class="viab-card">
+          <h4>Patrimônio imobiliário</h4>
+          <ul>
+            <li>Registro do imóvel comprovando a propriedade</li>
+            <li>Declaração de corretor credenciado (CRECI) com valor de mercado</li>
+            <li>Cópia do registro CRECI do profissional</li>
+          </ul>
+        </div>
+        <div class="viab-card">
+          <h4>Investidores</h4>
+          <ul>
+            <li>Cartas de intenção de investimento (pessoa física ou jurídica)</li>
+            <li>Documentos que comprovem a capacidade financeira do investidor</li>
+          </ul>
+        </div>
+      </div>
+      <div class="viab-grid" style="grid-template-columns:1fr;margin-top:8px">
+        <div class="viab-card">
+          <h4>Comprometimento com a abertura da empresa</h4>
+          <ul>
+            <li>Documentação de abertura de empresa nos EUA (quando aplicável)</li>
+            <li>Cotações de espaços físicos para instalação do negócio</li>
+            <li>Registros de contato com potenciais clientes (atas de reunião ou e-mails)</li>
+            <li>Cartas de intenção de contratação de serviços</li>
+            <li>Processo de obtenção de licença profissional nos Estados Unidos</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">12</div>
+      <div class="step-title">Questionários e pagamento da taxa federal</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Nesta fase, enviaremos questionários detalhados por e-mail com as informações necessárias para o preenchimento dos formulários obrigatórios junto ao Departamento de Imigração dos Estados Unidos. Sua atenção e precisão nas respostas são fundamentais para garantir a exatidão dos dados inseridos nos formulários.</p>
+      <div class="salary-grid">
+        <div class="salary-card">
+          <h4>Formulários obrigatórios</h4>
+          <ul>
+            <li>Formulário I-140 (Petição de Imigração)</li>
+            <li>Formulário ETA (Certificação Trabalhista)</li>
+          </ul>
+        </div>
+        <div class="salary-card">
+          <h4>Taxa federal (USCIS)</h4>
+          <ul>
+            <li>Valor: US$ 1.015</li>
+            <li>Pagamento por cartão de crédito</li>
+            <li>Pagamento por conta bancária</li>
+          </ul>
+        </div>
+      </div>
+      <div class="notice-gold" style="margin-top:.75rem">
+        <strong>Está nos Estados Unidos e pretende solicitar o ajuste de status?</strong> Nesse caso, haverá taxas adicionais: US$ 1.440 referente ao formulário I-485, US$ 260 para a permissão de trabalho e US$ 630 para a permissão de viagem. Outros documentos também serão exigidos, como exames médicos, fotografias e documentos pessoais. Se esse for o seu caso, entre em contato conosco para que possamos orientá-lo com mais detalhes.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ETAPA 4 -->
+<div id="etapa4" class="section">
+  <div class="section-title">Etapa 4 — Finalização e envio à USCIS</div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">13</div>
+      <div class="step-title">Elaboração da carta de suporte e organização do processo</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Com todos os documentos devidamente recebidos e validados, daremos início à elaboração da Carta de Suporte — também chamada de Petition Letter. Trata-se da peça central da sua petição: um documento narrativo que consolida toda a sua trajetória profissional, demonstra o interesse nacional do seu projeto e fundamenta o pedido de dispensa do requisito de patrocinador. Paralelamente, realizamos a organização, indexação e revisão final de todos os documentos que compõem o dossiê.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggleStep(this.parentElement)">
+      <div class="step-num">14</div>
+      <div class="step-title">Revisão final pelo cliente e envio à USCIS</div>
+      <div class="step-arrow">›</div>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Antes do envio oficial, o processo completo será encaminhado a você para revisão e aprovação. Essa etapa é fundamental: gostaríamos que você lesse com atenção cada documento, confirmando que todas as informações estão corretas e que o processo representa fielmente a sua trajetória. Após a sua aprovação formal, a petição será enviada à USCIS por correio com rastreamento.</p>
+      <div class="notice-gold">Este é o momento que culmina todo o esforço dedicado ao longo do processo. A partir daqui, sua petição estará formalmente nas mãos da USCIS. Nossa equipe continuará acompanhando o andamento e mantendo você informado sobre qualquer atualização.</div>
+    </div>
+  </div>
+
+  <div class="cta-box">
+    <div class="cta-label">Estamos à sua disposição</div>
+    <div class="cta-title">Nossa equipe acompanha cada etapa do seu processo</div>
+    <div class="cta-links">
+      <a href="mailto:casemanager@akrosimmigration.com">casemanager@akrosimmigration.com</a>
+      <a href="https://wa.me/16893224429" target="_blank">WhatsApp de suporte</a>
+      <a href="https://akrosimmigration.com" target="_blank">akrosimmigration.com</a>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="footer-logo">AKROS <span>Immigration Solutions</span></div>
+  <div class="footer-info">akrosimmigration.com</div>
+</div>
+</div>
+
+<script>
+function showSection(id,btn){
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('visible')});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active')});
+  document.getElementById(id).classList.add('visible');
+  btn.classList.add('active');
+}
+function toggleStep(el){el.classList.toggle('open')}
+</script>
+
+</body>
+</html>

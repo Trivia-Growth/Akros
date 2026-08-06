@@ -29,6 +29,8 @@ commit-msg:
 pre-push:
   parallel: true
   commands:
+    remind-impeccable:
+      run: node scripts/remind-impeccable.mjs
     esteira:
       run: pnpm run audit:esteira
     fidelidade:
