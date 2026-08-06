@@ -21,3 +21,17 @@ export function usePosts(): PostBlog[] {
 
   return posts;
 }
+
+export function usePost(slug: string | undefined): PostBlog | null | undefined {
+  const [post, setPost] = useState<PostBlog | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (!slug) {
+      setPost(null);
+      return;
+    }
+    container.conteudo.obterPostPorSlug(slug).then(setPost);
+  }, [slug]);
+
+  return post;
+}

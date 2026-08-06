@@ -85,5 +85,168 @@
       "successTitle": "Recebemos seu contato!",
       "successMessage": "Nossa equipe vai analisar seu perfil e retornar em breve."
     }
+  },
+  "aboutPage": {
+    "eyebrow": "Quem somos",
+    "title": "Especialistas em transformar carreiras em novas jornadas",
+    "intro": "A Akros Immigration Solutions é uma consultoria especializada em imigração para os Estados Unidos, com foco em profissionais altamente qualificados. Já ajudamos mais de 300 famílias a conquistar o Green Card com transparência, profissionalismo e acompanhamento próximo em cada etapa.",
+    "ceo": {
+      "eyebrow": "CEO & Fundadora",
+      "name": "Natalia Luz",
+      "bio1": "Advogada formada pela PUC/SP em 2010, com mais de 14 anos de experiência em direito civil e propriedade intelectual.",
+      "bio2": "Em 2020, Natalia recebeu seu próprio Green Card por habilidade excepcional — uma jornada que a inspirou a dedicar sua carreira a abrir esse mesmo caminho para outros profissionais brasileiros excepcionais."
+    },
+    "partner": {
+      "eyebrow": "Advogada parceira",
+      "name": "Dra. Denise Sarchiapone",
+      "bio": "Parceira jurídica da Akros, responsável por confirmar a estratégia legal de cada caso antes do início formal do processo — garantindo solidez técnica em cada petição."
+    },
+    "values": {
+      "title": "Nossos valores",
+      "transparency": {
+        "title": "Transparência",
+        "description": "Comunicação clara sobre prazos, custos e expectativas em cada etapa."
+      },
+      "professionalism": {
+        "title": "Profissionalismo",
+        "description": "Rigor técnico e atenção aos detalhes em cada documento e petição."
+      },
+      "closeness": {
+        "title": "Acompanhamento próximo",
+        "description": "Você nunca caminha sozinho — nossa equipe está ao seu lado do início ao fim."
+      }
+    },
+    "cta": "Fale com nossa equipe"
+  },
+  "visasPage": {
+    "eyebrow": "Vistos",
+    "title": "Encontre o caminho certo para você",
+    "subtitle": "Conheça os principais tipos de visto para imigração e trabalho nos Estados Unidos.",
+    "filterAll": "Todos",
+    "filterImmigrant": "Imigrantes",
+    "filterNonImmigrant": "Não-imigrantes",
+    "categoryImmigrant": "Vistos de Imigrante (Green Card)",
+    "categoryNonImmigrant": "Vistos de Não-imigrante",
+    "cta": "Falar com especialista",
+    "niwHighlight": "Carro-chefe da Akros",
+    "list": {
+      "eb1": {
+        "name": "EB-1",
+        "description": "Habilidade extraordinária em ciência, artes, educação, negócios ou esportes."
+      },
+      "eb2": {
+        "name": "EB-2",
+        "description": "Profissionais com formação avançada ou habilidade excepcional. Requer oferta de emprego."
+      },
+      "eb2niw": {
+        "name": "EB-2 NIW",
+        "description": "Green Card sem necessidade de oferta de emprego, quando há benefício ao interesse nacional dos EUA."
+      },
+      "eb3": {
+        "name": "EB-3",
+        "description": "Profissionais, trabalhadores qualificados e não qualificados com oferta de emprego."
+      },
+      "eb4": {
+        "name": "EB-4",
+        "description": "Imigrante especial: religiosos, funcionários de organizações internacionais e outros."
+      },
+      "f1": {
+        "name": "F-1",
+        "description": "Mudança de status de turista para estudante nos EUA."
+      },
+      "l1": {
+        "name": "L-1",
+        "description": "Transferência de funcionários de empresas multinacionais para filiais nos EUA."
+      },
+      "e2": {
+        "name": "E-2",
+        "description": "Visto de investidor para desenvolver e dirigir operações de um negócio nos EUA."
+      },
+      "p1": {
+        "name": "P-1",
+        "description": "Atletas, artistas e equipes de entretenimento para competições ou eventos específicos."
+      },
+      "r": {
+        "name": "R",
+        "description": "Ministros e outros membros religiosos para trabalho em capacidade religiosa."
+      },
+      "h1b": {
+        "name": "H-1B",
+        "description": "Ocupações especializadas para profissionais com formação avançada ou habilidades específicas."
+      },
+      "h2b": {
+        "name": "H-2B",
+        "description": "Trabalhadores temporários para necessidade de mão-de-obra não agrícola."
+      }
+    }
+  },
+  "methodologyPage": {
+    "eyebrow": "Metodologia",
+    "title": "Como conduzimos o seu processo",
+    "subtitle": "Um caminho estruturado em 7 passos, do primeiro contato à sua nova vida nos EUA.",
+    "journeyNote": "Os passos 4 a 7 correspondem à jornada acompanhada no seu Portal do Cliente — Introdução + 5 fases.",
+    "steps": {
+      "1": {
+        "title": "Análise de perfil e objetivos",
+        "description": "Entendemos sua trajetória profissional e seus objetivos de imigração."
+      },
+      "2": {
+        "title": "Consulta com especialista",
+        "description": "Avaliação detalhada do seu caso e apresentação do orçamento."
+      },
+      "3": {
+        "title": "Consulta com advogada parceira",
+        "description": "A Dra. Denise Sarchiapone confirma a estratégia jurídica do seu caso."
+      },
+      "4": {
+        "title": "Contrato e pagamento inicial",
+        "description": "Formalização da assessoria, com opções de financiamento."
+      },
+      "5": {
+        "title": "Organização de documentos",
+        "description": "Nossos case managers conduzem a coleta e preparação de toda a documentação."
+      },
+      "6": {
+        "title": "Aprovação e envio à USCIS",
+        "description": "Você revisa e aprova o processo antes do envio oficial."
+      },
+      "7": {
+        "title": "Preparação para relocation",
+        "description": "Suporte para a mudança e instalação nos Estados Unidos."
+      }
+    },
+    "cta": "Iniciar minha jornada"
+  },
+  "servicesPage": {
+    "eyebrow": "Outros serviços",
+    "title": "Atendemos diferentes perfis profissionais",
+    "subtitle": "Além do EB-2 NIW, apoiamos outras categorias rumo à imigração legal para os EUA.",
+    "cta": "Falar com especialista",
+    "categories": {
+      "qualified": {
+        "title": "Profissionais Qualificados",
+        "description": "Bacharéis com experiência de mercado elegíveis à residência permanente (Green Card), com foco em habilidades excepcionais e contribuições relevantes na sua área."
+      },
+      "athletes": {
+        "title": "Atletas & Artistas",
+        "description": "Profissionais do esporte e das artes com reconhecimento na sua área podem obter vistos de trabalho (P-1) ou Green Card (EB-1)."
+      },
+      "religious": {
+        "title": "Trabalhadores Religiosos",
+        "description": "Convidados para atuar em igrejas nos Estados Unidos em funções pastorais ou técnicas, através do visto R ou EB-4."
+      },
+      "legalization": {
+        "title": "Legalização",
+        "description": "Suporte para quem já está nos EUA buscando ajuste de status ou Green Card, com orientação sobre o melhor caminho legal disponível."
+      }
+    }
+  },
+  "blogPage": {
+    "eyebrow": "Blog",
+    "title": "Conteúdo para sua jornada de imigração",
+    "subtitle": "Artigos e guias sobre vistos, processos e vida nos Estados Unidos.",
+    "readMore": "Ler artigo",
+    "back": "Voltar ao blog",
+    "notFound": "Artigo não encontrado."
   }
 }

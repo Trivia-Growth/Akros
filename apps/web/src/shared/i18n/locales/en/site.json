@@ -85,5 +85,165 @@
       "successTitle": "We received your message!",
       "successMessage": "Our team will review your profile and get back to you soon."
     }
+  },
+  "aboutPage": {
+    "eyebrow": "About us",
+    "title": "Specialists in turning careers into new journeys",
+    "intro": "Akros Immigration Solutions is a specialized consulting firm for US immigration, focused on highly qualified professionals. We've helped over 300 families earn their Green Card with transparency, professionalism, and close support at every step.",
+    "ceo": {
+      "eyebrow": "CEO & Founder",
+      "name": "Natalia Luz",
+      "bio1": "Attorney graduated from PUC/SP in 2010, with over 14 years of experience in civil law and intellectual property.",
+      "bio2": "In 2020, Natalia received her own Green Card based on exceptional ability — a journey that inspired her to dedicate her career to opening that same path for other exceptional Brazilian professionals."
+    },
+    "partner": {
+      "eyebrow": "Partner attorney",
+      "name": "Dra. Denise Sarchiapone",
+      "bio": "Akros' legal partner, responsible for confirming the legal strategy of each case before the formal start of the process — ensuring technical soundness in every petition."
+    },
+    "values": {
+      "title": "Our values",
+      "transparency": {
+        "title": "Transparency",
+        "description": "Clear communication about timelines, costs, and expectations at every step."
+      },
+      "professionalism": {
+        "title": "Professionalism",
+        "description": "Technical rigor and attention to detail in every document and petition."
+      },
+      "closeness": {
+        "title": "Close support",
+        "description": "You never walk alone — our team is by your side from start to finish."
+      }
+    },
+    "cta": "Talk to our team"
+  },
+  "visasPage": {
+    "eyebrow": "Visas",
+    "title": "Find the right path for you",
+    "subtitle": "Explore the main visa types for immigration and work in the United States.",
+    "filterAll": "All",
+    "filterImmigrant": "Immigrant",
+    "filterNonImmigrant": "Non-immigrant",
+    "categoryImmigrant": "Immigrant Visas (Green Card)",
+    "categoryNonImmigrant": "Non-immigrant Visas",
+    "cta": "Talk to a specialist",
+    "niwHighlight": "Akros' flagship",
+    "list": {
+      "eb1": {
+        "name": "EB-1",
+        "description": "Extraordinary ability in science, arts, education, business, or athletics."
+      },
+      "eb2": {
+        "name": "EB-2",
+        "description": "Professionals with advanced degrees or exceptional ability. Requires a job offer."
+      },
+      "eb2niw": {
+        "name": "EB-2 NIW",
+        "description": "Green Card with no job offer required, when there's benefit to the US national interest."
+      },
+      "eb3": {
+        "name": "EB-3",
+        "description": "Professionals, skilled and unskilled workers with a job offer."
+      },
+      "eb4": {
+        "name": "EB-4",
+        "description": "Special immigrant: religious workers, international organization employees, and others."
+      },
+      "f1": { "name": "F-1", "description": "Status change from tourist to student in the US." },
+      "l1": {
+        "name": "L-1",
+        "description": "Transfer of employees from multinational companies to US branches."
+      },
+      "e2": {
+        "name": "E-2",
+        "description": "Investor visa to develop and direct business operations in the US."
+      },
+      "p1": {
+        "name": "P-1",
+        "description": "Athletes, artists, and entertainment teams for specific competitions or events."
+      },
+      "r": {
+        "name": "R",
+        "description": "Ministers and other religious members for work in a religious capacity."
+      },
+      "h1b": {
+        "name": "H-1B",
+        "description": "Specialty occupations for professionals with advanced degrees or specific skills."
+      },
+      "h2b": {
+        "name": "H-2B",
+        "description": "Temporary workers for non-agricultural labor needs."
+      }
+    }
+  },
+  "methodologyPage": {
+    "eyebrow": "Methodology",
+    "title": "How we run your process",
+    "subtitle": "A structured 7-step path, from first contact to your new life in the US.",
+    "journeyNote": "Steps 4 through 7 correspond to the journey tracked in your Client Portal — Introduction + 5 phases.",
+    "steps": {
+      "1": {
+        "title": "Profile and goals analysis",
+        "description": "We understand your professional background and immigration goals."
+      },
+      "2": {
+        "title": "Specialist consultation",
+        "description": "Detailed case evaluation and budget presentation."
+      },
+      "3": {
+        "title": "Partner attorney consultation",
+        "description": "Dra. Denise Sarchiapone confirms the legal strategy for your case."
+      },
+      "4": {
+        "title": "Contract and initial payment",
+        "description": "Formalizing the service, with financing options available."
+      },
+      "5": {
+        "title": "Document organization",
+        "description": "Our case managers lead the collection and preparation of all documentation."
+      },
+      "6": {
+        "title": "Approval and USCIS filing",
+        "description": "You review and approve the process before official submission."
+      },
+      "7": {
+        "title": "Relocation preparation",
+        "description": "Support for your move and settling in the United States."
+      }
+    },
+    "cta": "Start my journey"
+  },
+  "servicesPage": {
+    "eyebrow": "Other services",
+    "title": "We support different professional profiles",
+    "subtitle": "Beyond EB-2 NIW, we support other categories on the path to legal US immigration.",
+    "cta": "Talk to a specialist",
+    "categories": {
+      "qualified": {
+        "title": "Qualified Professionals",
+        "description": "Bachelor's degree holders with market experience eligible for permanent residency (Green Card), with a focus on exceptional ability and relevant contributions in their field."
+      },
+      "athletes": {
+        "title": "Athletes & Artists",
+        "description": "Recognized sports and arts professionals can obtain work visas (P-1) or a Green Card (EB-1)."
+      },
+      "religious": {
+        "title": "Religious Workers",
+        "description": "Invited to work at US churches in pastoral or technical roles, through the R visa or EB-4."
+      },
+      "legalization": {
+        "title": "Legalization",
+        "description": "Support for those already in the US seeking a status adjustment or Green Card, with guidance on the best legal path available."
+      }
+    }
+  },
+  "blogPage": {
+    "eyebrow": "Blog",
+    "title": "Content for your immigration journey",
+    "subtitle": "Articles and guides about visas, processes, and life in the United States.",
+    "readMore": "Read article",
+    "back": "Back to blog",
+    "notFound": "Article not found."
   }
 }

@@ -1,7 +1,13 @@
 import { DashboardPage } from "@/features/jornada/interfaces/DashboardPage";
 import { JornadaPage } from "@/features/jornada/interfaces/JornadaPage";
+import { BlogPage } from "@/features/site/interfaces/BlogPage";
+import { BlogPostPage } from "@/features/site/interfaces/BlogPostPage";
 import { ContatosPage } from "@/features/site/interfaces/ContatosPage";
 import { HomePage } from "@/features/site/interfaces/HomePage";
+import { MetodologiaPage } from "@/features/site/interfaces/MetodologiaPage";
+import { QuemSomosPage } from "@/features/site/interfaces/QuemSomosPage";
+import { ServicosPage } from "@/features/site/interfaces/ServicosPage";
+import { VistosPage } from "@/features/site/interfaces/VistosPage";
 import { AdminLayout } from "@/shared/layout/AdminLayout";
 import { Placeholder } from "@/shared/layout/Placeholder";
 import { PortalLayout } from "@/shared/layout/PortalLayout";
@@ -15,12 +21,12 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: "quem-somos", element: <Placeholder title="Quem Somos" story="E01-S02" /> },
-      { path: "servicos", element: <Placeholder title="Outros Serviços" story="E01-S05" /> },
-      { path: "metodologia", element: <Placeholder title="Metodologia" story="E01-S04" /> },
-      { path: "vistos", element: <Placeholder title="Vistos" story="E01-S03" /> },
-      { path: "blog", element: <Placeholder title="Blog" story="E01-S06" /> },
-      { path: "blog/:slug", element: <Placeholder title="Artigo" story="E01-S06" /> },
+      { path: "quem-somos", element: <QuemSomosPage /> },
+      { path: "servicos", element: <ServicosPage /> },
+      { path: "metodologia", element: <MetodologiaPage /> },
+      { path: "vistos", element: <VistosPage /> },
+      { path: "blog", element: <BlogPage /> },
+      { path: "blog/:slug", element: <BlogPostPage /> },
       { path: "contatos", element: <ContatosPage /> },
     ],
   },
