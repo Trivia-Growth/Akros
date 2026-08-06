@@ -1,3 +1,4 @@
+import { ContatosPage } from "@/features/site/interfaces/ContatosPage";
 import { HomePage } from "@/features/site/interfaces/HomePage";
 import { AdminLayout } from "@/shared/layout/AdminLayout";
 import { Placeholder } from "@/shared/layout/Placeholder";
@@ -18,7 +19,7 @@ export const router = createBrowserRouter([
       { path: "vistos", element: <Placeholder title="Vistos" story="E01-S03" /> },
       { path: "blog", element: <Placeholder title="Blog" story="E01-S06" /> },
       { path: "blog/:slug", element: <Placeholder title="Artigo" story="E01-S06" /> },
-      { path: "contatos", element: <Placeholder title="Contatos" story="E01-S07" /> },
+      { path: "contatos", element: <ContatosPage /> },
     ],
   },
   {

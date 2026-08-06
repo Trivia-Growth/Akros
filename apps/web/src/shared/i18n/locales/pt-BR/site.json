@@ -54,5 +54,36 @@
       "subtitle": "Fale com nossa equipe e descubra o melhor caminho para o seu perfil.",
       "button": "Falar com um especialista"
     }
+  },
+  "contact": {
+    "eyebrow": "Fale conosco",
+    "title": "Vamos conversar sobre o seu caso",
+    "subtitle": "Preencha o formulário ou entre em contato pelos canais abaixo. Respondemos em até 5 dias úteis.",
+    "channels": {
+      "email": "E-mail",
+      "phone": "Telefone",
+      "whatsapp": "WhatsApp",
+      "schedule": "Agendar reunião"
+    },
+    "form": {
+      "title": "Conte um pouco sobre você",
+      "name": "Nome completo",
+      "namePlaceholder": "Seu nome",
+      "email": "E-mail",
+      "emailPlaceholder": "voce@exemplo.com",
+      "phone": "Telefone / WhatsApp",
+      "phonePlaceholder": "+55 11 90000-0000",
+      "visaType": "Tipo de visto de interesse",
+      "visaTypePlaceholder": "Selecione",
+      "profession": "Área / Profissão",
+      "professionPlaceholder": "Ex: Engenharia de Software",
+      "message": "Mensagem (opcional)",
+      "messagePlaceholder": "Conte mais sobre o seu caso",
+      "consent": "Autorizo o contato da Akros e concordo com o tratamento dos meus dados conforme a política de privacidade.",
+      "submit": "Enviar formulário",
+      "submitting": "Enviando...",
+      "successTitle": "Recebemos seu contato!",
+      "successMessage": "Nossa equipe vai analisar seu perfil e retornar em breve."
+    }
   }
 }

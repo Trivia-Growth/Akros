@@ -54,5 +54,36 @@
       "subtitle": "Talk to our team and discover the best path for your profile.",
       "button": "Talk to a specialist"
     }
+  },
+  "contact": {
+    "eyebrow": "Get in touch",
+    "title": "Let's talk about your case",
+    "subtitle": "Fill out the form or reach us through the channels below. We reply within 5 business days.",
+    "channels": {
+      "email": "Email",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp",
+      "schedule": "Schedule a meeting"
+    },
+    "form": {
+      "title": "Tell us a bit about yourself",
+      "name": "Full name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "phone": "Phone / WhatsApp",
+      "phonePlaceholder": "+1 555 000-0000",
+      "visaType": "Visa type of interest",
+      "visaTypePlaceholder": "Select",
+      "profession": "Field / Profession",
+      "professionPlaceholder": "E.g.: Software Engineering",
+      "message": "Message (optional)",
+      "messagePlaceholder": "Tell us more about your case",
+      "consent": "I authorize Akros to contact me and agree to the processing of my data according to the privacy policy.",
+      "submit": "Submit form",
+      "submitting": "Submitting...",
+      "successTitle": "We received your message!",
+      "successMessage": "Our team will review your profile and get back to you soon."
+    }
   }
 }
