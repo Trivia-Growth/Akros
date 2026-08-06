@@ -1,7 +1,7 @@
 import { container } from "@/app/di";
 import { useMockDb } from "@/mocks/store";
 import { Badge, Button, Card, Input, Modal, Select, Textarea, toast } from "@/shared/ui";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const STATUS_VARIANT = {
@@ -102,7 +102,11 @@ export function PropostasPage() {
 
 function NovaPropostaModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation("admin");
-  const leads = useMockDb((s) => s.leads.filter((l) => l.estagio === "em_negociacao"));
+  const todosLeads = useMockDb((s) => s.leads);
+  const leads = useMemo(
+    () => todosLeads.filter((l) => l.estagio === "em_negociacao"),
+    [todosLeads],
+  );
   const [leadId, setLeadId] = useState("");
   const [escopo, setEscopo] = useState("");
   const [tipoVisto, setTipoVisto] = useState("EB-2 NIW");

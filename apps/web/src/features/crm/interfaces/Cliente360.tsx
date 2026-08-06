@@ -19,7 +19,7 @@ import {
   toast,
 } from "@/shared/ui";
 import { MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const SAUDE_VARIANT = {
@@ -51,10 +51,13 @@ export function Cliente360({ clienteId, onBack }: Props) {
   const { t } = useTranslation("admin");
   const cliente = useMockDb((s) => s.clientes.find((c) => c.id === clienteId));
   const jornada = useMockDb((s) => s.jornadas.find((j) => j.clienteId === clienteId));
-  const interacoes = useMockDb((s) =>
-    s.interacoes
-      .filter((i) => i.clienteId === clienteId)
-      .sort((a, b) => b.ocorridoEm.localeCompare(a.ocorridoEm)),
+  const todasInteracoes = useMockDb((s) => s.interacoes);
+  const interacoes = useMemo(
+    () =>
+      todasInteracoes
+        .filter((i) => i.clienteId === clienteId)
+        .sort((a, b) => b.ocorridoEm.localeCompare(a.ocorridoEm)),
+    [todasInteracoes, clienteId],
   );
   const documentos = useDocumentosCliente(clienteId);
   const pagamentos = usePagamentosCliente(clienteId);

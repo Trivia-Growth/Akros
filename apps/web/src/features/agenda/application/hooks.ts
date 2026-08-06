@@ -1,8 +1,13 @@
 import { useMockDb } from "@/mocks/store";
+import { useMemo } from "react";
 import type { Reuniao, Transcricao } from "../domain/types";
 
 export function useReunioesCliente(clienteId: string | undefined): Reuniao[] {
-  return useMockDb((s) => (clienteId ? s.reunioes.filter((r) => r.clienteId === clienteId) : []));
+  const reunioes = useMockDb((s) => s.reunioes);
+  return useMemo(
+    () => (clienteId ? reunioes.filter((r) => r.clienteId === clienteId) : []),
+    [reunioes, clienteId],
+  );
 }
 
 export function useTranscricaoPorReuniao(reuniaoId: string | undefined): Transcricao | undefined {

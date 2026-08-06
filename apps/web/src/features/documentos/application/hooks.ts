@@ -1,12 +1,19 @@
 import { useMockDb } from "@/mocks/store";
+import { useMemo } from "react";
 import type { Documento, SolicitacaoAssinatura } from "../domain/types";
 
 export function useDocumentosCliente(clienteId: string | undefined): Documento[] {
-  return useMockDb((s) => (clienteId ? s.documentos.filter((d) => d.clienteId === clienteId) : []));
+  const documentos = useMockDb((s) => s.documentos);
+  return useMemo(
+    () => (clienteId ? documentos.filter((d) => d.clienteId === clienteId) : []),
+    [documentos, clienteId],
+  );
 }
 
 export function useSolicitacoesAssinatura(documentoIds: string[]): SolicitacaoAssinatura[] {
-  return useMockDb((s) =>
-    s.solicitacoesAssinatura.filter((sol) => documentoIds.includes(sol.documentoId)),
+  const solicitacoes = useMockDb((s) => s.solicitacoesAssinatura);
+  return useMemo(
+    () => solicitacoes.filter((sol) => documentoIds.includes(sol.documentoId)),
+    [solicitacoes, documentoIds],
   );
 }
