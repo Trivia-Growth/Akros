@@ -1,3 +1,35 @@
 {
-  "_scaffold": "Client portal namespace — full content added in E02-S01..S07."
+  "dashboard": {
+    "greeting": "Hello, {{nome}}",
+    "visaType": "Visa",
+    "caseManager": "Case manager",
+    "progress": "Journey progress",
+    "nextActions": "Next actions",
+    "noActions": "No pending actions right now. Wait for your case manager to reach out.",
+    "documents": "Documents",
+    "documentsPending_one": "{{count}} pending",
+    "documentsPending_other": "{{count}} pending",
+    "documentsUpToDate": "All up to date",
+    "payments": "Payments",
+    "paymentsOverdue": "There's an overdue payment",
+    "paymentsPending": "Payment pending",
+    "paymentsUpToDate": "All up to date",
+    "nextMeeting": "Next meeting",
+    "noMeeting": "No meeting scheduled",
+    "viewJourney": "View full journey",
+    "alertPhaseUnlocked": "Phase unlocked by your case manager!"
+  },
+  "journey": {
+    "title": "My Journey",
+    "subtitle": "Track every step of your EB-2 NIW process.",
+    "overallProgress": "Overall progress",
+    "locked": "Available once your case manager unlocks it",
+    "stepsTitle": "Steps in this phase",
+    "markComplete": "Mark as complete",
+    "completed": "Completed",
+    "deadline": "Average time: {{days}} business days",
+    "requiredDocs": "Required documents",
+    "phaseCompleted": "Phase completed! Waiting for your case manager to unlock the next step.",
+    "selectPhase": "Select a phase above to see the details"
+  }
 }

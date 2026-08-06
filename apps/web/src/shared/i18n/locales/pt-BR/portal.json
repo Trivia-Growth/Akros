@@ -1,3 +1,35 @@
 {
-  "_scaffold": "Namespace do portal do cliente — conteúdo completo adicionado em E02-S01..S07."
+  "dashboard": {
+    "greeting": "Olá, {{nome}}",
+    "visaType": "Visto",
+    "caseManager": "Case manager",
+    "progress": "Progresso da jornada",
+    "nextActions": "Próximas ações",
+    "noActions": "Nenhuma ação pendente no momento. Aguarde contato do seu case manager.",
+    "documents": "Documentos",
+    "documentsPending_one": "{{count}} pendente",
+    "documentsPending_other": "{{count}} pendentes",
+    "documentsUpToDate": "Tudo em dia",
+    "payments": "Pagamentos",
+    "paymentsOverdue": "Há pagamento em atraso",
+    "paymentsPending": "Pagamento pendente",
+    "paymentsUpToDate": "Tudo em dia",
+    "nextMeeting": "Próxima reunião",
+    "noMeeting": "Nenhuma reunião agendada",
+    "viewJourney": "Ver jornada completa",
+    "alertPhaseUnlocked": "Fase liberada pelo seu case manager!"
+  },
+  "journey": {
+    "title": "Minha Jornada",
+    "subtitle": "Acompanhe cada etapa do seu processo EB-2 NIW.",
+    "overallProgress": "Progresso geral",
+    "locked": "Disponível após liberação do seu case manager",
+    "stepsTitle": "Etapas desta fase",
+    "markComplete": "Marcar como concluída",
+    "completed": "Concluída",
+    "deadline": "Prazo médio: {{days}} dias úteis",
+    "requiredDocs": "Documentos necessários",
+    "phaseCompleted": "Fase concluída! Aguardando liberação da próxima etapa pelo seu case manager.",
+    "selectPhase": "Selecione uma fase acima para ver os detalhes"
+  }
 }

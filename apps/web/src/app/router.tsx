@@ -1,3 +1,5 @@
+import { DashboardPage } from "@/features/jornada/interfaces/DashboardPage";
+import { JornadaPage } from "@/features/jornada/interfaces/JornadaPage";
 import { ContatosPage } from "@/features/site/interfaces/ContatosPage";
 import { HomePage } from "@/features/site/interfaces/HomePage";
 import { AdminLayout } from "@/shared/layout/AdminLayout";
@@ -26,8 +28,8 @@ export const router = createBrowserRouter([
     path: "/portal",
     element: <PortalLayout />,
     children: [
-      { index: true, element: <Placeholder title="Visão geral" story="E02-S01" /> },
-      { path: "jornada", element: <Placeholder title="Minha jornada" story="E02-S02" /> },
+      { index: true, element: <DashboardPage /> },
+      { path: "jornada", element: <JornadaPage /> },
       { path: "documentos", element: <Placeholder title="Documentos" story="E02-S03" /> },
       { path: "pagamentos", element: <Placeholder title="Pagamentos" story="E02-S05" /> },
       { path: "agenda", element: <Placeholder title="Agenda" story="E02-S06" /> },
