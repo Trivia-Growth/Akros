@@ -17,6 +17,11 @@ export class MockClienteRepository implements ClienteRepository {
     return comLatencia(cliente);
   }
 
+  async atualizar(id: string, patch: Partial<Cliente>): Promise<void> {
+    useMockDb.getState().atualizarCliente(id, patch);
+    return comLatencia(undefined);
+  }
+
   async historico(clienteId: string): Promise<Interacao[]> {
     const historico = useMockDb
       .getState()

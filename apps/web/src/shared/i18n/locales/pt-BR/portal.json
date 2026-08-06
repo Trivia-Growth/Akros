@@ -31,5 +31,60 @@
     "requiredDocs": "Documentos necessários",
     "phaseCompleted": "Fase concluída! Aguardando liberação da próxima etapa pelo seu case manager.",
     "selectPhase": "Selecione uma fase acima para ver os detalhes"
+  },
+  "documents": {
+    "title": "Documentos",
+    "subtitle": "Envie e acompanhe o status dos seus documentos por fase.",
+    "rulesTitle": "Regras de envio",
+    "rule1": "Documentos em versão final devem ser enviados em PDF.",
+    "rule2": "Não aceitamos fotos de documentos nem arquivos em Word como versão definitiva.",
+    "rule3": "Documentos que não estejam em inglês precisam de tradução certificada.",
+    "rule4": "Não aceitamos documentos enviados por WhatsApp — use e-mail ou o drive compartilhado.",
+    "upload": "Enviar arquivo",
+    "uploading": "Enviando...",
+    "uploaded": "Documento enviado com sucesso!",
+    "signatureTitle": "Assinatura pendente",
+    "sign": "Assinar documento",
+    "signModalTitle": "Confirmar assinatura",
+    "signModalDescription": "Digite seu nome completo para confirmar a assinatura digital deste documento.",
+    "signNamePlaceholder": "Seu nome completo",
+    "signConfirm": "Confirmar assinatura",
+    "signed": "Assinado por {{nome}} em {{data}}",
+    "noDocuments": "Nenhum documento nesta fase ainda."
+  },
+  "payments": {
+    "title": "Pagamentos",
+    "subtitle": "Acompanhe o status dos seus pagamentos.",
+    "totalPaid": "Total pago",
+    "totalPending": "Total pendente",
+    "nextDue": "Próximo vencimento",
+    "payNow": "Pagar agora (mock)",
+    "paid": "Pago em {{data}}",
+    "noPayments": "Nenhum pagamento registrado."
+  },
+  "agenda": {
+    "title": "Agenda",
+    "subtitle": "Suas reuniões com a equipe Akros.",
+    "upcoming": "Próximas reuniões",
+    "past": "Reuniões passadas",
+    "schedule": "Agendar reunião",
+    "scheduleModalTitle": "Agendar reunião",
+    "selectSlot": "Escolha um horário disponível",
+    "confirm": "Confirmar agendamento",
+    "scheduled": "Reunião agendada com sucesso!",
+    "transcription": "Transcrição disponível",
+    "noMeetings": "Nenhuma reunião ainda."
+  },
+  "profile": {
+    "title": "Meu Perfil",
+    "subtitle": "Seus dados pessoais e preferências.",
+    "name": "Nome completo",
+    "email": "E-mail",
+    "phone": "Telefone",
+    "visaType": "Tipo de visto",
+    "caseManager": "Case manager",
+    "language": "Idioma preferido",
+    "save": "Salvar alterações",
+    "saved": "Perfil atualizado com sucesso!"
   }
 }

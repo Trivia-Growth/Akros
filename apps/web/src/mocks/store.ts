@@ -59,6 +59,7 @@ interface MockDbState {
   moverEstagioLead: (id: string, estagio: EstagioLead) => void;
   adicionarNotaLead: (id: string, nota: string) => void;
   criarClienteAPartirDeLead: (leadId: string) => Cliente;
+  atualizarCliente: (id: string, patch: Partial<Cliente>) => void;
   registrarInteracao: (interacao: Omit<Interacao, "id">) => void;
 
   // --- Jornada ---
@@ -179,6 +180,12 @@ export const useMockDb = create<MockDbState>((set, get) => ({
     }));
 
     return cliente;
+  },
+
+  atualizarCliente: (id, patch) => {
+    set((s) => ({
+      clientes: s.clientes.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
   },
 
   registrarInteracao: (interacao) => {

@@ -1,17 +1,10 @@
-import { container } from "@/app/di";
-import { useEffect, useState } from "react";
-import type { Reuniao } from "../domain/types";
+import { useMockDb } from "@/mocks/store";
+import type { Reuniao, Transcricao } from "../domain/types";
 
 export function useReunioesCliente(clienteId: string | undefined): Reuniao[] {
-  const [reunioes, setReunioes] = useState<Reuniao[]>([]);
+  return useMockDb((s) => (clienteId ? s.reunioes.filter((r) => r.clienteId === clienteId) : []));
+}
 
-  useEffect(() => {
-    if (!clienteId) {
-      setReunioes([]);
-      return;
-    }
-    container.agenda.listarPorCliente(clienteId).then(setReunioes);
-  }, [clienteId]);
-
-  return reunioes;
+export function useTranscricaoPorReuniao(reuniaoId: string | undefined): Transcricao | undefined {
+  return useMockDb((s) => s.transcricoes.find((t) => t.reuniaoId === reuniaoId));
 }

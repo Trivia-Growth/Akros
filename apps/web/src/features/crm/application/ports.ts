@@ -4,6 +4,7 @@ export interface ClienteRepository {
   listar(): Promise<Cliente[]>;
   obter(id: string): Promise<Cliente | null>;
   criarAPartirDeLead(leadId: string): Promise<Cliente>;
+  atualizar(id: string, patch: Partial<Cliente>): Promise<void>;
   historico(clienteId: string): Promise<Interacao[]>;
   registrarInteracao(interacao: Omit<Interacao, "id">): Promise<void>;
 }

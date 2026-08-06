@@ -31,5 +31,60 @@
     "requiredDocs": "Required documents",
     "phaseCompleted": "Phase completed! Waiting for your case manager to unlock the next step.",
     "selectPhase": "Select a phase above to see the details"
+  },
+  "documents": {
+    "title": "Documents",
+    "subtitle": "Upload and track the status of your documents by phase.",
+    "rulesTitle": "Submission rules",
+    "rule1": "Final versions of documents must be submitted in PDF.",
+    "rule2": "We do not accept photos of documents or Word files as the final version.",
+    "rule3": "Documents not originally in English require a certified translation.",
+    "rule4": "We do not accept documents sent via WhatsApp — use email or the shared drive.",
+    "upload": "Upload file",
+    "uploading": "Uploading...",
+    "uploaded": "Document uploaded successfully!",
+    "signatureTitle": "Signature pending",
+    "sign": "Sign document",
+    "signModalTitle": "Confirm signature",
+    "signModalDescription": "Type your full name to confirm the digital signature of this document.",
+    "signNamePlaceholder": "Your full name",
+    "signConfirm": "Confirm signature",
+    "signed": "Signed by {{nome}} on {{data}}",
+    "noDocuments": "No documents in this phase yet."
+  },
+  "payments": {
+    "title": "Payments",
+    "subtitle": "Track the status of your payments.",
+    "totalPaid": "Total paid",
+    "totalPending": "Total pending",
+    "nextDue": "Next due date",
+    "payNow": "Pay now (mock)",
+    "paid": "Paid on {{data}}",
+    "noPayments": "No payments recorded."
+  },
+  "agenda": {
+    "title": "Agenda",
+    "subtitle": "Your meetings with the Akros team.",
+    "upcoming": "Upcoming meetings",
+    "past": "Past meetings",
+    "schedule": "Schedule meeting",
+    "scheduleModalTitle": "Schedule meeting",
+    "selectSlot": "Choose an available time slot",
+    "confirm": "Confirm booking",
+    "scheduled": "Meeting scheduled successfully!",
+    "transcription": "Transcription available",
+    "noMeetings": "No meetings yet."
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "Your personal data and preferences.",
+    "name": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "visaType": "Visa type",
+    "caseManager": "Case manager",
+    "language": "Preferred language",
+    "save": "Save changes",
+    "saved": "Profile updated successfully!"
   }
 }

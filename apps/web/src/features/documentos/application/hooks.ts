@@ -1,17 +1,12 @@
-import { container } from "@/app/di";
-import { useEffect, useState } from "react";
-import type { Documento } from "../domain/types";
+import { useMockDb } from "@/mocks/store";
+import type { Documento, SolicitacaoAssinatura } from "../domain/types";
 
 export function useDocumentosCliente(clienteId: string | undefined): Documento[] {
-  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  return useMockDb((s) => (clienteId ? s.documentos.filter((d) => d.clienteId === clienteId) : []));
+}
 
-  useEffect(() => {
-    if (!clienteId) {
-      setDocumentos([]);
-      return;
-    }
-    container.documentos.listarPorCliente(clienteId).then(setDocumentos);
-  }, [clienteId]);
-
-  return documentos;
+export function useSolicitacoesAssinatura(documentoIds: string[]): SolicitacaoAssinatura[] {
+  return useMockDb((s) =>
+    s.solicitacoesAssinatura.filter((sol) => documentoIds.includes(sol.documentoId)),
+  );
 }

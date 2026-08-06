@@ -1,5 +1,9 @@
+import { AgendaPage } from "@/features/agenda/interfaces/AgendaPage";
+import { PerfilPage } from "@/features/crm/interfaces/PerfilPage";
+import { DocumentosPage } from "@/features/documentos/interfaces/DocumentosPage";
 import { DashboardPage } from "@/features/jornada/interfaces/DashboardPage";
 import { JornadaPage } from "@/features/jornada/interfaces/JornadaPage";
+import { PagamentosPage } from "@/features/pagamentos/interfaces/PagamentosPage";
 import { BlogPage } from "@/features/site/interfaces/BlogPage";
 import { BlogPostPage } from "@/features/site/interfaces/BlogPostPage";
 import { ContatosPage } from "@/features/site/interfaces/ContatosPage";
@@ -36,10 +40,10 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: "jornada", element: <JornadaPage /> },
-      { path: "documentos", element: <Placeholder title="Documentos" story="E02-S03" /> },
-      { path: "pagamentos", element: <Placeholder title="Pagamentos" story="E02-S05" /> },
-      { path: "agenda", element: <Placeholder title="Agenda" story="E02-S06" /> },
-      { path: "perfil", element: <Placeholder title="Meu perfil" story="E02-S07" /> },
+      { path: "documentos", element: <DocumentosPage /> },
+      { path: "pagamentos", element: <PagamentosPage /> },
+      { path: "agenda", element: <AgendaPage /> },
+      { path: "perfil", element: <PerfilPage /> },
     ],
   },
   {
