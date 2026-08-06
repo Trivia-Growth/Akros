@@ -1,12 +1,12 @@
-// Logger estruturado (JSON) para a borda e a infraestrutura.
+// Logger estruturado (JSON) para browser e infraestrutura.
 // Regras: uma linha JSON por evento; sempre com `reqId` quando houver; NUNCA logar PII
-// (CPF, email, token, senha) nem o corpo cru de request. Ver observabilidade/README.md.
+// (CPF, email, token, senha) nem o corpo cru de request.
 // O domínio (domain/) não loga — quem loga é interfaces/ e infrastructure/.
 
 export type NivelLog = "debug" | "info" | "warn" | "error";
 
 export interface CamposLog {
-  /** Correlaciona todos os logs de uma mesma requisição. */
+  /** Correlaciona todos os logs de uma mesma requisição/sessão. */
   reqId?: string;
   /** Campos extras seguros (sem PII). */
   [chave: string]: unknown;
@@ -14,7 +14,8 @@ export interface CamposLog {
 
 /** Sink de saída — sobrescrevível em teste. Default: console. */
 let sink: (linha: string) => void = (linha) => {
-  process.stdout.write(`${linha}\n`);
+  // eslint-disable-next-line no-console
+  console.log(linha);
 };
 
 /** Troca o destino do log (ex.: capturar em teste). Retorna o sink anterior. */
