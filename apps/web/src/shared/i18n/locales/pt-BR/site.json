@@ -1,11 +1,16 @@
 {
   "home": {
     "hero": {
-      "eyebrow": "Akros Immigration Solutions",
-      "title": "Elevando Talentos ao Topo Global",
-      "subtitle": "Facilitamos seu sonho de viver nos EUA com soluções de imigração personalizadas.",
+      "eyebrow": "Imigração para os Estados Unidos",
+      "titleLead": "Elevando talentos",
+      "titleAccent": "ao topo global",
+      "subtitle": "Consultoria de imigração para profissionais brasileiros altamente qualificados. Conduzimos o seu caso do primeiro diagnóstico ao pouso nos Estados Unidos.",
       "ctaPrimary": "Agendar consulta",
-      "ctaSecondary": "Conhecer os vistos"
+      "ctaSecondary": "Conhecer os vistos",
+      "trust": "Estratégia validada por advogada licenciada nos EUA antes de qualquer processo começar.",
+      "photoAlt": "Natalia Luz, CEO e fundadora da Akros Immigration Solutions",
+      "credentialTitle": "Green Card por habilidade excepcional",
+      "credentialSubtitle": "Conquistado em 2020 pela própria fundadora"
     },
     "stats": {
       "families": "famílias atendidas",
@@ -13,8 +18,10 @@
       "satisfaction": "satisfação dos clientes"
     },
     "categories": {
+      "eyebrow": "Perfis que atendemos",
       "title": "Como podemos ajudar você",
       "subtitle": "Atendemos diferentes perfis profissionais rumo à imigração legal para os EUA.",
+      "cta": "Ver todos os serviços",
       "qualified": {
         "title": "Profissionais Qualificados",
         "description": "Bacharéis com experiência de mercado elegíveis à residência permanente (Green Card)."
@@ -36,23 +43,49 @@
       "eyebrow": "Nosso carro-chefe",
       "title": "EB-2 National Interest Waiver",
       "description": "Green Card baseado em emprego para profissionais com habilidades excepcionais — sem necessidade de oferta de emprego, quando demonstrado benefício ao interesse nacional dos Estados Unidos.",
-      "cta": "Ver requisitos do EB-2 NIW"
+      "cta": "Ver requisitos do EB-2 NIW",
+      "points": {
+        "noOffer": {
+          "title": "Sem oferta de emprego",
+          "description": "Você não depende de uma empresa americana patrocinar o seu processo."
+        },
+        "family": {
+          "title": "Cônjuge e filhos incluídos",
+          "description": "O pedido cobre a família direta na mesma petição."
+        },
+        "selfPetition": {
+          "title": "Petição em nome próprio",
+          "description": "Você é o titular do caso — e continua dono da sua carreira nos EUA."
+        }
+      },
+      "note": "Cada caso passa por diagnóstico de elegibilidade antes de qualquer contrato."
+    },
+    "method": {
+      "eyebrow": "Metodologia Akros",
+      "title": "Sete passos, nenhum improviso",
+      "subtitle": "Do diagnóstico de perfil ao pouso nos Estados Unidos — você sempre sabe em que etapa está.",
+      "cta": "Ver a metodologia completa"
     },
     "about": {
       "eyebrow": "Quem cuida do seu processo",
       "name": "Natalia Luz",
       "role": "CEO & Fundadora",
       "bio": "Advogada formada pela PUC/SP (2010), com mais de 14 anos de experiência em direito civil e propriedade intelectual. Natalia recebeu seu próprio Green Card em 2020 por habilidade excepcional — e hoje dedica sua carreira a abrir esse mesmo caminho para outros profissionais brasileiros.",
+      "quote": "Eu passei por esse processo antes de conduzir o de alguém. Sei exatamente onde ele dói.",
+      "photoAlt": "Retrato de Natalia Luz",
       "cta": "Conhecer nossa história"
     },
     "testimonials": {
+      "eyebrow": "Depoimentos",
       "title": "Quem já trilhou esse caminho com a gente",
       "subtitle": "Histórias reais de clientes que conquistaram o Green Card."
     },
     "cta": {
       "title": "Pronto para dar o primeiro passo?",
       "subtitle": "Fale com nossa equipe e descubra o melhor caminho para o seu perfil.",
-      "button": "Falar com um especialista"
+      "button": "Falar com um especialista",
+      "secondary": "Ver a metodologia",
+      "note": "Resposta em até 5 dias úteis. Sem compromisso."
     }
   },
   "contact": {
@@ -90,16 +123,31 @@
     "eyebrow": "Quem somos",
     "title": "Especialistas em transformar carreiras em novas jornadas",
     "intro": "A Akros Immigration Solutions é uma consultoria especializada em imigração para os Estados Unidos, com foco em profissionais altamente qualificados. Já ajudamos mais de 300 famílias a conquistar o Green Card com transparência, profissionalismo e acompanhamento próximo em cada etapa.",
-    "ceo": {
-      "eyebrow": "CEO & Fundadora",
-      "name": "Natalia Luz",
-      "bio1": "Advogada formada pela PUC/SP em 2010, com mais de 14 anos de experiência em direito civil e propriedade intelectual.",
-      "bio2": "Em 2020, Natalia recebeu seu próprio Green Card por habilidade excepcional — uma jornada que a inspirou a dedicar sua carreira a abrir esse mesmo caminho para outros profissionais brasileiros excepcionais."
-    },
-    "partner": {
-      "eyebrow": "Advogada parceira",
-      "name": "Dra. Denise Sarchiapone",
-      "bio": "Parceira jurídica da Akros, responsável por confirmar a estratégia legal de cada caso antes do início formal do processo — garantindo solidez técnica em cada petição."
+    "teamEyebrow": "Nosso time",
+    "teamTitle": "Quem conduz o seu processo",
+    "teamSubtitle": "Cada caso passa por advogada, estrategista e mentora de carreira — nenhuma etapa fica sem dono.",
+    "photoAlt": "Retrato de {{name}}",
+    "team": {
+      "natalia": {
+        "name": "Natalia Luz",
+        "role": "CEO & Fundadora",
+        "bio": "Advogada formada pela PUC/SP em 2010, com mais de 14 anos de experiência em direito civil e propriedade intelectual. Em 2020 recebeu seu próprio Green Card por habilidade excepcional — a jornada que a levou a abrir esse mesmo caminho para outros profissionais brasileiros."
+      },
+      "denise": {
+        "name": "Dra. Denise Sarchiapone",
+        "role": "Advogada parceira nos EUA",
+        "bio": "Advogada licenciada nos Estados Unidos, na região de Washington DC, com MBA em Negócios Internacionais e 18 anos morando no país. Confirma a estratégia jurídica de cada caso antes do início formal do processo."
+      },
+      "bruno": {
+        "name": "Bruno Luz",
+        "role": "Estrategista de Business Plan",
+        "bio": "Economista pela Universidade Mackenzie, com mais de 15 anos em bancos e consultoria empresarial. Desde 2020 já estruturou mais de 250 business plans para investidores estrangeiros nos Estados Unidos."
+      },
+      "elem": {
+        "name": "Elem Tluczek",
+        "role": "Mentora de Carreira",
+        "bio": "Profissional de RH com 10 anos de experiência em ciclo de vida do colaborador, programas de diversidade e compliance trabalhista brasileiro e americano. Prepara o cliente para o mercado dos EUA."
+      }
     },
     "values": {
       "title": "Nossos valores",

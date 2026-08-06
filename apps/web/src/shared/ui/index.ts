@@ -13,4 +13,5 @@ export { Avatar } from "./Avatar";
 export { Tooltip } from "./Tooltip";
 export { toast, ToastViewport } from "./Toast";
 export { Skeleton } from "./Skeleton";
+export { Reveal } from "./Reveal";
 export { cn } from "./utils/cn";

@@ -1,11 +1,16 @@
 {
   "home": {
     "hero": {
-      "eyebrow": "Akros Immigration Solutions",
-      "title": "Elevating Talent to Global Top",
-      "subtitle": "We make your dream of living in the US come true with personalized immigration solutions.",
+      "eyebrow": "Immigration to the United States",
+      "titleLead": "Elevating talent",
+      "titleAccent": "to the global top",
+      "subtitle": "Immigration consulting for highly qualified Brazilian professionals. We run your case from the first assessment to your landing in the United States.",
       "ctaPrimary": "Schedule a consultation",
-      "ctaSecondary": "Explore visa options"
+      "ctaSecondary": "Explore visa options",
+      "trust": "Strategy validated by a US-licensed attorney before any case formally begins.",
+      "photoAlt": "Natalia Luz, CEO and founder of Akros Immigration Solutions",
+      "credentialTitle": "Green Card based on exceptional ability",
+      "credentialSubtitle": "Earned in 2020 by our own founder"
     },
     "stats": {
       "families": "families served",
@@ -13,8 +18,10 @@
       "satisfaction": "client satisfaction"
     },
     "categories": {
+      "eyebrow": "Who we serve",
       "title": "How we can help you",
       "subtitle": "We support different professional profiles on the path to legal immigration to the US.",
+      "cta": "See all services",
       "qualified": {
         "title": "Qualified Professionals",
         "description": "Bachelor's degree holders with market experience eligible for permanent residency (Green Card)."
@@ -36,23 +43,49 @@
       "eyebrow": "Our flagship service",
       "title": "EB-2 National Interest Waiver",
       "description": "Employment-based Green Card for professionals with exceptional ability — no job offer required, when benefit to the US national interest is demonstrated.",
-      "cta": "See EB-2 NIW requirements"
+      "cta": "See EB-2 NIW requirements",
+      "points": {
+        "noOffer": {
+          "title": "No job offer required",
+          "description": "You don't depend on a US company sponsoring your case."
+        },
+        "family": {
+          "title": "Spouse and children included",
+          "description": "The petition covers your immediate family in the same filing."
+        },
+        "selfPetition": {
+          "title": "You are the petitioner",
+          "description": "The case is yours — and so is your career once you land in the US."
+        }
+      },
+      "note": "Every case goes through an eligibility assessment before any contract."
+    },
+    "method": {
+      "eyebrow": "The Akros method",
+      "title": "Seven steps, nothing improvised",
+      "subtitle": "From the profile assessment to landing in the United States — you always know which step you're on.",
+      "cta": "See the full methodology"
     },
     "about": {
       "eyebrow": "Who's behind your case",
       "name": "Natalia Luz",
       "role": "CEO & Founder",
       "bio": "Attorney graduated from PUC/SP (2010), with over 14 years of experience in civil law and intellectual property. Natalia received her own Green Card in 2020 based on exceptional ability — and now dedicates her career to opening that same path for other Brazilian professionals.",
+      "quote": "I went through this process myself before guiding anyone else's. I know exactly where it hurts.",
+      "photoAlt": "Portrait of Natalia Luz",
       "cta": "Learn our story"
     },
     "testimonials": {
+      "eyebrow": "Testimonials",
       "title": "Those who walked this path with us",
       "subtitle": "Real stories from clients who earned their Green Card."
     },
     "cta": {
       "title": "Ready to take the first step?",
       "subtitle": "Talk to our team and discover the best path for your profile.",
-      "button": "Talk to a specialist"
+      "button": "Talk to a specialist",
+      "secondary": "See the methodology",
+      "note": "We reply within 5 business days. No commitment."
     }
   },
   "contact": {
@@ -90,16 +123,31 @@
     "eyebrow": "About us",
     "title": "Specialists in turning careers into new journeys",
     "intro": "Akros Immigration Solutions is a specialized consulting firm for US immigration, focused on highly qualified professionals. We've helped over 300 families earn their Green Card with transparency, professionalism, and close support at every step.",
-    "ceo": {
-      "eyebrow": "CEO & Founder",
-      "name": "Natalia Luz",
-      "bio1": "Attorney graduated from PUC/SP in 2010, with over 14 years of experience in civil law and intellectual property.",
-      "bio2": "In 2020, Natalia received her own Green Card based on exceptional ability — a journey that inspired her to dedicate her career to opening that same path for other exceptional Brazilian professionals."
-    },
-    "partner": {
-      "eyebrow": "Partner attorney",
-      "name": "Dra. Denise Sarchiapone",
-      "bio": "Akros' legal partner, responsible for confirming the legal strategy of each case before the formal start of the process — ensuring technical soundness in every petition."
+    "teamEyebrow": "Our team",
+    "teamTitle": "Who runs your case",
+    "teamSubtitle": "Every case goes through an attorney, a strategist, and a career mentor — no step is left without an owner.",
+    "photoAlt": "Portrait of {{name}}",
+    "team": {
+      "natalia": {
+        "name": "Natalia Luz",
+        "role": "CEO & Founder",
+        "bio": "Attorney graduated from PUC/SP in 2010, with over 14 years of experience in civil law and intellectual property. In 2020 she received her own Green Card based on exceptional ability — the journey that led her to open the same path for other Brazilian professionals."
+      },
+      "denise": {
+        "name": "Dra. Denise Sarchiapone",
+        "role": "US partner attorney",
+        "bio": "US-licensed attorney based in the Washington DC area, with an MBA in International Business and 18 years living in the country. She confirms the legal strategy of every case before the process formally begins."
+      },
+      "bruno": {
+        "name": "Bruno Luz",
+        "role": "Business Plan Strategist",
+        "bio": "Economist from Mackenzie University, with over 15 years in banking and business consulting. Since 2020 he has built more than 250 business plans for foreign investors in the United States."
+      },
+      "elem": {
+        "name": "Elem Tluczek",
+        "role": "Career Mentor",
+        "bio": "HR professional with 10 years of experience in employee lifecycle, diversity programs, and Brazilian and US employment compliance. She prepares clients for the American job market."
+      }
     },
     "values": {
       "title": "Our values",
