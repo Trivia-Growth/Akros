@@ -1,6 +1,6 @@
 import { comLatencia, useMockDb } from "@/mocks/store";
-import type { AgenteService, ConversaRepository } from "../application/ports";
-import type { Conversa, RegraAtendimentoIA } from "../domain/types";
+import type { AgenteService, ConversaRepository, TimelineRepository } from "../application/ports";
+import type { Conversa, EventoComunicacao, RegraAtendimentoIA } from "../domain/types";
 
 export class MockConversaRepository implements ConversaRepository {
   async listarTodas(): Promise<Conversa[]> {
@@ -37,5 +37,25 @@ export class MockAgenteService implements AgenteService {
       return comLatencia({ resposta: topico.resposta, handoff: false });
     }
     return comLatencia({ resposta: config.mensagemHandoff, handoff: true });
+  }
+}
+
+export class MockTimelineRepository implements TimelineRepository {
+  async listarPorCliente(clienteOuLeadId: string): Promise<EventoComunicacao[]> {
+    const eventos = useMockDb
+      .getState()
+      .eventosComunicacao.filter((e) => e.clienteOuLeadId === clienteOuLeadId)
+      .sort((a, b) => a.ocorridoEm.localeCompare(b.ocorridoEm));
+    return comLatencia(eventos);
+  }
+
+  async registrar(evento: Omit<EventoComunicacao, "id">): Promise<EventoComunicacao> {
+    const criado = useMockDb.getState().registrarEvento(evento);
+    return comLatencia(criado);
+  }
+
+  async resolverPendenciaDeCanal(eventoId: string): Promise<void> {
+    useMockDb.getState().resolverPendenciaDeCanal(eventoId);
+    return comLatencia(undefined);
   }
 }

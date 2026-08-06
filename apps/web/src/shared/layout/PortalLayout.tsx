@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Map as MapIcon,
   Menu,
+  MessageSquare,
   User,
   Wallet,
   X,
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { to: "/portal/jornada", icon: MapIcon, label: "Minha jornada" },
   { to: "/portal/documentos", icon: FileText, label: "Documentos" },
   { to: "/portal/pagamentos", icon: Wallet, label: "Pagamentos" },
+  { to: "/portal/mensagens", icon: MessageSquare, label: "Mensagens" },
   { to: "/portal/agenda", icon: CalendarDays, label: "Agenda" },
   { to: "/portal/perfil", icon: User, label: "Meu perfil" },
 ];

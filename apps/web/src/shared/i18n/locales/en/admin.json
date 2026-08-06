@@ -17,7 +17,23 @@
     "noNotes": "No notes yet.",
     "convertToClient": "Convert to Client",
     "converted": "Lead converted to client successfully!",
-    "noteAdded": "Note added."
+    "noteAdded": "Note added.",
+    "gateBlocked": "This lead needs to pass the scheduling approval gate before moving to \"Meeting Scheduled\".",
+    "gatePending": "Awaiting approval",
+    "gateStatus": "Scheduling gate status: {{status}}",
+    "gateGoTo": "Go to approvals →",
+    "chooseProgramTitle": "Choose program",
+    "chooseProgramDescription": "The program defines the client's journey and document checklist.",
+    "noProfile": "No profile data collected yet.",
+    "noTimeline": "No communication recorded yet.",
+    "qualificationFictional": "Fictional demo script — not Akros' real intake form.",
+    "qualificationNotStarted": "Qualification not started yet.",
+    "tabs": {
+      "overview": "Overview",
+      "profile": "Profile",
+      "qualification": "Qualification",
+      "timeline": "History"
+    }
   },
   "clientes": {
     "title": "Clients",
@@ -43,7 +59,8 @@
     "currentPhaseIncomplete": "The current phase hasn't been completed yet. Unlock anyway?",
     "allPhasesUnlocked": "All phases have already been unlocked.",
     "noHistory": "No history entries yet.",
-    "backToList": "← Back to list"
+    "backToList": "← Back to list",
+    "goToReviewQueue": "View in document review queue →"
   },
   "proposals": {
     "title": "Proposals",
@@ -127,5 +144,143 @@
     "actionItems": "Next steps",
     "noTranscription": "Transcription not available for this meeting.",
     "client": "Client"
+  },
+  "journey": {
+    "responsible": {
+      "cliente": "Client",
+      "akros": "Akros",
+      "terceiro": "Third party",
+      "uscis": "USCIS"
+    }
+  },
+  "documents": {
+    "analysis": {
+      "aderencia": {
+        "atende": "Meets requirement",
+        "atende_com_ressalva": "Meets with caveat",
+        "nao_atende": "Does not meet requirement",
+        "tipo_incorreto": "Wrong document type"
+      },
+      "confidence": "confidence {{value}}%"
+    }
+  },
+  "docQueue": {
+    "title": "Document review",
+    "subtitle": "Queue prioritized by wait time — the AI's parecer is input, the decision is always human.",
+    "empty": "No documents awaiting review.",
+    "review": "Review",
+    "waitingFor": "waiting for {{hours}}h",
+    "sentAnyway": "Sent despite alert",
+    "noAnalysis": "Automated analysis not available for this document.",
+    "adjustReasonLabel": "Reason for the adjustment (the client will read this)",
+    "adjustReasonPlaceholder": "E.g.: missing the employer's signature",
+    "requestChanges": "Request changes",
+    "approve": "Approve",
+    "approved": "Document approved.",
+    "sentBackForChanges": "Document sent back for changes."
+  },
+  "profile": {
+    "education": "Education",
+    "experienceYears": "Years of experience",
+    "area": "Area of expertise",
+    "budget": "Budget range",
+    "lifeMoment": "Decision moment",
+    "timeline": "Desired timeline",
+    "family": "Family",
+    "inUS": "Already in the US",
+    "mainObjection": "Main objection",
+    "origin": {
+      "informado_lead": "provided by lead",
+      "inferido_bot": "inferred by bot",
+      "preenchido_equipe": "filled by team"
+    }
+  },
+  "qualification": {
+    "status": {
+      "nao_iniciada": "Not started",
+      "em_andamento": "In progress",
+      "concluida": "Completed"
+    }
+  },
+  "cadence": {
+    "status": "Cadence: {{status}} (touch {{step}}/4)",
+    "statusValue": {
+      "inativa": "inactive",
+      "ativa": "active",
+      "pausada": "paused",
+      "encerrada": "ended"
+    }
+  },
+  "gate": {
+    "title": "Scheduling approvals",
+    "subtitle": "No lead reaches the calendar without this check — the decision is always yours, never automatic.",
+    "empty": "No leads awaiting approval.",
+    "review": "Review",
+    "approve": "Approve scheduling",
+    "reject": "Reject",
+    "approved": "Scheduling approved.",
+    "rejected": "Lead rejected and moved to the reactivation base.",
+    "fitSuggestion": "System suggestion: {{fit}} fit — final decision is yours.",
+    "rejectReasonLabel": "Reason for rejection (becomes the main objection in the reactivation base)",
+    "rejectReasonPlaceholder": "E.g.: no matching budget at the moment",
+    "status": {
+      "pendente": "pending",
+      "aprovado": "approved",
+      "recusado": "rejected"
+    }
+  },
+  "programs": {
+    "title": "Programs",
+    "subtitle": "Visa program catalog — phases, steps, and required documents.",
+    "readOnlyNote": "Read-only in this phase. Program editing is planned for a future round.",
+    "subject": {
+      "individuo": "Individual",
+      "organizacao": "Organization"
+    },
+    "phases": "phases",
+    "requiredDocs": "required documents",
+    "requiredDocsTitle": "Required documents",
+    "activeClients_one": "{{count}} active client",
+    "activeClients_other": "{{count}} active clients",
+    "required": "Required",
+    "optional": "Optional"
+  },
+  "operations": {
+    "title": "Operations",
+    "subtitle": "Where cases get stuck and who needs attention now.",
+    "tabsBottlenecks": "Bottlenecks",
+    "tabsAlerts": "Alerts",
+    "noBottlenecks": "No bottlenecks identified right now.",
+    "noAlerts": "No alerts right now.",
+    "casesStuck_one": "{{count}} case stuck here",
+    "casesStuck_other": "{{count}} cases stuck here",
+    "avgDaysStuck": "avg {{days}} days stuck",
+    "alertInactive": "No contact for {{days}} days",
+    "alertStuck": "Step \"{{step}}\" stuck for {{days}} days",
+    "alertType": {
+      "inatividade": "Inactivity",
+      "etapa_travada": "Stuck step"
+    }
+  },
+  "reconciliation": {
+    "title": "Payment reconciliation",
+    "subtitle": "Check the receipt and confirm — no gateway, reconciliation is manual.",
+    "empty": "No payments awaiting reconciliation.",
+    "review": "Review",
+    "modalDescription": "Check the received receipt before confirming.",
+    "expectedValue": "Expected value",
+    "receivedValueLabel": "Received value",
+    "markDivergent": "Mark as divergent",
+    "confirm": "Confirm payment",
+    "confirmed": "Payment confirmed.",
+    "divergenceRecorded": "Divergence recorded."
+  },
+  "reactivation": {
+    "title": "Reactivation base",
+    "subtitle": "Leads who didn't close — segmented by objection and life moment, ready for a future offer.",
+    "all": "All",
+    "empty": "No leads in this base with the current filters.",
+    "count": "{{count}} leads · {{suggested}} with a re-approach signal",
+    "noObjection": "No objection recorded"
   }
 }

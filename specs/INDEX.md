@@ -38,6 +38,41 @@ Stories de fundação (E00) incluem `tasks.md`. As demais: `@sm` gera `tasks.md`
 ## E05 — Demo & Impersonação
 - `E05-S01-impersonacao/`, `E05-S02-cenarios/`
 
+---
+
+# Rodada 2 — especificada e implementada em 06/08/2026
+
+Origem: mensagem do Bruno Luz de 06/08/2026. Decisões em ADR-0004, ADR-0005 e ADR-0006.
+Ordem de execução e perguntas em aberto: `docs/epics/ROADMAP.md`.
+
+## E06 — Programas de visto (multi-fluxo) · ADR-0004
+- `E06-S01-modelo-programa/` — Programa como dado versionado (**design+spec**, arquitetural)
+- `E06-S02-programa-religioso/` — Segundo programa R/EB-4
+- `E06-S03-abertura-caso-programa/` — Escolha de programa na conversão
+- `E06-S04-catalogo-programas/` — Catálogo somente-leitura no admin
+
+## E07 — IA de análise de documentos · ADR-0005
+- `E07-S01-porta-analise-ia/` — Porta e contrato do parecer (**design+spec**, arquitetural)
+- `E07-S02-feedback-cliente/` — Parecer no upload, correção antes da fila
+- `E07-S03-fila-revisao-humana/` — Decisão humana registrada
+- `E07-S04-carta-experiencia-recomendacao/` — Regras do caso concreto + cenário de demo
+
+## E08 — Comunicação unificada · ADR-0006
+- `E08-S01-timeline-unificada/` — `EventoComunicacao` append-only (arquitetural)
+- `E08-S02-chat-portal/` — Canal registrável no portal
+- `E08-S03-politica-canal-documento/` — Anexo do WhatsApp registrado e redirecionado
+
+## E09 — Ritmo, previsão e responsabilidade
+- `E09-S01-dono-da-etapa/` · `E09-S02-previsao-ritmo/` · `E09-S03-painel-gargalos/` · `E09-S04-alertas-inatividade/`
+
+## E10 — Pagamentos na plataforma
+- `E10-S01-pagamento-transferencia/` — sem gateway; dados de recebimento fictícios + comprovante + conciliação manual
+- E10-S02..S04 (cartão/recorrência, QuickBooks/Wise, faturas) — sem specs, fora do escopo desta rodada
+
+## E11 — Pré-venda: qualificação e follow-up
+- `E11-S01-qualificacao-whatsapp/` · `E11-S02-perfil-lead/` · `E11-S03-cadencia-followup/` ·
+  `E11-S04-gate-aprovacao-agendamento/` · `E11-S05-base-reativacao/`
+
 ## Convenções destas specs
 - **Dados mockados** — nenhuma spec assume backend. Ver ADR-0002/0003.
 - **AC verificáveis** por interação de UI (a "execução do gate" nesta fase é E2E/interação, não API).

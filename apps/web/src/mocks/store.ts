@@ -1,30 +1,47 @@
 import { create } from "zustand";
 
 import type { Reuniao, Transcricao } from "@/features/agenda/domain/types";
-import type { RegraAtendimentoIA } from "@/features/comunicacao/domain/types";
-import type { Conversa } from "@/features/comunicacao/domain/types";
-import type { Cliente, Interacao, Proposta } from "@/features/crm/domain/types";
-import type { Documento, SolicitacaoAssinatura } from "@/features/documentos/domain/types";
-import type { Fase, Jornada } from "@/features/jornada/domain/types";
+import type {
+  Conversa,
+  EventoComunicacao,
+  RegraAtendimentoIA,
+} from "@/features/comunicacao/domain/types";
+import type { Cliente, Proposta } from "@/features/crm/domain/types";
+import type {
+  AnaliseDocumento,
+  Documento,
+  SolicitacaoAssinatura,
+} from "@/features/documentos/domain/types";
+import { instanciarJornada } from "@/features/jornada/application/instanciar-jornada";
+import type { Jornada } from "@/features/jornada/domain/types";
 import type { Pagamento } from "@/features/pagamentos/domain/types";
 import type { Depoimento, PostBlog } from "@/features/site/domain/types";
-import type { EstagioLead, Lead, NovoLead } from "@/shared/contracts/lead";
+import type {
+  EstagioLead,
+  Lead,
+  NovoLead,
+  OrigemCampoPerfil,
+  PerfilLead,
+} from "@/shared/contracts/lead";
 
 import { regraAtendimentoIA as regraAtendimentoIASeed } from "./agente-ia";
 import { depoimentos as depoimentosSeed, posts as postsSeed } from "./blog";
+import { toquesCadenciaMock } from "./cadencia";
 import { conversas as conversasSeed } from "./conversas";
 import {
   documentos as documentosSeed,
   solicitacoesAssinatura as solicitacoesSeed,
 } from "./documentos";
-import { criarFasesTemplate } from "./jornada-template";
 import { leads as leadsSeed } from "./leads";
 import { pagamentos as pagamentosSeed } from "./pagamentos";
 import { personas } from "./personas";
+import { catalogoProgramas } from "./programas";
 import { propostas as propostasSeed } from "./propostas";
+import { mapearRespostaLivre, roteiroQualificacaoMock } from "./qualificacao";
 import { reunioes as reunioesSeed, transcricoes as transcricoesSeed } from "./reunioes";
 
 const LATENCIA_MS = 150;
+const PROGRAMA_DEFAULT = "eb2-niw";
 
 export function comLatencia<T>(valor: T): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(valor), LATENCIA_MS));
@@ -49,7 +66,7 @@ interface MockDbState {
   transcricoes: Transcricao[];
   conversas: Conversa[];
   propostas: Proposta[];
-  interacoes: Interacao[];
+  eventosComunicacao: EventoComunicacao[];
   posts: PostBlog[];
   depoimentos: Depoimento[];
   regraAtendimentoIA: RegraAtendimentoIA;
@@ -58,25 +75,39 @@ interface MockDbState {
   criarLead: (input: NovoLead) => Lead;
   moverEstagioLead: (id: string, estagio: EstagioLead) => void;
   adicionarNotaLead: (id: string, nota: string) => void;
-  criarClienteAPartirDeLead: (leadId: string) => Cliente;
+  criarClienteAPartirDeLead: (leadId: string, programaCodigo?: string) => Cliente;
   atualizarCliente: (id: string, patch: Partial<Cliente>) => void;
-  registrarInteracao: (interacao: Omit<Interacao, "id">) => void;
+
+  // --- Comunicação / Timeline (E08-S01) ---
+  registrarEvento: (evento: Omit<EventoComunicacao, "id">) => EventoComunicacao;
+  resolverPendenciaDeCanal: (eventoId: string) => void;
 
   // --- Jornada ---
   liberarFase: (clienteId: string, faseId: string) => void;
   concluirEtapa: (clienteId: string, etapaId: string) => void;
 
-  // --- Documentos ---
+  // --- Documentos (E07) ---
   registrarEnvioDocumento: (id: string, urlMock: string) => void;
+  salvarAnaliseDocumento: (documentoId: string, analise: AnaliseDocumento) => void;
+  confirmarEnvioApesarDoAlerta: (id: string) => void;
+  decidirDocumento: (
+    id: string,
+    decisao: "aprovado" | "ajustes",
+    autor: string,
+    motivoAjuste?: string,
+  ) => void;
   assinarSolicitacao: (id: string, nomeAssinante: string) => void;
 
-  // --- Pagamentos ---
+  // --- Pagamentos (E10) ---
   marcarPagamentoComoPago: (id: string) => void;
+  anexarComprovantePagamento: (id: string, urlMock: string) => void;
+  confirmarPagamento: (id: string, autor: string) => void;
+  marcarDivergenciaPagamento: (id: string, valorRecebido: number, autor: string) => void;
 
   // --- Agenda ---
   agendarReuniao: (input: Omit<Reuniao, "id" | "status">) => Reuniao;
 
-  // --- Comunicação ---
+  // --- Comunicação (WhatsApp inbox, E04-S01) ---
   enviarMensagemConversa: (conversaId: string, texto: string) => void;
   atualizarConfigAgente: (patch: Partial<RegraAtendimentoIA>) => void;
 
@@ -84,6 +115,20 @@ interface MockDbState {
   criarProposta: (input: Omit<Proposta, "id" | "status" | "criadoEm">) => Proposta;
   enviarProposta: (id: string) => void;
   marcarStatusProposta: (id: string, status: Proposta["status"]) => void;
+
+  // --- Pré-venda (E11) ---
+  atualizarPerfilLead: (id: string, patch: Partial<PerfilLead>, origem: OrigemCampoPerfil) => void;
+  responderQualificacaoLead: (id: string, perguntaId: string, respostaLivre: string) => void;
+  registrarToqueCadencia: (id: string) => void;
+  pausarCadencia: (id: string) => void;
+  encerrarCadenciaManual: (id: string) => void;
+  decidirGateAgendamento: (
+    id: string,
+    decisao: "aprovado" | "recusado",
+    autor: string,
+    motivoRecusa?: string,
+  ) => void;
+  marcarNaoContatar: (id: string) => void;
 
   // --- Demo ---
   resetarDemo: () => void;
@@ -101,7 +146,7 @@ export interface MockDbSeed {
   transcricoes: Transcricao[];
   conversas: Conversa[];
   propostas: Proposta[];
-  interacoes: Interacao[];
+  eventosComunicacao: EventoComunicacao[];
 }
 
 function seedPadrao(): MockDbSeed {
@@ -116,7 +161,7 @@ function seedPadrao(): MockDbSeed {
     transcricoes: [...transcricoesSeed],
     conversas: [...conversasSeed],
     propostas: [...propostasSeed],
-    interacoes: [],
+    eventosComunicacao: [],
   };
 }
 
@@ -139,6 +184,9 @@ export const useMockDb = create<MockDbState>((set, get) => ({
   },
 
   moverEstagioLead: (id, estagio) => {
+    // E11-S04 AC-2: nenhum caminho move um lead para "reuniao_agendada" sem aprovação do gate.
+    const lead = get().leads.find((l) => l.id === id);
+    if (estagio === "reuniao_agendada" && lead?.gateAgendamento?.status !== "aprovado") return;
     set((s) => ({
       leads: s.leads.map((l) => (l.id === id ? { ...l, estagio } : l)),
     }));
@@ -150,12 +198,16 @@ export const useMockDb = create<MockDbState>((set, get) => ({
     }));
   },
 
-  criarClienteAPartirDeLead: (leadId) => {
+  criarClienteAPartirDeLead: (leadId, programaCodigo = PROGRAMA_DEFAULT) => {
     const lead = get().leads.find((l) => l.id === leadId);
     if (!lead) throw new Error(`Lead ${leadId} não encontrado`);
 
+    const programa = catalogoProgramas.find((p) => p.codigo === programaCodigo);
+    if (!programa) throw new Error(`Programa ${programaCodigo} não encontrado`);
+
+    const clienteId = novoId("cliente");
     const cliente: Cliente = {
-      id: novoId("cliente"),
+      id: clienteId,
       leadOrigemId: lead.id,
       nome: lead.nome,
       email: lead.email,
@@ -164,14 +216,11 @@ export const useMockDb = create<MockDbState>((set, get) => ({
       caseManager: "Natalia Luz",
       criadoEm: agora(),
       saude: "em_dia",
+      programaId: programa.codigo,
+      programaVersao: programa.versao,
     };
 
-    const jornada: Jornada = {
-      id: novoId("jornada"),
-      clienteId: cliente.id,
-      faseAtualId: "fase-0",
-      fases: criarFasesIniciais(),
-    };
+    const jornada = instanciarJornada(programa, clienteId, novoId("jornada"));
 
     set((s) => ({
       clientes: [...s.clientes, cliente],
@@ -188,9 +237,17 @@ export const useMockDb = create<MockDbState>((set, get) => ({
     }));
   },
 
-  registrarInteracao: (interacao) => {
+  registrarEvento: (evento) => {
+    const criado: EventoComunicacao = { ...evento, id: novoId("evento") };
+    set((s) => ({ eventosComunicacao: [...s.eventosComunicacao, criado] }));
+    return criado;
+  },
+
+  resolverPendenciaDeCanal: (eventoId) => {
     set((s) => ({
-      interacoes: [...s.interacoes, { ...interacao, id: novoId("interacao") }],
+      eventosComunicacao: s.eventosComunicacao.map((e) =>
+        e.id === eventoId ? { ...e, pendenteDeCanal: false } : e,
+      ),
     }));
   },
 
@@ -205,10 +262,12 @@ export const useMockDb = create<MockDbState>((set, get) => ({
         };
       }),
     }));
-    get().registrarInteracao({
-      clienteId,
-      tipo: "mudanca_fase",
-      descricao: `Fase ${faseId} liberada pelo case manager.`,
+    get().registrarEvento({
+      clienteOuLeadId: clienteId,
+      canal: "sistema",
+      direcao: "interno",
+      autor: "Case manager",
+      conteudo: `Fase ${faseId} liberada pelo case manager.`,
       ocorridoEm: agora(),
     });
   },
@@ -238,9 +297,68 @@ export const useMockDb = create<MockDbState>((set, get) => ({
   registrarEnvioDocumento: (id, urlMock) => {
     set((s) => ({
       documentos: s.documentos.map((d) =>
-        d.id === id ? { ...d, status: "enviado" as const, urlMock, enviadoEm: agora() } : d,
+        d.id === id
+          ? {
+              ...d,
+              status: "em_analise" as const,
+              urlMock,
+              enviadoEm: agora(),
+              enviadoApesarDoAlerta: false,
+              analise: undefined,
+              decisao: undefined,
+            }
+          : d,
       ),
     }));
+  },
+
+  salvarAnaliseDocumento: (documentoId, analise) => {
+    set((s) => ({
+      documentos: s.documentos.map((d) => (d.id === documentoId ? { ...d, analise } : d)),
+    }));
+  },
+
+  confirmarEnvioApesarDoAlerta: (id) => {
+    set((s) => ({
+      documentos: s.documentos.map((d) =>
+        d.id === id ? { ...d, enviadoApesarDoAlerta: true } : d,
+      ),
+    }));
+  },
+
+  decidirDocumento: (id, decisao, autor, motivoAjuste) => {
+    const documento = get().documentos.find((d) => d.id === id);
+    const concordouComIA = documento?.analise
+      ? (documento.analise.aderencia === "atende" ||
+          documento.analise.aderencia === "atende_com_ressalva") ===
+        (decisao === "aprovado")
+      : false;
+
+    set((s) => ({
+      documentos: s.documentos.map((d) =>
+        d.id === id
+          ? {
+              ...d,
+              status: decisao,
+              decisao: { decisao, autor, decididoEm: agora(), concordouComIA, motivoAjuste },
+            }
+          : d,
+      ),
+    }));
+
+    if (documento) {
+      get().registrarEvento({
+        clienteOuLeadId: documento.clienteId,
+        canal: "sistema",
+        direcao: "interno",
+        autor,
+        conteudo:
+          decisao === "aprovado"
+            ? `Documento "${documento.nome}" aprovado.`
+            : `Documento "${documento.nome}" devolvido para ajustes: ${motivoAjuste ?? "sem motivo informado"}.`,
+        ocorridoEm: agora(),
+      });
+    }
   },
 
   assinarSolicitacao: (id, nomeAssinante) => {
@@ -259,6 +377,68 @@ export const useMockDb = create<MockDbState>((set, get) => ({
         p.id === id ? { ...p, status: "pago" as const, pagoEm: agora() } : p,
       ),
     }));
+  },
+
+  anexarComprovantePagamento: (id, urlMock) => {
+    const pagamento = get().pagamentos.find((p) => p.id === id);
+    set((s) => ({
+      pagamentos: s.pagamentos.map((p) =>
+        p.id === id
+          ? { ...p, status: "em_conferencia" as const, comprovanteUrl: urlMock, anexadoEm: agora() }
+          : p,
+      ),
+    }));
+    if (pagamento) {
+      get().registrarEvento({
+        clienteOuLeadId: pagamento.clienteId,
+        canal: "chat_portal",
+        direcao: "entrada",
+        autor: "Cliente",
+        conteudo: `Comprovante anexado para "${pagamento.descricao}".`,
+        anexos: [{ nome: "comprovante.pdf" }],
+        ocorridoEm: agora(),
+      });
+    }
+  },
+
+  confirmarPagamento: (id, autor) => {
+    const pagamento = get().pagamentos.find((p) => p.id === id);
+    set((s) => ({
+      pagamentos: s.pagamentos.map((p) =>
+        p.id === id ? { ...p, status: "pago" as const, pagoEm: agora(), confirmadoPor: autor } : p,
+      ),
+    }));
+    if (pagamento) {
+      get().registrarEvento({
+        clienteOuLeadId: pagamento.clienteId,
+        canal: "sistema",
+        direcao: "interno",
+        autor,
+        conteudo: `Pagamento "${pagamento.descricao}" confirmado.`,
+        ocorridoEm: agora(),
+      });
+    }
+  },
+
+  marcarDivergenciaPagamento: (id, valorRecebido, autor) => {
+    const pagamento = get().pagamentos.find((p) => p.id === id);
+    set((s) => ({
+      pagamentos: s.pagamentos.map((p) =>
+        p.id === id
+          ? { ...p, status: "divergente" as const, valorRecebido, confirmadoPor: autor }
+          : p,
+      ),
+    }));
+    if (pagamento) {
+      get().registrarEvento({
+        clienteOuLeadId: pagamento.clienteId,
+        canal: "sistema",
+        direcao: "interno",
+        autor,
+        conteudo: `Divergência de valor em "${pagamento.descricao}": esperado ${pagamento.valor}, recebido ${valorRecebido}.`,
+        ocorridoEm: agora(),
+      });
+    }
   },
 
   agendarReuniao: (input) => {
@@ -316,6 +496,151 @@ export const useMockDb = create<MockDbState>((set, get) => ({
     }));
   },
 
+  atualizarPerfilLead: (id, patch, origem) => {
+    set((s) => ({
+      leads: s.leads.map((l) => {
+        if (l.id !== id) return l;
+        const perfilOrigem = { ...l.perfilOrigem };
+        for (const chave of Object.keys(patch)) {
+          perfilOrigem[chave as keyof PerfilLead] = origem;
+        }
+        return { ...l, perfil: { ...l.perfil, ...patch }, perfilOrigem };
+      }),
+    }));
+  },
+
+  responderQualificacaoLead: (id, perguntaId, respostaLivre) => {
+    const lead = get().leads.find((l) => l.id === id);
+    if (!lead) return;
+
+    const indiceAtual = roteiroQualificacaoMock.findIndex((p) => p.id === perguntaId);
+    const pergunta = roteiroQualificacaoMock[indiceAtual];
+    if (!pergunta) return;
+
+    const respostaMapeada = mapearRespostaLivre(pergunta, respostaLivre);
+    const origem: OrigemCampoPerfil =
+      respostaMapeada === respostaLivre.trim() ? "informado_lead" : "inferido_bot";
+
+    const respostas = { ...(lead.qualificacao?.respostas ?? {}), [perguntaId]: respostaLivre };
+    const proximoIndice = indiceAtual + 1;
+    const concluida = proximoIndice >= roteiroQualificacaoMock.length;
+
+    set((s) => ({
+      leads: s.leads.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              qualificacao: {
+                status: concluida ? "concluida" : "em_andamento",
+                perguntaAtualIndex: proximoIndice,
+                respostas,
+              },
+            }
+          : l,
+      ),
+    }));
+
+    if (respostaMapeada && pergunta.campo !== "nome") {
+      get().atualizarPerfilLead(
+        id,
+        { [pergunta.campo]: respostaMapeada } as Partial<PerfilLead>,
+        origem,
+      );
+    }
+    if (pergunta.campo === "nome" && respostaMapeada) {
+      set((s) => ({
+        leads: s.leads.map((l) => (l.id === id ? { ...l, nome: respostaMapeada } : l)),
+      }));
+    }
+
+    // AC-2 (E11-S03): resposta do lead encerra a cadência imediatamente.
+    if (lead.cadencia?.status === "ativa") {
+      get().encerrarCadenciaManual(id);
+    }
+  },
+
+  registrarToqueCadencia: (id) => {
+    const lead = get().leads.find((l) => l.id === id);
+    if (!lead) return;
+    const toqueAtual = (lead.cadencia?.toqueAtual ?? 0) + 1;
+    const esgotada = toqueAtual >= toquesCadenciaMock.length;
+
+    set((s) => ({
+      leads: s.leads.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              cadencia: {
+                status: esgotada ? "encerrada" : "ativa",
+                toqueAtual,
+                motivoEncerramento: esgotada ? "esgotada" : undefined,
+              },
+            }
+          : l,
+      ),
+    }));
+
+    const toque = toquesCadenciaMock[toqueAtual - 1];
+    if (toque) {
+      get().registrarEvento({
+        clienteOuLeadId: id,
+        canal: "whatsapp",
+        direcao: "saida",
+        autor: "Agente IA",
+        conteudo: toque.mensagem,
+        ocorridoEm: agora(),
+      });
+    }
+  },
+
+  pausarCadencia: (id) => {
+    set((s) => ({
+      leads: s.leads.map((l) =>
+        l.id === id && l.cadencia
+          ? { ...l, cadencia: { ...l.cadencia, status: "pausada" as const } }
+          : l,
+      ),
+    }));
+  },
+
+  encerrarCadenciaManual: (id) => {
+    set((s) => ({
+      leads: s.leads.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              cadencia: {
+                status: "encerrada",
+                toqueAtual: l.cadencia?.toqueAtual ?? 0,
+                motivoEncerramento:
+                  l.cadencia?.status === "ativa" ? "respondeu" : "desligada_manual",
+              },
+            }
+          : l,
+      ),
+    }));
+  },
+
+  decidirGateAgendamento: (id, decisao, autor, motivoRecusa) => {
+    set((s) => ({
+      leads: s.leads.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              gateAgendamento: { status: decisao, autor, decididoEm: agora(), motivoRecusa },
+              estagio: decisao === "recusado" ? ("descartado" as const) : l.estagio,
+            }
+          : l,
+      ),
+    }));
+  },
+
+  marcarNaoContatar: (id) => {
+    set((s) => ({
+      leads: s.leads.map((l) => (l.id === id ? { ...l, naoContatar: true } : l)),
+    }));
+  },
+
   resetarDemo: () => {
     set({ ...seedPadrao() });
   },
@@ -324,7 +649,3 @@ export const useMockDb = create<MockDbState>((set, get) => ({
     set((s) => ({ ...s, ...seedPadrao(), ...fabrica() }));
   },
 }));
-
-function criarFasesIniciais(): Fase[] {
-  return criarFasesTemplate();
-}

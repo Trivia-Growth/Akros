@@ -45,7 +45,19 @@
     "locked": "Bloqueada",
     "unlocked": "Liberada",
     "inProgress": "Em andamento",
-    "completed": "Concluída"
+    "completed": "Concluída",
+    "underConference": "Em conferência",
+    "divergent": "Divergente"
+  },
+  "timeline": {
+    "channel": {
+      "whatsapp": "WhatsApp",
+      "email": "E-mail",
+      "chat_portal": "Chat do portal",
+      "reuniao": "Reunião",
+      "sistema": "Sistema"
+    },
+    "pendingChannel": "Fora do canal registrável"
   },
   "language": {
     "pt-BR": "Português",

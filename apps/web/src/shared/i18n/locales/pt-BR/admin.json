@@ -17,7 +17,23 @@
     "noNotes": "Nenhuma nota ainda.",
     "convertToClient": "Converter em Cliente",
     "converted": "Lead convertido em cliente com sucesso!",
-    "noteAdded": "Nota adicionada."
+    "noteAdded": "Nota adicionada.",
+    "gateBlocked": "Este lead precisa passar pela aprovação de agendamento antes de ir para \"Reunião Agendada\".",
+    "gatePending": "Aguardando aprovação",
+    "gateStatus": "Status do gate de agendamento: {{status}}",
+    "gateGoTo": "Ir para aprovações →",
+    "chooseProgramTitle": "Escolher programa",
+    "chooseProgramDescription": "O programa define a jornada e o checklist de documentos do cliente.",
+    "noProfile": "Nenhum dado de perfil coletado ainda.",
+    "noTimeline": "Nenhum registro de comunicação ainda.",
+    "qualificationFictional": "Roteiro fictício de demonstração — não é o formulário real da Akros.",
+    "qualificationNotStarted": "Qualificação ainda não iniciada.",
+    "tabs": {
+      "overview": "Visão geral",
+      "profile": "Perfil",
+      "qualification": "Qualificação",
+      "timeline": "Histórico"
+    }
   },
   "clientes": {
     "title": "Clientes",
@@ -43,7 +59,8 @@
     "currentPhaseIncomplete": "A fase atual ainda não foi concluída. Deseja liberar mesmo assim?",
     "allPhasesUnlocked": "Todas as fases já foram liberadas.",
     "noHistory": "Nenhum registro no histórico ainda.",
-    "backToList": "← Voltar para a lista"
+    "backToList": "← Voltar para a lista",
+    "goToReviewQueue": "Ver na fila de revisão de documentos →"
   },
   "proposals": {
     "title": "Propostas",
@@ -127,5 +144,143 @@
     "actionItems": "Próximos passos",
     "noTranscription": "Transcrição não disponível para esta reunião.",
     "client": "Cliente"
+  },
+  "journey": {
+    "responsible": {
+      "cliente": "Cliente",
+      "akros": "Akros",
+      "terceiro": "Terceiro",
+      "uscis": "USCIS"
+    }
+  },
+  "documents": {
+    "analysis": {
+      "aderencia": {
+        "atende": "Atende",
+        "atende_com_ressalva": "Atende com ressalva",
+        "nao_atende": "Não atende",
+        "tipo_incorreto": "Tipo incorreto"
+      },
+      "confidence": "confiança {{value}}%"
+    }
+  },
+  "docQueue": {
+    "title": "Revisão de documentos",
+    "subtitle": "Fila priorizada por tempo de espera — o parecer da IA é insumo, a decisão é sempre humana.",
+    "empty": "Nenhum documento aguardando revisão.",
+    "review": "Revisar",
+    "waitingFor": "esperando há {{hours}}h",
+    "sentAnyway": "Enviado apesar do alerta",
+    "noAnalysis": "Análise automática não disponível para este documento.",
+    "adjustReasonLabel": "Motivo do ajuste (o cliente vai ler)",
+    "adjustReasonPlaceholder": "Ex: falta a assinatura do responsável pela empresa",
+    "requestChanges": "Pedir ajuste",
+    "approve": "Aprovar",
+    "approved": "Documento aprovado.",
+    "sentBackForChanges": "Documento devolvido para ajustes."
+  },
+  "profile": {
+    "education": "Formação",
+    "experienceYears": "Anos de experiência",
+    "area": "Área de atuação",
+    "budget": "Faixa de investimento",
+    "lifeMoment": "Momento de decisão",
+    "timeline": "Prazo desejado",
+    "family": "Família",
+    "inUS": "Já está nos EUA",
+    "mainObjection": "Objeção principal",
+    "origin": {
+      "informado_lead": "informado pelo lead",
+      "inferido_bot": "inferido pelo bot",
+      "preenchido_equipe": "preenchido pela equipe"
+    }
+  },
+  "qualification": {
+    "status": {
+      "nao_iniciada": "Não iniciada",
+      "em_andamento": "Em andamento",
+      "concluida": "Concluída"
+    }
+  },
+  "cadence": {
+    "status": "Cadência: {{status}} (toque {{step}}/4)",
+    "statusValue": {
+      "inativa": "inativa",
+      "ativa": "ativa",
+      "pausada": "pausada",
+      "encerrada": "encerrada"
+    }
+  },
+  "gate": {
+    "title": "Aprovações de agendamento",
+    "subtitle": "Nenhum lead vai para a agenda sem essa validação — a decisão é sempre sua, nunca automática.",
+    "empty": "Nenhum lead aguardando aprovação.",
+    "review": "Revisar",
+    "approve": "Aprovar agendamento",
+    "reject": "Recusar",
+    "approved": "Agendamento aprovado.",
+    "rejected": "Lead recusado e movido para a base de reativação.",
+    "fitSuggestion": "Sugestão do sistema: fit {{fit}} — decisão final é sua.",
+    "rejectReasonLabel": "Motivo da recusa (vira objeção principal na base de reativação)",
+    "rejectReasonPlaceholder": "Ex: sem orçamento compatível no momento",
+    "status": {
+      "pendente": "pendente",
+      "aprovado": "aprovado",
+      "recusado": "recusado"
+    }
+  },
+  "programs": {
+    "title": "Programas",
+    "subtitle": "Catálogo de programas de visto — fases, etapas e documentos exigidos.",
+    "readOnlyNote": "Somente leitura nesta fase. Edição de programas fica para uma rodada futura.",
+    "subject": {
+      "individuo": "Indivíduo",
+      "organizacao": "Organização"
+    },
+    "phases": "fases",
+    "requiredDocs": "documentos exigidos",
+    "requiredDocsTitle": "Documentos exigidos",
+    "activeClients_one": "{{count}} cliente ativo",
+    "activeClients_other": "{{count}} clientes ativos",
+    "required": "Obrigatório",
+    "optional": "Opcional"
+  },
+  "operations": {
+    "title": "Operação",
+    "subtitle": "Onde os casos travam e quem precisa de atenção agora.",
+    "tabsBottlenecks": "Gargalos",
+    "tabsAlerts": "Alertas",
+    "noBottlenecks": "Nenhum gargalo identificado no momento.",
+    "noAlerts": "Nenhum alerta no momento.",
+    "casesStuck_one": "{{count}} caso parado aqui",
+    "casesStuck_other": "{{count}} casos parados aqui",
+    "avgDaysStuck": "média {{days}} dias parado",
+    "alertInactive": "Sem contato há {{days}} dias",
+    "alertStuck": "Etapa \"{{step}}\" travada há {{days}} dias",
+    "alertType": {
+      "inatividade": "Inatividade",
+      "etapa_travada": "Etapa travada"
+    }
+  },
+  "reconciliation": {
+    "title": "Conciliação de pagamentos",
+    "subtitle": "Confira o comprovante e confirme — sem gateway, a conferência é manual.",
+    "empty": "Nenhum pagamento aguardando conciliação.",
+    "review": "Conferir",
+    "modalDescription": "Confira o comprovante recebido antes de confirmar.",
+    "expectedValue": "Valor esperado",
+    "receivedValueLabel": "Valor recebido",
+    "markDivergent": "Marcar divergência",
+    "confirm": "Confirmar pagamento",
+    "confirmed": "Pagamento confirmado.",
+    "divergenceRecorded": "Divergência registrada."
+  },
+  "reactivation": {
+    "title": "Base de reativação",
+    "subtitle": "Leads que não fecharam — segmentados por objeção e momento, prontos para uma oferta futura.",
+    "all": "Todos",
+    "empty": "Nenhum lead nesta base com os filtros atuais.",
+    "count": "{{count}} leads · {{suggested}} com sinal de reabordagem",
+    "noObjection": "Objeção não registrada"
   }
 }

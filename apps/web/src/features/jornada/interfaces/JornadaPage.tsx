@@ -9,6 +9,7 @@ import { Badge, Button, Card, Progress, Stepper, type StepperItem, toast } from 
 import { Lock } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { Etapa } from "../domain/types";
 
 export function JornadaPage() {
   const { t } = useTranslation("portal");
@@ -77,7 +78,10 @@ export function JornadaPage() {
                   className="flex flex-col gap-2 rounded-md border border-border p-4 sm:flex-row sm:items-start sm:justify-between"
                 >
                   <div>
-                    <p className="text-sm font-medium text-navy">{etapa.titulo}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium text-navy">{etapa.titulo}</p>
+                      {etapa.status !== "concluida" && <ResponsavelBadge etapa={etapa} />}
+                    </div>
                     <p className="mt-1 text-sm text-ink-soft">{etapa.descricao}</p>
                     {etapa.prazoMedioDiasUteis && (
                       <p className="mt-1 text-xs text-ink-muted">
@@ -120,6 +124,23 @@ export function JornadaPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+/** E09-S01 AC-6 — responsável sempre por rótulo, nunca só por cor. */
+function ResponsavelBadge({ etapa }: { etapa: Etapa }) {
+  const { t } = useTranslation("portal");
+  const map: Record<Etapa["responsavel"], "gold" | "navy" | "neutral"> = {
+    cliente: "gold",
+    akros: "navy",
+    terceiro: "neutral",
+    uscis: "neutral",
+  };
+  return (
+    <Badge variant={map[etapa.responsavel]}>
+      {t(`journey.responsible.${etapa.responsavel}`)}
+      {etapa.responsavelDetalhe ? ` · ${etapa.responsavelDetalhe}` : ""}
+    </Badge>
   );
 }
 

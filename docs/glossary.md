@@ -129,6 +129,70 @@ cliente específico ou alternar cenários — para a apresentação em localhost
 
 ---
 
+## Rodada 2 — termos novos (E06–E11, ADR-0004/0005/0006)
+
+**Programa (de visto):** dado versionado que define um fluxo completo de imigração — fases,
+etapas, prazos e documentos exigidos. `eb2-niw` e `religioso-r-eb4` são programas. Substitui o
+template hardcoded. Não confundir com **tipo de visto**, que é a categoria legal (EB-2 NIW, R,
+EB-4); um programa **opera** um ou mais tipos de visto.
+
+**Versão do programa:** identificador congelado na jornada do cliente na abertura do caso. Mudar
+o programa não altera casos já abertos.
+
+**Requisito de documento:** item do catálogo de um programa — tipo, objetivo, obrigatoriedade e
+quem emite. É contra o requisito que a IA avalia o documento enviado.
+
+**Sujeito do programa:** `individuo` ou `organizacao`. No visto religioso o sujeito é a igreja
+patrocinadora, o que muda checklist e formulários.
+
+**Análise de documento:** parecer automático produzido pela IA sobre um documento enviado.
+**Nunca** muda o status do documento — ver ADR-0005.
+
+**Aderência:** resultado da análise — `atende`, `atende_com_ressalva`, `nao_atende` ou
+`tipo_incorreto`.
+
+**Lacuna:** item faltante apontado pela análise, classificado em `impeditiva` ou `recomendada`.
+
+**Enviado apesar do alerta:** documento que o cliente escolheu mandar para a fila humana mesmo
+com parecer negativo da IA. A IA não bloqueia ninguém.
+
+**Evento de comunicação:** registro append-only de qualquer contato, em qualquer canal
+(`whatsapp`, `email`, `chat_portal`, `reuniao`, `sistema`). Substitui `Interacao` — ADR-0006.
+
+**Timeline (do cliente ou do lead):** sequência cronológica única de eventos de comunicação.
+
+**Canal registrável:** canal cujo conteúdo não pode ser apagado (chat do portal, e-mail). Por ele
+passam documento, decisão e aprovação formal. O WhatsApp é canal de relacionamento, não de registro.
+
+**Pendência de canal:** anexo recebido pelo WhatsApp e ainda não formalizado pelo portal.
+
+**Responsável (de etapa):** de quem depende a etapa agora — `cliente`, `akros`, `terceiro` ou
+`uscis`. `terceiro` cobre recomendante, avaliador educacional, tradutor e empresa emissora.
+
+**Fator de ritmo:** razão entre o tempo real que o cliente leva e o tempo esperado das etapas já
+concluídas. Alimenta a previsão de conclusão.
+
+**Previsão de conclusão:** faixa estimada (otimista–provável), nunca data única. Separa o tempo
+que depende do processo do tempo que depende da USCIS.
+
+**Gargalo:** etapa onde os casos acumulam tempo parado, medido por responsável.
+
+**Perfil de lead:** camada estruturada sobre o lead — formação, experiência, faixa de budget,
+momento de vida, família, objeção principal. Preservada mesmo quando o lead é descartado.
+
+**Objeção principal:** motivo pelo qual o lead não fechou. É o campo que torna a reativação possível.
+
+**Cadência de follow-up:** sequência de toques automáticos para lead sem resposta. Cada toque
+oferece uma saída diferente e a cadência encerra na primeira resposta.
+
+**Gate de agendamento:** aprovação humana obrigatória antes de um lead poder marcar reunião.
+Espelho, no pré-venda, do gate de liberação de fase (E03-S03).
+
+**Base de reativação:** visão sobre leads com estágio terminal, segmentável por objeção e momento
+de vida, para oferta futura.
+
+---
+
 ## Como manter este doc atualizado
 1. Ao escrever spec/design/code, termo novo de negócio → adicione aqui com definição.
 2. Ao revisar PR, sinônimos → redirecione pro glossário e padronize.

@@ -33,7 +33,7 @@ export function AdminDashboardPage() {
   const jornadas = useMockDb((s) => s.jornadas);
   const pagamentos = useMockDb((s) => s.pagamentos);
   const reunioes = useMockDb((s) => s.reunioes);
-  const interacoes = useMockDb((s) => s.interacoes);
+  const eventos = useMockDb((s) => s.eventosComunicacao);
 
   const funil = ESTAGIOS.map((estagio) => ({
     estagio,
@@ -76,7 +76,8 @@ export function AdminDashboardPage() {
     .sort((a, b) => a.inicio.localeCompare(b.inicio))
     .slice(0, 5);
 
-  const atividadeRecente = [...interacoes]
+  const atividadeRecente = [...eventos]
+    .filter((e) => e.canal === "sistema")
     .sort((a, b) => b.ocorridoEm.localeCompare(a.ocorridoEm))
     .slice(0, 6);
 
@@ -196,7 +197,7 @@ export function AdminDashboardPage() {
             <ul className="flex flex-col gap-2">
               {atividadeRecente.map((i) => (
                 <li key={i.id} className="text-sm text-ink-soft">
-                  {i.descricao}
+                  {i.conteudo}
                 </li>
               ))}
             </ul>

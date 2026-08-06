@@ -17,6 +17,21 @@ export class MockDocumentoRepository implements DocumentoRepository {
     useMockDb.getState().registrarEnvioDocumento(id, urlMock);
     return comLatencia(undefined);
   }
+
+  async confirmarEnvioApesarDoAlerta(id: string): Promise<void> {
+    useMockDb.getState().confirmarEnvioApesarDoAlerta(id);
+    return comLatencia(undefined);
+  }
+
+  async decidir(
+    id: string,
+    decisao: "aprovado" | "ajustes",
+    autor: string,
+    motivoAjuste?: string,
+  ): Promise<void> {
+    useMockDb.getState().decidirDocumento(id, decisao, autor, motivoAjuste);
+    return comLatencia(undefined);
+  }
 }
 
 export class MockAssinaturaService implements AssinaturaService {

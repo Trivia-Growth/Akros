@@ -45,7 +45,19 @@
     "locked": "Locked",
     "unlocked": "Unlocked",
     "inProgress": "In progress",
-    "completed": "Completed"
+    "completed": "Completed",
+    "underConference": "Under conference",
+    "divergent": "Divergent"
+  },
+  "timeline": {
+    "channel": {
+      "whatsapp": "WhatsApp",
+      "email": "Email",
+      "chat_portal": "Portal chat",
+      "reuniao": "Meeting",
+      "sistema": "System"
+    },
+    "pendingChannel": "Outside the registrable channel"
   },
   "language": {
     "pt-BR": "Português",

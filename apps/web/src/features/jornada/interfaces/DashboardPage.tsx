@@ -4,11 +4,13 @@ import { useDocumentosCliente } from "@/features/documentos/application/hooks";
 import {
   calcularProgresso,
   obterFaseAtual,
+  useEtapasPorResponsavel,
   useJornadaAtiva,
+  usePrevisao,
 } from "@/features/jornada/application/hooks";
 import { usePagamentosCliente } from "@/features/pagamentos/application/hooks";
 import { Badge, Button, Card, Progress, Stepper, type StepperItem } from "@/shared/ui";
-import { CalendarDays, FileText, Wallet } from "lucide-react";
+import { CalendarDays, FileText, Gauge, Wallet } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -32,6 +34,9 @@ export function DashboardPage() {
     title: f.titulo,
     status: f.status,
   }));
+
+  const porResponsavel = useEtapasPorResponsavel(jornada);
+  const previsao = usePrevisao(jornada);
 
   const docsPendentes = documentos.filter((d) => d.status === "pendente").length;
   const pagamentoAtrasado = pagamentos.some((p) => p.status === "atrasado");
@@ -63,6 +68,52 @@ export function DashboardPage() {
           </Button>
         </Link>
       </Card>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Card>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-label text-gold-700">
+            {t("dashboard.ballWith")}
+          </h2>
+          <div className="flex flex-col gap-2 text-sm">
+            <BolaRow
+              label={t("journey.responsible.cliente")}
+              count={porResponsavel.cliente.length}
+              destaque
+            />
+            <BolaRow label={t("journey.responsible.akros")} count={porResponsavel.akros.length} />
+            <BolaRow
+              label={t("journey.responsible.terceiro")}
+              count={porResponsavel.terceiro.length}
+            />
+            <BolaRow label={t("journey.responsible.uscis")} count={porResponsavel.uscis.length} />
+          </div>
+        </Card>
+
+        <Card>
+          <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-label text-gold-700">
+            <Gauge className="h-3.5 w-3.5" aria-hidden />
+            {t("dashboard.forecastTitle")}
+          </h2>
+          {previsao ? (
+            <>
+              <p className="font-display text-xl font-medium text-navy">
+                {t("dashboard.forecastRange", {
+                  min: Math.round(previsao.diasOtimista / 30),
+                  max: Math.round(previsao.diasProvavel / 30),
+                })}
+              </p>
+              <p className="mt-2 text-xs text-ink-muted">
+                {previsao.dadosSuficientes
+                  ? t("dashboard.forecastPace", { factor: previsao.fatorRitmo.toFixed(1) })
+                  : t("dashboard.forecastDefaultPace")}
+              </p>
+              <p className="mt-2 text-xs text-ink-muted">{t("dashboard.forecastNote")}</p>
+            </>
+          ) : (
+            <p className="text-sm text-ink-muted">—</p>
+          )}
+        </Card>
+      </div>
 
       <Card>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-label text-gold-700">
@@ -128,6 +179,15 @@ export function DashboardPage() {
           to="/portal/agenda"
         />
       </div>
+    </div>
+  );
+}
+
+function BolaRow({ label, count, destaque }: { label: string; count: number; destaque?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className={destaque ? "font-medium text-navy" : "text-ink-soft"}>{label}</span>
+      <Badge variant={count > 0 && destaque ? "gold" : "neutral"}>{count}</Badge>
     </div>
   );
 }

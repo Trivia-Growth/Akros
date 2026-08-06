@@ -13,9 +13,11 @@ import {
 import {
   MockAgenteService,
   MockConversaRepository,
+  MockTimelineRepository,
 } from "@/features/comunicacao/infrastructure/MockConversaRepository";
 import { MockClienteRepository } from "@/features/crm/infrastructure/MockClienteRepository";
 import { MockPropostaRepository } from "@/features/crm/infrastructure/MockPropostaRepository";
+import { MockAnalisadorDocumento } from "@/features/documentos/infrastructure/MockAnalisadorDocumento";
 import {
   MockAssinaturaService,
   MockDocumentoRepository,
@@ -25,6 +27,7 @@ import {
   MockProgressoRepository,
 } from "@/features/jornada/infrastructure/MockJornadaRepository";
 import { MockPagamentoRepository } from "@/features/pagamentos/infrastructure/MockPagamentoRepository";
+import { MockProgramaRepository } from "@/features/programas/infrastructure/MockProgramaRepository";
 import { MockConteudoRepository } from "@/features/site/infrastructure/MockConteudoRepository";
 import { MockLeadRepository } from "@/shared/contracts/MockLeadRepository";
 
@@ -42,6 +45,9 @@ export const container = {
   conversas: new MockConversaRepository(),
   agenteIA: new MockAgenteService(),
   conteudo: new MockConteudoRepository(),
+  programas: new MockProgramaRepository(),
+  timeline: new MockTimelineRepository(),
+  analiseDocumento: new MockAnalisadorDocumento(),
 } as const;
 
 export type Container = typeof container;

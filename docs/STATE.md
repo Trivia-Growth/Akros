@@ -9,78 +9,128 @@ alwaysApply: false
 Sessão atual:
 - **Data:** 2026-08-06
 - **Owner:** Claude (execução autônoma solicitada pelo usuário)
-- **Epic em foco:** Nenhum — **ROADMAP COMPLETO** (E00 a E05, 25 stories)
-- **Stories em progresso:** Nenhuma — todas concluídas
+- **Rodada 1 (E00–E05, 25 stories):** 🟩 concluída e implementada
+- **Rodada 2 (E06–E11 + E10-S01, 22 stories):** 🟩 especificada e implementada nesta sessão
+- **Stories em progresso:** Nenhuma
+
+## Última entrega desta sessão
+
+1. **Fotos reais da equipe** e **redesign da Homepage/Quem Somos** (E01-S01/S02) — ver histórico
+   de commits para o detalhe; não repetido aqui para não duplicar.
+2. **Rodada 2 completa: especificada E implementada.** A partir da mensagem do Bruno Luz
+   (06/08/2026), foram geradas e implementadas 22 stories novas (E06–E11, incluindo E10-S01):
+   - **E06 — Programas de visto**: `Programa` como dado versionado (ADR-0004). Novo bounded
+     context `features/programas/`. Dois programas no catálogo: `eb2-niw` (migrado de
+     `jornada-template.ts`, removido) e `religioso-r-eb4` (novo, prova de escalabilidade).
+     Conversão de lead escolhe o programa; catálogo somente-leitura em `/admin/programas`.
+   - **E07 — IA de análise de documentos** (ADR-0005): `AnalisadorDocumentoPort` +
+     `MockAnalisadorDocumento` determinístico. Parecer em `Documento.analise`, nunca muda
+     `Documento.status` — só decisão humana muda (`/admin/documentos`, fila priorizada por
+     espera). Regras específicas para o caso citado pela Akros (carta de experiência × carta de
+     recomendação × carteira de trabalho).
+   - **E08 — Comunicação unificada** (ADR-0006): `EventoComunicacao` append-only substitui
+     `Interacao` (removida do código). Timeline funde eventos de sistema/chat/e-mail/reunião com
+     as mensagens do WhatsApp (`useTimeline`). Chat do portal em `/portal/mensagens`.
+   - **E09 — Ritmo e responsabilidade**: `Etapa.responsavel` (cliente/Akros/terceiro/USCIS),
+     previsão de conclusão por fórmula aberta (`calcularPrevisao`), painel de gargalos + central
+     de alertas em `/admin/operacao`.
+   - **E10-S01 — Pagamento por transferência**: sem gateway (decisão do cliente); dados de
+     recebimento **fictícios** (`mocks/dados-recebimento.ts`), upload de comprovante pelo
+     cliente, conciliação manual em `/admin/pagamentos`.
+   - **E11 — Pré-venda**: perfil rico do lead, qualificação conversacional com roteiro
+     **fictício/mockado** (`mocks/qualificacao.ts` — não é o formulário real da Akros), cadência
+     de follow-up de 4 toques, gate humano antes de agendar (`/admin/aprovacoes`), base de
+     reativação (`/admin/reativacao`).
+3. **3 ADRs novos** (0004, 0005, 0006) e **2 design docs** (E06-S01, E07-S01) documentando as
+   decisões arquiteturais acima.
+4. **25 testes novos** (16 de invariante em `mocks/rodada2-actions.test.ts` + 9 smoke de render).
+   Total: **78 testes**, todos verdes.
+5. Duas `SPEC_DEVIATION` novas registradas no código (conteúdo de programa em PT-BR literal, não
+   i18n; `documentos/application` conhece `programas` — mesma exceção já documentada para
+   `jornada`→`programas`).
 
 ## Resumo de progresso
 
-Protótipo visual da Akros Immigration Solutions **100% implementado** seguindo o ciclo SDD
-(specs já existiam de sessão anterior; esta sessão executou @dev + @qa para todas as 25 stories).
+Protótipo visual da Akros Immigration Solutions **100% implementado** para as duas rodadas.
 
-**As 3 frentes estão navegáveis em localhost:**
-- **Site institucional** (`/`) — 7 páginas com conteúdo real coletado de akrosimmigration.com
-- **Portal do cliente** (`/portal`) — dashboard + jornada gamificada (Introdução + 5 fases,
-  unlock sequencial) + documentos + assinatura + pagamentos + agenda + perfil
-- **Painel admin** (`/admin`) — kanban de leads (6 colunas) + clientes 360 (7 abas) + gestão
-  de jornada (gate central) + propostas + dashboard com métricas + comunicação (WhatsApp +
-  agente IA) + agenda integrada + transcrições Fireflies
+**As 3 frentes navegáveis em localhost, agora com ~15 telas novas:**
+- **Site institucional** (`/`) — 7 páginas, redesign de Home/Quem Somos com fotos reais.
+- **Portal do cliente** (`/portal`) — dashboard (agora com "de quem é a bola" + previsão) +
+  jornada (com badge de responsável por etapa) + documentos (com parecer de IA) + assinatura +
+  pagamentos (transferência) + **mensagens** (chat do portal, novo) + agenda + perfil.
+- **Painel admin** (`/admin`) — kanban (com escolha de programa na conversão + abas de
+  perfil/qualificação/timeline no lead) + **aprovações** (gate, novo) + clientes 360 +
+  **revisão de documentos** (fila de IA, novo) + propostas + **conciliação** (pagamentos, novo) +
+  **programas** (catálogo, novo) + **operação** (gargalos/alertas, novo) + **reativação** (novo) +
+  comunicação + agenda.
 
-**Impersonação/demo** (barra fixa em todas as telas): seletor de persona (4 clientes em
-estados diferentes de jornada), alternador Cliente↔Admin, 6 cenários pré-configurados,
-botão resetar demo.
+**Impersonação/demo:** seletor de persona (**5 clientes** agora — incluindo a Igreja Vida Nova no
+programa religioso), alternador Cliente↔Admin, 6 cenários pré-configurados, botão resetar demo.
 
 ## Arquitetura implementada
 
-- Portas/adapters (ADR-0002): 13 portas, todas com Mock*Repository, container de DI (`app/di.ts`)
-- Estado mock: Zustand (`useMockDb`) com seed determinístico + `resetarDemo()`
-- i18n completo (react-i18next): pt-BR + EN, 4 namespaces, zero texto hardcoded
-- Design system: 15 componentes (`shared/ui/`), tokens Akros (navy/gold/cream)
-- 38 testes vitest cobrindo regras de negócio centrais (gate de unlock sequencial,
-  progresso da jornada, conversão lead→cliente, ciclo de vida de proposta, mutações de
-  documentos/pagamentos/agenda/comunicação)
+- Portas/adapters (ADR-0002): ~17 portas com Mock*Repository, container de DI (`app/di.ts`)
+  ampliado com `programas`, `timeline` e `analiseDocumento`.
+- Estado mock: Zustand (`useMockDb`) — cresceu de ~15 para ~30 actions nesta sessão.
+- i18n completo (react-i18next): pt-BR + EN, zero texto de UI hardcoded (conteúdo de
+  programa/jornada é exceção documentada, ver SPEC_DEVIATION).
+- Design system: 16 componentes (`shared/ui/`), reaproveitados sem mudança nas telas novas.
+- **78 testes vitest**: regras de negócio centrais + as invariantes da rodada 2 (IA nunca muda
+  status, cadência para na resposta, gate bloqueia agendamento, versão do programa congela,
+  timeline unificada, previsão com dados insuficientes cai no padrão).
 
-## Gates finais (verificados nesta sessão)
+## Arquitetura decidida e implementada na rodada 2
+
+- **ADR-0004** — Programa de visto como dado versionado. `criarFasesTemplate()` removido; a
+  jornada é instanciada de um `Programa` (`instanciarJornada`) e congela a versão usada.
+- **ADR-0005** — Análise de documento por IA atrás de `AnalisadorDocumentoPort`, parecer em campo
+  separado do status. A IA nunca aprova; o cliente sempre pode enviar assim mesmo.
+- **ADR-0006** — `EventoComunicacao` append-only unifica WhatsApp, e-mail, chat do portal,
+  reunião e evento de sistema numa timeline só, e absorve `Interacao` (removida).
+
+## Gates (verificados nesta sessão)
 
 ```
-Typecheck: ✅ zero erros
-Build:     ✅ sucesso
-Lint:      ✅ zero erros (biome)
-Testes:    ✅ 38/38 passando
+Typecheck:  ✅ zero erros
+Build:      ✅ sucesso (~690kB, aviso de bundle size não-bloqueante)
+Lint:       ✅ zero erros (biome)
+Arch check: ✅ zero violações (dependency-cruiser, 151 módulos, 444 dependências)
+Esteira:    ✅ 108 docs OK
+Testes:     ✅ 78/78 passando
 ```
 
 ## Pendências conhecidas
 
-1. **Peer review visual em browser real não realizado** — extensão Chrome (claude-in-chrome)
-   indisponível no ambiente desta sessão. Todos os checklists impeccable (`specs/*/evidence/`)
-   foram preenchidos por revisão de código, mas a validação visual humana em `pnpm dev` ainda
-   não ocorreu. **Recomendado antes de demo ao cliente.**
-2. **Conteúdo/copy não validado pela Akros** — textos, valores de honorários, prazos médios
-   são estimativas razoáveis baseadas no manual e site reais, não confirmados pelo cliente.
-3. **Bundle size** — build gera ~600kB (aviso do Vite, não-bloqueante). Considerar code-splitting
-   por rota antes de produção.
+1. **Peer review visual em browser real não realizado** — sem ferramenta de browser no ambiente
+   desta sessão. As ~15 telas novas da rodada 2 nunca passaram por olho humano. **Recomendado
+   antes de qualquer demo ao vivo.**
+2. **Conteúdo/copy não validado pela Akros** — textos, prazos e a proposta de fluxo religioso são
+   estimativas razoáveis, não confirmadas pelo cliente (ver as 8 perguntas em aberto no ROADMAP).
+3. **Dados fictícios que precisam virar reais antes de produção**: dados bancários
+   (`mocks/dados-recebimento.ts`), roteiro de qualificação (`mocks/qualificacao.ts`), limiares de
+   alerta e intervalos de cadência.
+4. **Bundle size** — build gera ~690kB (aviso do Vite, não-bloqueante). Cresceu com a rodada 2;
+   code-splitting por rota fica mais importante antes de produção.
 
 ## Próximos passos
 
-1. Rodar `pnpm dev`, abrir `/dev/ui` e as 3 frentes, revisar visualmente com a barra de demo.
-2. Validar conteúdo com a Akros (Natalia Luz) antes da apresentação.
-3. Ver "Sugestões estratégicas" em `docs/epics/ROADMAP.md` para próxima rodada (score de
-   elegibilidade, notificações, badges de gamificação, portal do recomendante, etc).
-4. Fase futura: migrar mocks → Supabase seguindo ADR-0002 (trocar adapters no container, sem
-   tocar UI/domínio).
+1. Peer review visual em browser das ~15 telas novas — prioridade máxima antes de demo ao vivo.
+2. Levar as 8 perguntas em aberto (`docs/epics/ROADMAP.md`) para Bruno/Natalia/Dra. Denise.
+3. Validar conteúdo com a Akros antes de qualquer apresentação externa.
+4. Fase futura: migrar mocks → Supabase seguindo ADR-0002, incluindo trocar
+   `MockAnalisadorDocumento` por um adapter de LLM real (ver implicações de PII na ADR-0005).
 
 ## Notas/contexto de troca
 
-- Fonte da jornada: `manual-cliente-eb2-niw-utf8-links-corrigidos-v2.html`.
+- Fonte da jornada EB-2 NIW: `manual-cliente-eb2-niw-utf8-links-corrigidos-v2.html`. Fonte do
+  programa religioso: proposta própria, sem documento-fonte — precisa de validação jurídica.
 - Identidade: `Akros identidade/` (logos). Paleta navy `#0D2240` / gold `#C6A254` / cream `#F5F4F0`.
-- Todas as specs em `specs/E0N-S0N-*/spec.md`, evidências de impeccable em `specs/E0N-S0N-*/evidence/`.
-- Correção de bug notável: hooks de documentos/pagamentos/agenda inicialmente usavam fetch
-  assíncrono via container (padrão do `site/hooks.ts`), o que não refletia mutações em tempo
-  real. Refatorados para leitura reativa direto do `useMockDb` (mesmo padrão de `jornada/hooks.ts`).
-- Extensões de porta feitas durante execução (além do previsto em E00-S04):
-  `ClienteRepository.atualizar()` (necessário para E02-S07).
+- Todas as specs em `specs/E0N-S0N-*/spec.md`. Rodada 2 não tem pasta `evidence/` (checklist
+  impeccable) — reaproveitou os componentes de design system existentes, sem tela nova de
+  primeiro princípio; recomenda-se o peer review da pendência 1 acima cobrir isso.
 - `pnpm exec biome` trava neste ambiente sandboxed (thread nativa Rust incompatível com o
-  wrapper de spawn do pnpm) — lint foi validado chamando o binário `cli-darwin-arm64/biome`
-  diretamente. Não afeta `git commit` (lefthook invoca de forma diferente e funciona normal).
+  wrapper de spawn do pnpm) — lint validado chamando o binário `cli-darwin-arm64/biome`
+  diretamente. Não afeta `git commit`/`git push` (lefthook invoca de forma diferente e funciona).
 
 ---
 *Atualizar este arquivo ao pausar a sessão. Use `/handoff` para semiautomatizar.*

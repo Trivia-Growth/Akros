@@ -7,10 +7,10 @@ describe("ações do portal (E02-S03..S07)", () => {
     useMockDb.getState().resetarDemo();
   });
 
-  it("E02-S03 AC-2: registrarEnvio muda status do documento para 'enviado'", async () => {
+  it("E02-S03/E07-S01 AC-2: registrarEnvio muda status do documento para 'em_analise' (a IA analisa antes da fila humana)", async () => {
     await container.documentos.registrarEnvio("doc-carlos-diploma", "/mock-files/x.pdf");
     const doc = await container.documentos.obter("doc-carlos-diploma");
-    expect(doc?.status).toBe("enviado");
+    expect(doc?.status).toBe("em_analise");
     expect(doc?.urlMock).toBe("/mock-files/x.pdf");
   });
 

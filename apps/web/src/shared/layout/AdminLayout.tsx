@@ -2,13 +2,19 @@ import { DemoBar } from "@/features/demo/interfaces/DemoBar";
 import { LanguageSwitcher } from "@/shared/i18n/LanguageSwitcher";
 import { cn } from "@/shared/ui/utils/cn";
 import {
+  Activity,
+  BookOpen,
   CalendarClock,
+  CheckCircle2,
+  FileSearch,
   KanbanSquare,
   LayoutDashboard,
   Menu,
   MessageCircle,
+  RotateCcw,
   ScrollText,
   Users,
+  Wallet,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -18,8 +24,14 @@ import { NavLink, Outlet } from "react-router-dom";
 const NAV_ITEMS = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/admin/leads", icon: KanbanSquare, label: "Leads (Kanban)" },
+  { to: "/admin/aprovacoes", icon: CheckCircle2, label: "Aprovações" },
   { to: "/admin/clientes", icon: Users, label: "Clientes" },
+  { to: "/admin/documentos", icon: FileSearch, label: "Revisão de documentos" },
   { to: "/admin/propostas", icon: ScrollText, label: "Propostas" },
+  { to: "/admin/pagamentos", icon: Wallet, label: "Conciliação" },
+  { to: "/admin/programas", icon: BookOpen, label: "Programas" },
+  { to: "/admin/operacao", icon: Activity, label: "Operação" },
+  { to: "/admin/reativacao", icon: RotateCcw, label: "Reativação" },
   { to: "/admin/comunicacao", icon: MessageCircle, label: "Comunicação" },
   { to: "/admin/agenda", icon: CalendarClock, label: "Agenda" },
 ];

@@ -34,8 +34,8 @@ describe("ações do admin (E03)", () => {
     const depois = useMockDb.getState().jornadas.find((j) => j.clienteId === "cliente-carlos");
     expect(depois?.fases.find((f) => f.id === "fase-2")?.status).toBe("liberada");
 
-    const historico = await container.clientes.historico("cliente-carlos");
-    expect(historico.some((i) => i.tipo === "mudanca_fase")).toBe(true);
+    const historico = await container.timeline.listarPorCliente("cliente-carlos");
+    expect(historico.some((e) => e.canal === "sistema")).toBe(true);
   });
 
   it("E03-S04: ciclo de vida da proposta (rascunho → enviada → aceita)", async () => {

@@ -18,9 +18,11 @@ export const pagamentos: Pagamento[] = [
     descricao: "Parcela 2/6 — honorários Akros",
     valor: 4000,
     moeda: "BRL",
-    status: "pendente",
+    status: "em_conferencia",
     vencimento: "2026-08-15",
     tipo: "parcela",
+    comprovanteUrl: "/mock-files/comprovante-carlos-parcela-2.pdf",
+    anexadoEm: "2026-08-05T16:00:00-03:00",
   },
   {
     id: "pag-renata-entrada",

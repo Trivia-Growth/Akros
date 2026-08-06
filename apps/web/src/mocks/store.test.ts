@@ -40,8 +40,8 @@ describe("useMockDb (E00-S04 — camada de mock + DI)", () => {
 
   it("registra interação no histórico ao liberar fase", async () => {
     await container.jornada.liberarFase("cliente-carlos", "fase-2");
-    const historico = await container.clientes.historico("cliente-carlos");
-    expect(historico.some((i) => i.tipo === "mudanca_fase")).toBe(true);
+    const historico = await container.timeline.listarPorCliente("cliente-carlos");
+    expect(historico.some((e) => e.canal === "sistema")).toBe(true);
   });
 
   it("AC-1: formulário de lead cria Lead que aparece no kanban (estágio 'lead')", async () => {

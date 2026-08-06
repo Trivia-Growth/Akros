@@ -1,14 +1,16 @@
 import { container } from "@/app/di";
 import { useClienteAtivo } from "@/features/demo/application/hooks";
 import {
+  enviarEAnalisarDocumento,
   useDocumentosCliente,
   useSolicitacoesAssinatura,
 } from "@/features/documentos/application/hooks";
 import { useJornadaAtiva } from "@/features/jornada/application/hooks";
-import { Badge, Button, Card, Input, Modal, toast } from "@/shared/ui";
-import { FileText, PenLine, Upload } from "lucide-react";
+import { Badge, Button, Card, Input, Modal, Progress, toast } from "@/shared/ui";
+import { AlertTriangle, CheckCircle2, FileText, PenLine, Upload } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { Documento } from "../domain/types";
 
 const STATUS_VARIANT = {
   pendente: "neutral",
@@ -18,6 +20,13 @@ const STATUS_VARIANT = {
   ajustes: "warning",
 } as const;
 
+const ADERENCIA_VARIANT = {
+  atende: "success",
+  atende_com_ressalva: "gold",
+  nao_atende: "danger",
+  tipo_incorreto: "danger",
+} as const;
+
 export function DocumentosPage() {
   const { t } = useTranslation("portal");
   const cliente = useClienteAtivo();
@@ -25,18 +34,26 @@ export function DocumentosPage() {
   const documentos = useDocumentosCliente(cliente?.id);
   const solicitacoes = useSolicitacoesAssinatura(documentos.map((d) => d.id));
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [analisandoId, setAnalisandoId] = useState<string | null>(null);
 
   const faseNome = (faseId?: string) => jornada?.fases.find((f) => f.id === faseId)?.titulo ?? "—";
 
-  async function handleUpload(documentoId: string) {
+  async function handleUpload(documento: Documento) {
     if (uploadingId) return;
-    setUploadingId(documentoId);
+    setUploadingId(documento.id);
+    setAnalisandoId(documento.id);
     try {
-      await container.documentos.registrarEnvio(documentoId, `/mock-files/${documentoId}.pdf`);
+      await enviarEAnalisarDocumento(documento, `/mock-files/${documento.id}.pdf`);
       toast.success(t("documents.uploaded"));
     } finally {
       setUploadingId(null);
+      setAnalisandoId(null);
     }
+  }
+
+  async function handleEnviarApesarDoAlerta(documentoId: string) {
+    await container.documentos.confirmarEnvioApesarDoAlerta(documentoId);
+    toast.success(t("documents.sentAnyway"));
   }
 
   return (
@@ -64,42 +81,130 @@ export function DocumentosPage() {
         <div className="flex flex-col gap-3">
           {documentos.map((doc) => {
             const solicitacao = solicitacoes.find((s) => s.documentoId === doc.id);
+            const analisando = analisandoId === doc.id;
             return (
-              <Card
-                key={doc.id}
-                className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-navy-50 text-navy">
-                    <FileText className="h-4 w-4" aria-hidden />
+              <Card key={doc.id} className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-navy-50 text-navy">
+                      <FileText className="h-4 w-4" aria-hidden />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-navy">{doc.nome}</p>
+                      <p className="text-xs text-ink-muted">{faseNome(doc.faseId)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-navy">{doc.nome}</p>
-                    <p className="text-xs text-ink-muted">{faseNome(doc.faseId)}</p>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={STATUS_VARIANT[doc.status]}>
+                      {t(`common:status.${statusI18nKey(doc.status)}`)}
+                    </Badge>
+                    {doc.status === "pendente" && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        loading={uploadingId === doc.id}
+                        disabled={uploadingId === doc.id}
+                        onClick={() => handleUpload(doc)}
+                      >
+                        <Upload className="h-3.5 w-3.5" aria-hidden />
+                        {uploadingId === doc.id ? t("documents.uploading") : t("documents.upload")}
+                      </Button>
+                    )}
+                    {solicitacao && <SignatureAction solicitacao={solicitacao} />}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant={STATUS_VARIANT[doc.status]}>
-                    {t(`common:status.${statusI18nKey(doc.status)}`)}
-                  </Badge>
-                  {doc.status === "pendente" && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      loading={uploadingId === doc.id}
-                      disabled={uploadingId === doc.id}
-                      onClick={() => handleUpload(doc.id)}
-                    >
-                      <Upload className="h-3.5 w-3.5" aria-hidden />
-                      {uploadingId === doc.id ? t("documents.uploading") : t("documents.upload")}
-                    </Button>
-                  )}
-                  {solicitacao && <SignatureAction solicitacao={solicitacao} />}
-                </div>
+
+                {analisando && (
+                  <div className="rounded-md bg-cream-200 px-4 py-3 text-sm text-ink-soft">
+                    <Progress value={70} label={t("documents.analyzing")} />
+                  </div>
+                )}
+
+                {!analisando && doc.analise && (
+                  <AnalisePanel
+                    analise={doc.analise}
+                    enviadoApesarDoAlerta={doc.enviadoApesarDoAlerta}
+                    onEnviarAssimMesmo={() => handleEnviarApesarDoAlerta(doc.id)}
+                  />
+                )}
               </Card>
             );
           })}
         </div>
+      )}
+    </div>
+  );
+}
+
+function AnalisePanel({
+  analise,
+  enviadoApesarDoAlerta,
+  onEnviarAssimMesmo,
+}: {
+  analise: NonNullable<Documento["analise"]>;
+  enviadoApesarDoAlerta?: boolean;
+  onEnviarAssimMesmo: () => void;
+}) {
+  const { t } = useTranslation("portal");
+  const negativo = analise.aderencia === "nao_atende" || analise.aderencia === "tipo_incorreto";
+
+  return (
+    <div className="rounded-md border border-border bg-cream-100 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {analise.aderencia === "atende" ? (
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />
+          ) : (
+            <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden />
+          )}
+          <Badge variant={ADERENCIA_VARIANT[analise.aderencia]}>
+            {t(`documents.analysis.aderencia.${analise.aderencia}`)}
+          </Badge>
+        </div>
+        <span className="text-xs text-ink-muted">
+          {t("documents.analysis.confidence", { value: Math.round(analise.confianca * 100) })}
+        </span>
+      </div>
+
+      {analise.lacunas.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-1.5">
+          {analise.lacunas.map((lacuna) => (
+            <li key={lacuna.id} className="flex items-start gap-2 text-sm text-ink-soft">
+              <span
+                className={
+                  lacuna.gravidade === "impeditiva"
+                    ? "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500"
+                    : "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"
+                }
+                aria-hidden
+              />
+              {lacuna.descricao}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {analise.sugestoes.length > 0 && analise.lacunas.length === 0 && (
+        <ul className="mt-3 flex flex-col gap-1.5">
+          {analise.sugestoes.map((sugestao) => (
+            <li key={sugestao} className="text-sm text-ink-soft">
+              {sugestao}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className="mt-3 text-xs italic text-ink-muted">{t("documents.analysis.disclaimer")}</p>
+
+      {negativo && !enviadoApesarDoAlerta && (
+        <Button size="sm" variant="secondary" className="mt-3" onClick={onEnviarAssimMesmo}>
+          {t("documents.analysis.sendAnyway")}
+        </Button>
+      )}
+      {enviadoApesarDoAlerta && (
+        <p className="mt-3 text-xs font-medium text-amber-700">
+          {t("documents.analysis.sentAnywayNotice")}
+        </p>
       )}
     </div>
   );

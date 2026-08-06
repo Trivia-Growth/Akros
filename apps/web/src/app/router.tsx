@@ -1,15 +1,22 @@
 import { AdminAgendaPage } from "@/features/agenda/interfaces/AdminAgendaPage";
 import { AgendaPage } from "@/features/agenda/interfaces/AgendaPage";
 import { ComunicacaoPage } from "@/features/comunicacao/interfaces/ComunicacaoPage";
+import { MensagensPage } from "@/features/comunicacao/interfaces/MensagensPage";
 import { AdminDashboardPage } from "@/features/crm/interfaces/AdminDashboardPage";
+import { AprovacoesPage } from "@/features/crm/interfaces/AprovacoesPage";
 import { Clientes360Page } from "@/features/crm/interfaces/Clientes360Page";
 import { KanbanPage } from "@/features/crm/interfaces/KanbanPage";
 import { PerfilPage } from "@/features/crm/interfaces/PerfilPage";
 import { PropostasPage } from "@/features/crm/interfaces/PropostasPage";
+import { ReativacaoPage } from "@/features/crm/interfaces/ReativacaoPage";
 import { DocumentosPage } from "@/features/documentos/interfaces/DocumentosPage";
+import { FilaRevisaoPage } from "@/features/documentos/interfaces/FilaRevisaoPage";
 import { DashboardPage } from "@/features/jornada/interfaces/DashboardPage";
 import { JornadaPage } from "@/features/jornada/interfaces/JornadaPage";
+import { OperacaoPage } from "@/features/jornada/interfaces/OperacaoPage";
+import { ConciliacaoPage } from "@/features/pagamentos/interfaces/ConciliacaoPage";
 import { PagamentosPage } from "@/features/pagamentos/interfaces/PagamentosPage";
+import { ProgramasPage } from "@/features/programas/interfaces/ProgramasPage";
 import { BlogPage } from "@/features/site/interfaces/BlogPage";
 import { BlogPostPage } from "@/features/site/interfaces/BlogPostPage";
 import { ContatosPage } from "@/features/site/interfaces/ContatosPage";
@@ -47,6 +54,7 @@ export const router = createBrowserRouter([
       { path: "jornada", element: <JornadaPage /> },
       { path: "documentos", element: <DocumentosPage /> },
       { path: "pagamentos", element: <PagamentosPage /> },
+      { path: "mensagens", element: <MensagensPage /> },
       { path: "agenda", element: <AgendaPage /> },
       { path: "perfil", element: <PerfilPage /> },
     ],
@@ -57,8 +65,14 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <AdminDashboardPage /> },
       { path: "leads", element: <KanbanPage /> },
+      { path: "aprovacoes", element: <AprovacoesPage /> },
       { path: "clientes", element: <Clientes360Page /> },
+      { path: "documentos", element: <FilaRevisaoPage /> },
       { path: "propostas", element: <PropostasPage /> },
+      { path: "pagamentos", element: <ConciliacaoPage /> },
+      { path: "programas", element: <ProgramasPage /> },
+      { path: "operacao", element: <OperacaoPage /> },
+      { path: "reativacao", element: <ReativacaoPage /> },
       { path: "comunicacao", element: <ComunicacaoPage /> },
       { path: "agenda", element: <AdminAgendaPage /> },
     ],

@@ -17,7 +17,13 @@
     "nextMeeting": "Next meeting",
     "noMeeting": "No meeting scheduled",
     "viewJourney": "View full journey",
-    "alertPhaseUnlocked": "Phase unlocked by your case manager!"
+    "alertPhaseUnlocked": "Phase unlocked by your case manager!",
+    "ballWith": "Who's turn it is",
+    "forecastTitle": "Completion forecast",
+    "forecastRange": "{{min}}–{{max}} months",
+    "forecastPace": "Calculated from your pace (factor {{factor}}x).",
+    "forecastDefaultPace": "Based on the standard average timeline — not enough data on your pace yet.",
+    "forecastNote": "Estimate only — not a commitment from Akros nor an official USCIS timeline."
   },
   "journey": {
     "title": "My Journey",
@@ -30,7 +36,13 @@
     "deadline": "Average time: {{days}} business days",
     "requiredDocs": "Required documents",
     "phaseCompleted": "Phase completed! Waiting for your case manager to unlock the next step.",
-    "selectPhase": "Select a phase above to see the details"
+    "selectPhase": "Select a phase above to see the details",
+    "responsible": {
+      "cliente": "With you",
+      "akros": "With Akros",
+      "terceiro": "With a third party",
+      "uscis": "With USCIS"
+    }
   },
   "documents": {
     "title": "Documents",
@@ -50,17 +62,59 @@
     "signNamePlaceholder": "Your full name",
     "signConfirm": "Confirm signature",
     "signed": "Signed by {{nome}} on {{data}}",
-    "noDocuments": "No documents in this phase yet."
+    "noDocuments": "No documents in this phase yet.",
+    "analyzing": "Analyzing the document...",
+    "sentAnyway": "Document sent for review.",
+    "analysis": {
+      "aderencia": {
+        "atende": "Meets requirement",
+        "atende_com_ressalva": "Meets with caveat",
+        "nao_atende": "Does not meet requirement",
+        "tipo_incorreto": "Wrong document type"
+      },
+      "confidence": "confidence {{value}}%",
+      "disclaimer": "Automated analysis — does not replace the Akros team's review.",
+      "sendAnyway": "Send for review anyway",
+      "sentAnywayNotice": "Sent for review despite the automated analysis alert."
+    }
   },
   "payments": {
     "title": "Payments",
     "subtitle": "Track the status of your payments.",
+    "transferNote": "Payment by bank transfer — no card, no automatic charge.",
     "totalPaid": "Total paid",
     "totalPending": "Total pending",
     "nextDue": "Next due date",
     "payNow": "Pay now (mock)",
     "paid": "Paid on {{data}}",
-    "noPayments": "No payments recorded."
+    "noPayments": "No payments recorded.",
+    "viewTransferData": "View transfer details",
+    "transferDataTitle": "Transfer details",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "paymentId": "Payment ID",
+    "attachReceipt": "Attach receipt",
+    "receiptAttached": "Receipt attached! Our team will review and confirm.",
+    "divergenceNotice": "Received value differs from expected — expected {{expected}}, received {{received}}.",
+    "fields": {
+      "holder": "Account holder",
+      "bank": "Bank",
+      "agency": "Branch",
+      "account": "Account",
+      "pixKey": "Pix key",
+      "routingNumber": "Routing number",
+      "accountNumber": "Account number",
+      "swift": "SWIFT"
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "subtitle": "Talk to the Akros team through a registrable channel of your case.",
+    "notDeletableNotice": "Messages here can't be deleted — they're part of your case record.",
+    "caseManager": "Your case manager",
+    "empty": "No messages yet.",
+    "placeholder": "Write your message...",
+    "send": "Send"
   },
   "agenda": {
     "title": "Agenda",

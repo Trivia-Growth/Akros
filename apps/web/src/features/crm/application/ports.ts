@@ -1,12 +1,11 @@
-import type { Cliente, Interacao, Proposta } from "../domain/types";
+import type { Cliente, Proposta } from "../domain/types";
 
 export interface ClienteRepository {
   listar(): Promise<Cliente[]>;
   obter(id: string): Promise<Cliente | null>;
-  criarAPartirDeLead(leadId: string): Promise<Cliente>;
+  /** E06-S03: programaCodigo omitido usa "eb2-niw" (default histórico do protótipo). */
+  criarAPartirDeLead(leadId: string, programaCodigo?: string): Promise<Cliente>;
   atualizar(id: string, patch: Partial<Cliente>): Promise<void>;
-  historico(clienteId: string): Promise<Interacao[]>;
-  registrarInteracao(interacao: Omit<Interacao, "id">): Promise<void>;
 }
 
 export interface PropostaRepository {

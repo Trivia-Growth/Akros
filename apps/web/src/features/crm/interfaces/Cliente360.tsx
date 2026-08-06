@@ -1,6 +1,7 @@
 import { container } from "@/app/di";
 import { useReunioesCliente } from "@/features/agenda/application/hooks";
-import { useConversaCliente } from "@/features/comunicacao/application/hooks";
+import { useConversaCliente, useTimeline } from "@/features/comunicacao/application/hooks";
+import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
 import { useDocumentosCliente } from "@/features/documentos/application/hooks";
 import { usePagamentosCliente } from "@/features/pagamentos/application/hooks";
 import { useMockDb } from "@/mocks/store";
@@ -21,6 +22,7 @@ import {
 import { MessageCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 const SAUDE_VARIANT = {
   em_dia: "success",
@@ -38,7 +40,9 @@ const DOC_STATUS_VARIANT = {
 
 const PAG_STATUS_VARIANT = {
   pendente: "gold",
+  em_conferencia: "navy",
   pago: "success",
+  divergente: "danger",
   atrasado: "danger",
 } as const;
 
@@ -51,14 +55,8 @@ export function Cliente360({ clienteId, onBack }: Props) {
   const { t } = useTranslation("admin");
   const cliente = useMockDb((s) => s.clientes.find((c) => c.id === clienteId));
   const jornada = useMockDb((s) => s.jornadas.find((j) => j.clienteId === clienteId));
-  const todasInteracoes = useMockDb((s) => s.interacoes);
-  const interacoes = useMemo(
-    () =>
-      todasInteracoes
-        .filter((i) => i.clienteId === clienteId)
-        .sort((a, b) => b.ocorridoEm.localeCompare(a.ocorridoEm)),
-    [todasInteracoes, clienteId],
-  );
+  const timeline = useTimeline(clienteId);
+  const timelineDesc = useMemo(() => [...timeline].reverse(), [timeline]);
   const documentos = useDocumentosCliente(clienteId);
   const pagamentos = usePagamentosCliente(clienteId);
   const reunioes = useReunioesCliente(clienteId);
@@ -90,6 +88,11 @@ export function Cliente360({ clienteId, onBack }: Props) {
             {cliente.tipoVisto} · {cliente.caseManager}
           </p>
         </div>
+        {cliente.programaId && (
+          <Badge variant="neutral">
+            {cliente.programaId} · v{cliente.programaVersao}
+          </Badge>
+        )}
         <Badge variant={SAUDE_VARIANT[cliente.saude]} className="ml-auto">
           {t(`clientes.health_${cliente.saude}`)}
         </Badge>
@@ -134,10 +137,22 @@ export function Cliente360({ clienteId, onBack }: Props) {
             <p className="text-sm text-ink-muted">—</p>
           ) : (
             <div className="flex flex-col gap-2">
+              {documentos.some((d) => d.status === "em_analise") && (
+                <Link to="/admin/documentos" className="text-xs text-gold-700 hover:underline">
+                  {t("clientes.goToReviewQueue")}
+                </Link>
+              )}
               {documentos.map((d) => (
                 <Card key={d.id} className="flex items-center justify-between">
                   <p className="text-sm text-navy">{d.nome}</p>
-                  <Badge variant={DOC_STATUS_VARIANT[d.status]}>{d.status}</Badge>
+                  <div className="flex items-center gap-2">
+                    {d.analise && (
+                      <Badge variant={d.analise.aderencia === "atende" ? "success" : "warning"}>
+                        {d.analise.aderencia}
+                      </Badge>
+                    )}
+                    <Badge variant={DOC_STATUS_VARIANT[d.status]}>{d.status}</Badge>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -212,23 +227,7 @@ export function Cliente360({ clienteId, onBack }: Props) {
         </TabsContent>
 
         <TabsContent value="history">
-          {interacoes.length === 0 ? (
-            <p className="text-sm text-ink-muted">{t("clientes.noHistory")}</p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {interacoes.map((i) => (
-                <li
-                  key={i.id}
-                  className="rounded-md border border-border bg-white px-4 py-3 text-sm"
-                >
-                  <p className="text-ink-soft">{i.descricao}</p>
-                  <p className="mt-1 text-xs text-ink-muted">
-                    {new Date(i.ocorridoEm).toLocaleString("pt-BR")}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
+          <Timeline eventos={timelineDesc} emptyLabel={t("clientes.noHistory")} />
         </TabsContent>
       </Tabs>
     </div>

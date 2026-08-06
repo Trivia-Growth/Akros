@@ -1,6 +1,7 @@
 import type { Cliente } from "@/features/crm/domain/types";
+import { instanciarJornada } from "@/features/jornada/application/instanciar-jornada";
 import type { Fase, Jornada } from "@/features/jornada/domain/types";
-import { criarFasesTemplate } from "./jornada-template";
+import { programaEb2Niw, programaReligiosoREb4 } from "./programas";
 
 export interface Persona {
   cliente: Cliente;
@@ -28,6 +29,7 @@ function aplicarCorte(fases: Fase[], indiceAtual: number, etapasConcluidas = 0):
         etapas: fase.etapas.map((e, i) => ({
           ...e,
           status: i < etapasConcluidas ? "concluida" : "pendente",
+          desdeEm: i < etapasConcluidas ? undefined : "2026-07-01T09:00:00-03:00",
         })),
       };
     }
@@ -43,8 +45,38 @@ function fasesCompletas(fases: Fase[]): Fase[] {
   }));
 }
 
+/** E09-S02 — datas reais de conclusão para demonstrar o fator de ritmo (Renata está "atencao"). */
+function comHistoricoDeRitmo(fases: Fase[]): Fase[] {
+  const datas: Record<string, { iniciadaEm: string; concluidaRealEm: string }> = {
+    "intro-1": {
+      iniciadaEm: "2026-04-15T09:00:00-03:00",
+      concluidaRealEm: "2026-04-16T09:00:00-03:00",
+    },
+    "intro-2": {
+      iniciadaEm: "2026-04-16T09:00:00-03:00",
+      concluidaRealEm: "2026-04-18T09:00:00-03:00",
+    },
+    "f1-1": {
+      iniciadaEm: "2026-04-18T09:00:00-03:00",
+      concluidaRealEm: "2026-04-20T09:00:00-03:00",
+    },
+    "f1-3": {
+      iniciadaEm: "2026-04-20T09:00:00-03:00",
+      concluidaRealEm: "2026-05-25T09:00:00-03:00",
+    },
+  };
+  return fases.map((fase) => ({
+    ...fase,
+    etapas: fase.etapas.map((e) => (datas[e.id] ? { ...e, ...datas[e.id] } : e)),
+  }));
+}
+
 // --- Persona 1: Carlos Mendes — recém-contratado, Fase 1 em andamento ---
-const fasesCarlos = aplicarCorte(criarFasesTemplate(), 1, 1);
+const fasesCarlos = aplicarCorte(
+  instanciarJornada(programaEb2Niw, "cliente-carlos", "jornada-carlos").fases,
+  1,
+  1,
+);
 export const personaCarlos: Persona = {
   cliente: {
     id: "cliente-carlos",
@@ -56,17 +88,23 @@ export const personaCarlos: Persona = {
     caseManager: "Natalia Luz",
     criadoEm: "2026-06-02T10:00:00-03:00",
     saude: "em_dia",
+    programaId: "eb2-niw",
+    programaVersao: "1.0",
   },
   jornada: {
     id: "jornada-carlos",
     clienteId: "cliente-carlos",
     faseAtualId: "fase-1",
     fases: fasesCarlos,
+    programaId: "eb2-niw",
+    programaVersao: "1.0",
   },
 };
 
-// --- Persona 2: Renata Alves — meio do processo, Fase 2 em andamento ---
-const fasesRenata = aplicarCorte(criarFasesTemplate(), 2, 2);
+// --- Persona 2: Renata Alves — meio do processo, Fase 2 em andamento, ritmo lento ---
+const fasesRenata = comHistoricoDeRitmo(
+  aplicarCorte(instanciarJornada(programaEb2Niw, "cliente-renata", "jornada-renata").fases, 2, 2),
+);
 export const personaRenata: Persona = {
   cliente: {
     id: "cliente-renata",
@@ -78,17 +116,25 @@ export const personaRenata: Persona = {
     caseManager: "Natalia Luz",
     criadoEm: "2026-04-15T14:30:00-03:00",
     saude: "atencao",
+    programaId: "eb2-niw",
+    programaVersao: "1.0",
   },
   jornada: {
     id: "jornada-renata",
     clienteId: "cliente-renata",
     faseAtualId: "fase-2",
     fases: fasesRenata,
+    programaId: "eb2-niw",
+    programaVersao: "1.0",
   },
 };
 
 // --- Persona 3: Bruno Castro — aguardando USCIS, Fase 5 em andamento (pós-envio) ---
-const fasesBruno = aplicarCorte(criarFasesTemplate(), 5, 1);
+const fasesBruno = aplicarCorte(
+  instanciarJornada(programaEb2Niw, "cliente-bruno", "jornada-bruno").fases,
+  5,
+  1,
+);
 export const personaBruno: Persona = {
   cliente: {
     id: "cliente-bruno",
@@ -100,12 +146,16 @@ export const personaBruno: Persona = {
     caseManager: "Natalia Luz",
     criadoEm: "2025-11-20T09:15:00-03:00",
     saude: "em_dia",
+    programaId: "eb2-niw",
+    programaVersao: "1.0",
   },
   jornada: {
     id: "jornada-bruno",
     clienteId: "cliente-bruno",
     faseAtualId: "fase-5",
     fases: fasesBruno,
+    programaId: "eb2-niw",
+    programaVersao: "1.0",
   },
 };
 
@@ -121,13 +171,55 @@ export const personaFernanda: Persona = {
     caseManager: "Natalia Luz",
     criadoEm: "2025-05-10T11:00:00-03:00",
     saude: "em_dia",
+    programaId: "eb2-niw",
+    programaVersao: "1.0",
   },
   jornada: {
     id: "jornada-fernanda",
     clienteId: "cliente-fernanda",
     faseAtualId: "fase-5",
-    fases: fasesCompletas(criarFasesTemplate()),
+    fases: fasesCompletas(
+      instanciarJornada(programaEb2Niw, "cliente-fernanda", "jornada-fernanda").fases,
+    ),
+    programaId: "eb2-niw",
+    programaVersao: "1.0",
   },
 };
 
-export const personas: Persona[] = [personaCarlos, personaRenata, personaBruno, personaFernanda];
+// --- Persona 5: Igreja Vida Nova — programa religioso R/EB-4 (E06-S02), Fase 1 em andamento ---
+const fasesIgreja = aplicarCorte(
+  instanciarJornada(programaReligiosoREb4, "cliente-igreja", "jornada-igreja").fases,
+  1,
+  0,
+);
+export const personaIgreja: Persona = {
+  cliente: {
+    id: "cliente-igreja",
+    leadOrigemId: "lead-fechado-igreja",
+    nome: "Igreja Vida Nova (Pr. Ezequiel Moraes)",
+    email: "contato@igrejavidanova.example.com",
+    telefone: "+55 19 94444-5005",
+    tipoVisto: "Visto Religioso (R/EB-4)",
+    caseManager: "Natalia Luz",
+    criadoEm: "2026-07-10T09:00:00-03:00",
+    saude: "em_dia",
+    programaId: "religioso-r-eb4",
+    programaVersao: "1.0",
+  },
+  jornada: {
+    id: "jornada-igreja",
+    clienteId: "cliente-igreja",
+    faseAtualId: "rel-fase-1",
+    fases: fasesIgreja,
+    programaId: "religioso-r-eb4",
+    programaVersao: "1.0",
+  },
+};
+
+export const personas: Persona[] = [
+  personaCarlos,
+  personaRenata,
+  personaBruno,
+  personaFernanda,
+  personaIgreja,
+];

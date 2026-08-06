@@ -10,17 +10,13 @@ export interface Cliente {
   caseManager: string;
   criadoEm: string;
   saude: SaudeCaso;
+  /** E06-S03: programa que originou a jornada deste cliente. Versão congelada — ADR-0004. */
+  programaId?: string;
+  programaVersao?: string;
 }
 
-export type TipoInteracao = "email" | "whatsapp" | "reuniao" | "mudanca_fase" | "nota";
-
-export interface Interacao {
-  id: string;
-  clienteId: string;
-  tipo: TipoInteracao;
-  descricao: string;
-  ocorridoEm: string;
-}
+// SPEC_DEVIATION (E08-S01): `Interacao`/`TipoInteracao` foram removidos — absorvidos por
+// `EventoComunicacao` (features/comunicacao/domain/types.ts), ver ADR-0006.
 
 export type PropostaStatus = "rascunho" | "enviada" | "aceita" | "recusada";
 

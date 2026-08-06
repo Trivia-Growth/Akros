@@ -1,0 +1,310 @@
+import type { Programa } from "@/features/programas/domain/types";
+
+/**
+ * Programa EB-2 NIW (E06-S01). Conteúdo migrado de jornada-template.ts (criarFasesTemplate),
+ * que foi extraído de manual-cliente-eb2-niw-utf8-links-corrigidos-v2.html + docs/PROJECT.md.
+ * SPEC_DEVIATION: título/descrição ficam em PT-BR literal — ver nota em
+ * features/programas/domain/types.ts.
+ */
+export const programaEb2Niw: Programa = {
+  id: "programa-eb2-niw",
+  codigo: "eb2-niw",
+  nome: "EB-2 NIW",
+  categoria: "imigrante",
+  sujeito: "individuo",
+  versao: "1.0",
+  ativo: true,
+  fasesTemplate: [
+    {
+      id: "fase-0",
+      ordem: 0,
+      titulo: "Introdução",
+      descricao: "Boas-vindas, canais de comunicação e regras de envio de documentos.",
+      etapas: [
+        {
+          id: "intro-1",
+          titulo: "Ler o manual do cliente",
+          descricao:
+            "Conheça os canais de comunicação, regras de envio de documentos e traduções certificadas.",
+          responsavel: "cliente",
+        },
+        {
+          id: "intro-2",
+          titulo: "Confirmar leitura",
+          descricao: "Confirme que leu e entendeu as regras antes de avançar para a Fase 1.",
+          responsavel: "cliente",
+        },
+      ],
+    },
+    {
+      id: "fase-1",
+      ordem: 1,
+      titulo: "Documentação e Currículo",
+      descricao: "Contrato, kick-off, currículo especializado e documentos comprobatórios.",
+      etapas: [
+        {
+          id: "f1-1",
+          titulo: "Formalização do contrato e pagamento inicial",
+          descricao:
+            "Assinatura eletrônica do contrato de prestação de serviços e pagamento da entrada.",
+          responsavel: "cliente",
+          documentosRequeridos: ["req-eb2-contrato"],
+        },
+        {
+          id: "f1-2",
+          titulo: "Reunião de início do processo (Kick-off)",
+          descricao: "Reunião inicial para tratar dos documentos da Fase 1.",
+          responsavel: "akros",
+        },
+        {
+          id: "f1-3",
+          titulo: "Elaboração do currículo especializado",
+          descricao:
+            "Currículo estruturado para evidenciar contribuições profissionais e qualificações excepcionais.",
+          prazoMedioDiasUteis: 10,
+          responsavel: "akros",
+          documentosRequeridos: ["req-eb2-curriculo"],
+        },
+        {
+          id: "f1-4",
+          titulo: "Organização dos documentos comprobatórios",
+          descricao:
+            "Formação acadêmica, certificados, licenças profissionais, associações e reconhecimentos.",
+          responsavel: "cliente",
+          documentosRequeridos: ["req-eb2-formacao"],
+        },
+      ],
+    },
+    {
+      id: "fase-2",
+      ordem: 2,
+      titulo: "Business Plan e Cartas",
+      descricao:
+        "Checkpoint I, Business Plan, cartas de recomendação e experiência, avaliação educacional.",
+      etapas: [
+        {
+          id: "f2-1",
+          titulo: "Reunião de alinhamento (Checkpoint I)",
+          descricao: "Apresentação dos próximos documentos da Fase 2.",
+          responsavel: "akros",
+        },
+        {
+          id: "f2-2",
+          titulo: "Plano de negócios (Business Plan)",
+          descricao: "Plano detalhado do projeto nos EUA, em parceria com a Scopimos.",
+          responsavel: "akros",
+          responsavelDetalhe: "Parceria Scopimos",
+          documentosRequeridos: ["req-eb2-business-plan"],
+        },
+        {
+          id: "f2-3",
+          titulo: "Cartas de recomendação",
+          descricao: "5 recomendantes atestam qualificação e resultados. Assinaturas manuscritas.",
+          prazoMedioDiasUteis: 15,
+          responsavel: "terceiro",
+          responsavelDetalhe: "Recomendantes indicados por você",
+          documentosRequeridos: ["req-eb2-carta-recomendacao"],
+        },
+        {
+          id: "f2-4",
+          titulo: "Cartas de comprovação de experiência profissional",
+          descricao: "Comprovam tempo de atuação e responsabilidades em cada empresa.",
+          prazoMedioDiasUteis: 10,
+          responsavel: "terceiro",
+          responsavelDetalhe: "Empresas empregadoras",
+          documentosRequeridos: ["req-eb2-carta-experiencia"],
+        },
+        {
+          id: "f2-5",
+          titulo: "Avaliação educacional (Educational Evaluation)",
+          descricao: "Equivalência da formação acadêmica ao sistema dos EUA.",
+          prazoMedioDiasUteis: 15,
+          responsavel: "terceiro",
+          responsavelDetalhe: "Avaliador educacional credenciado",
+          documentosRequeridos: ["req-eb2-avaliacao-educacional"],
+        },
+      ],
+    },
+    {
+      id: "fase-3",
+      ordem: 3,
+      titulo: "Viabilidade Econômica e Formulários",
+      descricao: "Checkpoint II, comprovação de viabilidade, questionários e taxa federal USCIS.",
+      etapas: [
+        {
+          id: "f3-1",
+          titulo: "Reunião de alinhamento (Checkpoint II)",
+          descricao: "Apresentação dos documentos da Fase 3.",
+          responsavel: "akros",
+        },
+        {
+          id: "f3-2",
+          titulo: "Comprovação de viabilidade econômica",
+          descricao:
+            "Recursos próprios, patrimônio, investidores e comprometimento com abertura da empresa.",
+          responsavel: "cliente",
+        },
+        {
+          id: "f3-3",
+          titulo: "Questionários e pagamento da taxa federal",
+          descricao: "Formulários I-140 e ETA. Taxa USCIS: US$ 1.015.",
+          responsavel: "cliente",
+          documentosRequeridos: ["req-eb2-questionario"],
+        },
+      ],
+    },
+    {
+      id: "fase-4",
+      ordem: 4,
+      titulo: "Finalização e Envio à USCIS",
+      descricao: "Carta de suporte (Petition Letter), revisão final e envio rastreado.",
+      etapas: [
+        {
+          id: "f4-1",
+          titulo: "Elaboração da carta de suporte",
+          descricao: "Petition Letter consolida a trajetória e fundamenta o interesse nacional.",
+          responsavel: "akros",
+          documentosRequeridos: ["req-eb2-peticao"],
+        },
+        {
+          id: "f4-2",
+          titulo: "Revisão final pelo cliente e envio à USCIS",
+          descricao: "Aprovação formal do cliente e envio por correio com rastreamento.",
+          responsavel: "akros",
+          responsavelDetalhe: "Envio; aprovação prévia é do cliente",
+          documentosRequeridos: ["req-eb2-comprovante"],
+        },
+      ],
+    },
+    {
+      id: "fase-5",
+      ordem: 5,
+      titulo: "Pós-aprovação e Relocation",
+      descricao:
+        "Acompanhamento da decisão USCIS, consular processing/ajuste de status e mudança para os EUA.",
+      etapas: [
+        {
+          id: "f5-1",
+          titulo: "Acompanhamento da decisão USCIS",
+          descricao: "Monitoramento de RFE (pedido de evidência adicional) ou aprovação.",
+          responsavel: "uscis",
+          documentosRequeridos: ["req-eb2-aprovacao"],
+        },
+        {
+          id: "f5-2",
+          titulo: "Consular processing / ajuste de status",
+          descricao: "Definição do caminho conforme o cliente esteja no Brasil ou nos EUA.",
+          responsavel: "cliente",
+        },
+        {
+          id: "f5-3",
+          titulo: "Preparação para relocation",
+          descricao: "Suporte para a mudança e instalação nos Estados Unidos.",
+          responsavel: "cliente",
+        },
+      ],
+    },
+  ],
+  documentosExigidos: [
+    {
+      id: "req-eb2-contrato",
+      faseTemplateId: "fase-1",
+      tipo: "contrato",
+      titulo: "Contrato de prestação de serviços",
+      objetivo: "Formalizar a assessoria.",
+      obrigatorio: true,
+      emitidoPor: "cliente",
+    },
+    {
+      id: "req-eb2-curriculo",
+      faseTemplateId: "fase-1",
+      tipo: "curriculo",
+      titulo: "Currículo especializado",
+      objetivo: "Evidenciar contribuições e qualificações excepcionais.",
+      obrigatorio: true,
+      emitidoPor: "cliente",
+    },
+    {
+      id: "req-eb2-formacao",
+      faseTemplateId: "fase-1",
+      tipo: "formacao_academica",
+      titulo: "Diploma + histórico escolar",
+      objetivo: "Comprovar formação acadêmica.",
+      obrigatorio: true,
+      emitidoPor: "instituicao",
+    },
+    {
+      id: "req-eb2-business-plan",
+      faseTemplateId: "fase-2",
+      tipo: "business_plan",
+      titulo: "Business Plan",
+      objetivo: "Detalhar o projeto nos EUA.",
+      obrigatorio: true,
+      emitidoPor: "terceiro_certificado",
+    },
+    {
+      id: "req-eb2-carta-recomendacao",
+      faseTemplateId: "fase-2",
+      tipo: "carta_recomendacao",
+      titulo: "Carta de recomendação",
+      objetivo: "Terceiro atesta a qualidade do seu trabalho — não comprova tempo de vínculo.",
+      obrigatorio: true,
+      emitidoPor: "terceiro_certificado",
+    },
+    {
+      id: "req-eb2-carta-experiencia",
+      faseTemplateId: "fase-2",
+      tipo: "carta_experiencia",
+      titulo: "Carta de experiência profissional",
+      objetivo:
+        "Comprovar tempo de vínculo, cargo e responsabilidades — emitida pela empresa, não por um colega.",
+      obrigatorio: true,
+      emitidoPor: "empregador",
+    },
+    {
+      id: "req-eb2-avaliacao-educacional",
+      faseTemplateId: "fase-2",
+      tipo: "avaliacao_educacional",
+      titulo: "Avaliação educacional",
+      objetivo: "Equivalência do diploma ao sistema dos EUA.",
+      obrigatorio: true,
+      emitidoPor: "terceiro_certificado",
+    },
+    {
+      id: "req-eb2-questionario",
+      faseTemplateId: "fase-3",
+      tipo: "questionario_uscis",
+      titulo: "Questionários USCIS + comprovante da taxa federal",
+      objetivo: "Formulários I-140/ETA e pagamento da taxa.",
+      obrigatorio: true,
+      emitidoPor: "cliente",
+    },
+    {
+      id: "req-eb2-peticao",
+      faseTemplateId: "fase-4",
+      tipo: "peticao",
+      titulo: "Petição EB-2 NIW completa",
+      objetivo: "Consolidar toda a documentação para envio.",
+      obrigatorio: true,
+      emitidoPor: "terceiro_certificado",
+    },
+    {
+      id: "req-eb2-comprovante",
+      faseTemplateId: "fase-4",
+      tipo: "comprovante",
+      titulo: "Comprovante de envio USCIS",
+      objetivo: "Rastreamento do envio.",
+      obrigatorio: true,
+      emitidoPor: "terceiro_certificado",
+    },
+    {
+      id: "req-eb2-aprovacao",
+      faseTemplateId: "fase-5",
+      tipo: "aprovacao_uscis",
+      titulo: "Notice of Approval (I-140)",
+      objetivo: "Registrar a decisão da USCIS.",
+      obrigatorio: false,
+      emitidoPor: "terceiro_certificado",
+    },
+  ],
+};
