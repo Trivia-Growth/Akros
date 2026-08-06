@@ -1,3 +1,58 @@
 {
-  "_scaffold": "Namespace do site institucional — conteúdo completo adicionado em E01-S01..S07."
+  "home": {
+    "hero": {
+      "eyebrow": "Akros Immigration Solutions",
+      "title": "Elevando Talentos ao Topo Global",
+      "subtitle": "Facilitamos seu sonho de viver nos EUA com soluções de imigração personalizadas.",
+      "ctaPrimary": "Agendar consulta",
+      "ctaSecondary": "Conhecer os vistos"
+    },
+    "stats": {
+      "families": "famílias atendidas",
+      "experience": "anos de experiência",
+      "satisfaction": "satisfação dos clientes"
+    },
+    "categories": {
+      "title": "Como podemos ajudar você",
+      "subtitle": "Atendemos diferentes perfis profissionais rumo à imigração legal para os EUA.",
+      "qualified": {
+        "title": "Profissionais Qualificados",
+        "description": "Bacharéis com experiência de mercado elegíveis à residência permanente (Green Card)."
+      },
+      "athletes": {
+        "title": "Atletas & Artistas",
+        "description": "Profissionais do esporte e das artes podem obter vistos de trabalho ou Green Card."
+      },
+      "religious": {
+        "title": "Trabalhadores Religiosos",
+        "description": "Convidados para atuar em igrejas nos EUA em funções pastorais ou técnicas."
+      },
+      "legalization": {
+        "title": "Legalização",
+        "description": "Suporte para quem já está nos EUA buscando mudança de status ou Green Card."
+      }
+    },
+    "niw": {
+      "eyebrow": "Nosso carro-chefe",
+      "title": "EB-2 National Interest Waiver",
+      "description": "Green Card baseado em emprego para profissionais com habilidades excepcionais — sem necessidade de oferta de emprego, quando demonstrado benefício ao interesse nacional dos Estados Unidos.",
+      "cta": "Ver requisitos do EB-2 NIW"
+    },
+    "about": {
+      "eyebrow": "Quem cuida do seu processo",
+      "name": "Natalia Luz",
+      "role": "CEO & Fundadora",
+      "bio": "Advogada formada pela PUC/SP (2010), com mais de 14 anos de experiência em direito civil e propriedade intelectual. Natalia recebeu seu próprio Green Card em 2020 por habilidade excepcional — e hoje dedica sua carreira a abrir esse mesmo caminho para outros profissionais brasileiros.",
+      "cta": "Conhecer nossa história"
+    },
+    "testimonials": {
+      "title": "Quem já trilhou esse caminho com a gente",
+      "subtitle": "Histórias reais de clientes que conquistaram o Green Card."
+    },
+    "cta": {
+      "title": "Pronto para dar o primeiro passo?",
+      "subtitle": "Fale com nossa equipe e descubra o melhor caminho para o seu perfil.",
+      "button": "Falar com um especialista"
+    }
+  }
 }

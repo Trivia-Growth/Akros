@@ -1,3 +1,58 @@
 {
-  "_scaffold": "Institutional site namespace — full content added in E01-S01..S07."
+  "home": {
+    "hero": {
+      "eyebrow": "Akros Immigration Solutions",
+      "title": "Elevating Talent to Global Top",
+      "subtitle": "We make your dream of living in the US come true with personalized immigration solutions.",
+      "ctaPrimary": "Schedule a consultation",
+      "ctaSecondary": "Explore visa options"
+    },
+    "stats": {
+      "families": "families served",
+      "experience": "years of experience",
+      "satisfaction": "client satisfaction"
+    },
+    "categories": {
+      "title": "How we can help you",
+      "subtitle": "We support different professional profiles on the path to legal immigration to the US.",
+      "qualified": {
+        "title": "Qualified Professionals",
+        "description": "Bachelor's degree holders with market experience eligible for permanent residency (Green Card)."
+      },
+      "athletes": {
+        "title": "Athletes & Artists",
+        "description": "Sports and artistic professionals can obtain work visas or a Green Card."
+      },
+      "religious": {
+        "title": "Religious Workers",
+        "description": "Invited to work at US churches in pastoral or technical roles."
+      },
+      "legalization": {
+        "title": "Legalization",
+        "description": "Support for those already in the US seeking a status change or Green Card."
+      }
+    },
+    "niw": {
+      "eyebrow": "Our flagship service",
+      "title": "EB-2 National Interest Waiver",
+      "description": "Employment-based Green Card for professionals with exceptional ability — no job offer required, when benefit to the US national interest is demonstrated.",
+      "cta": "See EB-2 NIW requirements"
+    },
+    "about": {
+      "eyebrow": "Who's behind your case",
+      "name": "Natalia Luz",
+      "role": "CEO & Founder",
+      "bio": "Attorney graduated from PUC/SP (2010), with over 14 years of experience in civil law and intellectual property. Natalia received her own Green Card in 2020 based on exceptional ability — and now dedicates her career to opening that same path for other Brazilian professionals.",
+      "cta": "Learn our story"
+    },
+    "testimonials": {
+      "title": "Those who walked this path with us",
+      "subtitle": "Real stories from clients who earned their Green Card."
+    },
+    "cta": {
+      "title": "Ready to take the first step?",
+      "subtitle": "Talk to our team and discover the best path for your profile.",
+      "button": "Talk to a specialist"
+    }
+  }
 }
