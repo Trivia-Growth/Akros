@@ -47,10 +47,48 @@ export interface Conversa {
 }
 
 export interface RegraAtendimentoIA {
+  id: string;
   ativo: boolean;
   nomeAgente: string;
+  funcao: string;
+  canais: CanalComunicacao[];
+  alma: string;
   saudacao: string;
   janelasAtendimento: { inicio: string; fim: string }[];
   topicos: { pergunta: string; resposta: string }[];
   mensagemHandoff: string;
+  baseConhecimento: FonteConhecimento[];
+  skills: SkillAgente[];
+  mcps: ConectorMCP[];
+  memoria: ConfiguracaoMemoria;
+}
+
+export interface FonteConhecimento {
+  id: string;
+  nome: string;
+  tipo: "documento" | "url" | "faq" | "base_interna";
+  status: "pronta" | "indexando";
+  itens: number;
+}
+
+export interface SkillAgente {
+  id: string;
+  nome: string;
+  descricao: string;
+  ativa: boolean;
+}
+
+export interface ConectorMCP {
+  id: string;
+  nome: string;
+  descricao: string;
+  ativo: boolean;
+  permissao: "leitura" | "leitura_escrita";
+}
+
+export interface ConfiguracaoMemoria {
+  ativa: boolean;
+  escopo: "por_cliente" | "por_conversa";
+  retencao: string;
+  campos: string[];
 }

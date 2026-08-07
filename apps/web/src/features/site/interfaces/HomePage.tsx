@@ -1,7 +1,7 @@
 import { useDepoimentos } from "@/features/site/application/hooks";
 import type { Depoimento } from "@/features/site/domain/types";
 import { Button, Card, Reveal } from "@/shared/ui";
-import { ArrowUpRight, Award, Check, Quote, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Check, Quote, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -39,17 +39,31 @@ function Hero() {
 
   return (
     <section className="relative isolate overflow-hidden bg-navy-950">
-      <div aria-hidden className="absolute inset-0" style={DOT_GRID} />
+      <img
+        src="/akros-hero-family-arrival.png"
+        alt=""
+        aria-hidden
+        width={1536}
+        height={1024}
+        fetchPriority="high"
+        className="absolute inset-0 h-full w-full object-cover object-[65%_center]"
+      />
+      <div aria-hidden className="absolute inset-0 bg-navy-950/30" />
       <div
         aria-hidden
-        className="absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-gold/10 blur-3xl"
+        className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/90 to-navy-950/25"
       />
       <div
         aria-hidden
-        className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-navy-950"
+        className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-navy-950 via-navy-950/45 to-transparent"
+      />
+      <div aria-hidden className="absolute inset-0 opacity-40" style={DOT_GRID} />
+      <div
+        aria-hidden
+        className="absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-gold/10 blur-3xl"
       />
 
-      <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-x-14 gap-y-16 px-6 pb-28 pt-20 lg:grid-cols-12 lg:pb-36 lg:pt-28">
+      <div className="relative mx-auto grid min-h-[42rem] max-w-6xl grid-cols-1 items-center gap-x-14 gap-y-12 px-6 py-24 sm:py-28 lg:min-h-[44rem] lg:grid-cols-12 lg:py-32">
         <div className="lg:col-span-7">
           <Reveal>
             <p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-label text-gold">
@@ -59,7 +73,7 @@ function Hero() {
           </Reveal>
 
           <Reveal delay={60}>
-            <h1 className="mt-6 font-display text-[2.75rem] font-medium leading-[1.05] text-white sm:text-6xl">
+            <h1 className="mt-6 max-w-2xl font-display text-[2.9rem] font-medium leading-[1.02] text-white sm:text-6xl">
               {t("home.hero.titleLead")}
               <br />
               <span className="text-gold-300 italic">{t("home.hero.titleAccent")}</span>
@@ -75,8 +89,16 @@ function Hero() {
           <Reveal delay={180}>
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <Link to="/contatos">
-                <Button variant="gold" size="lg">
+                <Button
+                  variant="gold"
+                  size="lg"
+                  className="group shadow-gold transition-all hover:-translate-y-0.5 hover:shadow-elevated"
+                >
                   {t("home.hero.ctaPrimary")}
+                  <ArrowUpRight
+                    className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    aria-hidden
+                  />
                 </Button>
               </Link>
               <Link to="/vistos">
@@ -93,43 +115,27 @@ function Hero() {
           </Reveal>
 
           <Reveal delay={240}>
-            <p className="mt-12 flex max-w-md items-start gap-3 border-t border-white/10 pt-6 text-sm leading-relaxed text-white/50">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold/70" aria-hidden />
-              {t("home.hero.trust")}
-            </p>
+            <div className="mt-12 flex max-w-xl items-start gap-3 border-t border-white/15 pt-6">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gold/30 bg-gold/10 text-gold">
+                <ShieldCheck className="h-4 w-4" aria-hidden />
+              </span>
+              <p className="text-sm leading-relaxed text-white/60">{t("home.hero.trust")}</p>
+            </div>
           </Reveal>
         </div>
 
-        <Reveal delay={200} className="lg:col-span-5">
-          <div className="relative mx-auto max-w-sm lg:max-w-none">
-            <div
-              aria-hidden
-              className="absolute -bottom-4 -right-4 h-full w-full rounded-xl border border-gold/30"
-            />
-            <img
-              src="/equipe/natalia-luz.jpg"
-              alt={t("home.hero.photoAlt")}
-              width={800}
-              height={800}
-              loading="eager"
-              className="relative aspect-square w-full rounded-xl object-cover object-top ring-1 ring-white/10"
-            />
-            <div className="absolute -bottom-7 left-4 right-10 rounded-lg bg-white/95 p-4 shadow-elevated backdrop-blur-sm sm:-left-6 sm:right-16">
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gold-50 text-gold-700">
-                  <Award className="h-4 w-4" aria-hidden />
-                </span>
-                <div>
-                  <p className="text-sm font-medium leading-snug text-navy">
-                    {t("home.hero.credentialTitle")}
-                  </p>
-                  <p className="mt-0.5 text-xs text-ink-muted">
-                    {t("home.hero.credentialSubtitle")}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <Reveal delay={240} className="hidden lg:col-span-5 lg:block">
+          <aside className="ml-auto max-w-xs border-l border-gold/60 pl-6 text-white">
+            <p className="text-xs font-semibold uppercase tracking-label text-gold">
+              {t("home.hero.imageBadge")}
+            </p>
+            <p className="mt-3 font-display text-2xl leading-snug">
+              {t("home.hero.credentialTitle")}
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-white/65">
+              {t("home.hero.credentialSubtitle")}
+            </p>
+          </aside>
         </Reveal>
       </div>
     </section>
@@ -345,7 +351,7 @@ function Fundadora() {
               className="absolute -left-4 -top-4 h-full w-full rounded-xl border border-gold/40"
             />
             <img
-              src="/equipe/natalia-luz.jpg"
+              src="/equipe/natalia-luz-portrait.png"
               alt={t("home.about.photoAlt")}
               width={800}
               height={800}

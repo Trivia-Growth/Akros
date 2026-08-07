@@ -12,6 +12,8 @@ export { Stepper, type StepperItem, type StepStatus } from "./Stepper";
 export { Avatar } from "./Avatar";
 export { Tooltip } from "./Tooltip";
 export { toast, ToastViewport } from "./Toast";
+export { NotificationCenter, type NotificationItem } from "./NotificationCenter";
+export { PhaseCelebration } from "./PhaseCelebration";
 export { Skeleton } from "./Skeleton";
 export { Reveal } from "./Reveal";
 export { cn } from "./utils/cn";

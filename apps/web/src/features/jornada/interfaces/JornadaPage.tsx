@@ -5,8 +5,17 @@ import {
   obterFaseAtual,
   useJornadaAtiva,
 } from "@/features/jornada/application/hooks";
-import { Badge, Button, Card, Progress, Stepper, type StepperItem, toast } from "@/shared/ui";
-import { Lock } from "lucide-react";
+import {
+  Badge,
+  Button,
+  Card,
+  PhaseCelebration,
+  Progress,
+  Stepper,
+  type StepperItem,
+  toast,
+} from "@/shared/ui";
+import { CheckCircle2, Lock } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Etapa } from "../domain/types";
@@ -17,6 +26,7 @@ export function JornadaPage() {
   const jornada = useJornadaAtiva();
   const faseAtual = obterFaseAtual(jornada);
   const [faseSelecionadaId, setFaseSelecionadaId] = useState<string | undefined>(faseAtual?.id);
+  const [faseCelebrada, setFaseCelebrada] = useState<string | null>(null);
 
   if (!jornada || !cliente) {
     return <p className="text-ink-muted">Nenhuma jornada encontrada para esta persona.</p>;
@@ -33,26 +43,61 @@ export function JornadaPage() {
     jornada.fases.find((f) => f.id === faseSelecionadaId) ?? faseAtual ?? jornada.fases[0];
 
   const handleConcluirEtapa = async (etapaId: string) => {
+    const faseDaEtapa = jornada.fases.find((fase) =>
+      fase.etapas.some((etapa) => etapa.id === etapaId),
+    );
+    const concluiFase =
+      faseDaEtapa !== undefined &&
+      faseDaEtapa.etapas.filter((etapa) => etapa.status === "pendente").length === 1;
     await concluirEtapa(cliente.id, etapaId);
-    toast.success(t("journey.completed"));
+    if (concluiFase && faseDaEtapa) {
+      setFaseCelebrada(faseDaEtapa.titulo);
+      toast.success(`${faseDaEtapa.titulo}: ${t("journey.phaseCompleted")}`);
+    } else {
+      toast.success(t("journey.completed"));
+    }
   };
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold text-navy">{t("journey.title")}</h1>
-        <p className="text-sm text-ink-soft">{t("journey.subtitle")}</p>
+      <div className="relative overflow-hidden rounded-2xl bg-navy p-6 text-white shadow-elevated sm:p-8">
+        <div
+          aria-hidden
+          className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-gold/20 blur-3xl"
+        />
+        <div className="relative max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-label text-gold">
+            Sua jornada Akros
+          </p>
+          <h1 className="mt-3 font-display text-3xl font-medium sm:text-4xl">
+            {t("journey.title")}
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-white/65">{t("journey.subtitle")}</p>
+        </div>
       </div>
 
-      <Progress value={progresso} label={t("journey.overallProgress")} className="max-w-md" />
+      <Card className="border-gold-200 bg-white p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-label text-gold-700">
+              {t("journey.overallProgress")}
+            </p>
+            <p className="mt-1 font-display text-2xl font-medium text-navy">
+              {progresso}% concluído
+            </p>
+          </div>
+          {faseAtual && <FaseStatusBadge status={faseAtual.status} />}
+        </div>
+        <Progress value={progresso} className="mt-4" />
+      </Card>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-white p-6">
+      <div className="overflow-x-auto rounded-xl border border-border bg-white p-6 shadow-subtle">
         <Stepper items={stepperItems} onSelect={setFaseSelecionadaId} />
       </div>
 
       {faseSelecionada && (
-        <Card>
-          <div className="mb-4 flex items-start justify-between gap-4">
+        <Card className="border-border p-6 sm:p-7">
+          <div className="mb-6 flex items-start justify-between gap-4 border-b border-border pb-5">
             <div>
               <h2 className="font-display text-xl font-semibold text-navy">
                 {faseSelecionada.titulo}
@@ -75,31 +120,46 @@ export function JornadaPage() {
               {faseSelecionada.etapas.map((etapa) => (
                 <div
                   key={etapa.id}
-                  className="flex flex-col gap-2 rounded-md border border-border p-4 sm:flex-row sm:items-start sm:justify-between"
+                  className="group flex flex-col gap-3 rounded-xl border border-border p-4 transition-all duration-200 hover:border-gold-300 hover:bg-gold-50/30 sm:flex-row sm:items-start sm:justify-between"
                 >
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium text-navy">{etapa.titulo}</p>
-                      {etapa.status !== "concluida" && <ResponsavelBadge etapa={etapa} />}
-                    </div>
-                    <p className="mt-1 text-sm text-ink-soft">{etapa.descricao}</p>
-                    {etapa.prazoMedioDiasUteis && (
-                      <p className="mt-1 text-xs text-ink-muted">
-                        {t("journey.deadline", { days: etapa.prazoMedioDiasUteis })}
-                      </p>
-                    )}
-                    {etapa.documentosRequeridos && etapa.documentosRequeridos.length > 0 && (
-                      <div className="mt-2">
-                        <p className="text-xs font-medium text-ink-muted">
-                          {t("journey.requiredDocs")}:
-                        </p>
-                        <ul className="mt-1 list-inside list-disc text-xs text-ink-soft">
-                          {etapa.documentosRequeridos.map((doc) => (
-                            <li key={doc}>{doc}</li>
-                          ))}
-                        </ul>
+                  <div className="flex gap-3">
+                    <span
+                      className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                        etapa.status === "concluida"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-gold-300 bg-gold-50 text-gold-700"
+                      }`}
+                    >
+                      {etapa.status === "concluida" ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />
+                      ) : (
+                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                      )}
+                    </span>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-navy">{etapa.titulo}</p>
+                        {etapa.status !== "concluida" && <ResponsavelBadge etapa={etapa} />}
                       </div>
-                    )}
+                      <p className="mt-1 text-sm text-ink-soft">{etapa.descricao}</p>
+                      {etapa.prazoMedioDiasUteis && (
+                        <p className="mt-1 text-xs text-ink-muted">
+                          {t("journey.deadline", { days: etapa.prazoMedioDiasUteis })}
+                        </p>
+                      )}
+                      {etapa.documentosRequeridos && etapa.documentosRequeridos.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-ink-muted">
+                            {t("journey.requiredDocs")}:
+                          </p>
+                          <ul className="mt-1 list-inside list-disc text-xs text-ink-soft">
+                            {etapa.documentosRequeridos.map((doc) => (
+                              <li key={doc}>{doc}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="shrink-0">
                     {etapa.status === "concluida" ? (
@@ -122,6 +182,9 @@ export function JornadaPage() {
             </div>
           )}
         </Card>
+      )}
+      {faseCelebrada && (
+        <PhaseCelebration phaseTitle={faseCelebrada} onClose={() => setFaseCelebrada(null)} />
       )}
     </div>
   );

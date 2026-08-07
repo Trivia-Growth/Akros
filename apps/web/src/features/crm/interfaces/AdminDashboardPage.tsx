@@ -1,6 +1,7 @@
 import { useMockDb } from "@/mocks/store";
 import type { EstagioLead } from "@/shared/contracts/lead";
 import { Badge, Card } from "@/shared/ui";
+import { ArrowUpRight, CircleDollarSign, ClipboardCheck, Clock3, UsersRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -34,6 +35,7 @@ export function AdminDashboardPage() {
   const pagamentos = useMockDb((s) => s.pagamentos);
   const reunioes = useMockDb((s) => s.reunioes);
   const eventos = useMockDb((s) => s.eventosComunicacao);
+  const documentos = useMockDb((s) => s.documentos);
 
   const funil = ESTAGIOS.map((estagio) => ({
     estagio,
@@ -80,16 +82,57 @@ export function AdminDashboardPage() {
     .filter((e) => e.canal === "sistema")
     .sort((a, b) => b.ocorridoEm.localeCompare(a.ocorridoEm))
     .slice(0, 6);
+  const pendencias = documentos.filter((documento) => documento.status === "em_analise").length;
+  const reunioesHoje = proximasReunioes.filter(
+    (reuniao) => new Date(reuniao.inicio).toDateString() === new Date().toDateString(),
+  ).length;
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold text-navy">{t("dashboard.title")}</h1>
-        <p className="text-sm text-ink-soft">{t("dashboard.subtitle")}</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-label text-gold-700">Akros OS</p>
+          <h1 className="mt-2 font-display text-3xl font-medium text-navy">
+            {t("dashboard.title")}
+          </h1>
+          <p className="mt-1 text-sm text-ink-soft">{t("dashboard.subtitle")}</p>
+        </div>
+        <p className="rounded-full border border-border bg-white px-3 py-1.5 text-xs font-medium text-ink-soft">
+          Atualizado agora
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <MetricCard
+          label="Leads ativos"
+          value={leads.filter((lead) => !["fechado", "descartado"].includes(lead.estagio)).length}
+          detail={`${taxaConversao}% de conversão`}
+          icon={UsersRound}
+        />
+        <MetricCard
+          label="Revisões pendentes"
+          value={pendencias}
+          detail={pendencias ? "Prioridade para operação" : "Fila em dia"}
+          icon={ClipboardCheck}
+          tone={pendencias ? "gold" : "navy"}
+        />
+        <MetricCard
+          label="Reuniões hoje"
+          value={reunioesHoje}
+          detail={`${proximasReunioes.length} próximas na agenda`}
+          icon={Clock3}
+        />
+        <MetricCard
+          label="Receita recebida"
+          value={formatarValor(totalPago, "BRL")}
+          detail={`${formatarValor(totalPendente, "BRL")} em aberto`}
+          icon={CircleDollarSign}
+          tone="gold"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase tracking-label text-gold-700">
               {t("dashboard.funnelTitle")}
@@ -111,7 +154,7 @@ export function AdminDashboardPage() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="p-6">
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-label text-gold-700">
             {t("dashboard.clientsByPhaseTitle")}
           </h2>
@@ -127,7 +170,7 @@ export function AdminDashboardPage() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="p-6">
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-label text-gold-700">
             {t("dashboard.caseHealthTitle")}
           </h2>
@@ -146,7 +189,7 @@ export function AdminDashboardPage() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="p-6">
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-label text-gold-700">
             {t("dashboard.revenueTitle")}
           </h2>
@@ -167,7 +210,7 @@ export function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="p-6">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-label text-gold-700">
             {t("dashboard.upcomingMeetingsTitle")}
           </h2>
@@ -187,7 +230,7 @@ export function AdminDashboardPage() {
           )}
         </Card>
 
-        <Card>
+        <Card className="p-6">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-label text-gold-700">
             {t("dashboard.recentActivityTitle")}
           </h2>
@@ -205,10 +248,47 @@ export function AdminDashboardPage() {
         </Card>
       </div>
 
-      <Link to="/admin/leads" className="text-sm text-gold-700 hover:underline">
-        Ver kanban de leads →
+      <Link
+        to="/admin/leads"
+        className="group inline-flex w-fit items-center gap-1.5 text-sm font-medium text-navy underline decoration-gold decoration-2 underline-offset-4 hover:text-gold-700"
+      >
+        Ver kanban de leads
+        <ArrowUpRight
+          className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+          aria-hidden
+        />
       </Link>
     </div>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  detail,
+  icon: Icon,
+  tone = "navy",
+}: {
+  label: string;
+  value: number | string;
+  detail: string;
+  icon: typeof UsersRound;
+  tone?: "navy" | "gold";
+}) {
+  const iconClass = tone === "gold" ? "bg-gold-50 text-gold-700" : "bg-navy-50 text-navy";
+  return (
+    <Card className="min-w-0 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">{label}</p>
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconClass}`}
+        >
+          <Icon className="h-4 w-4" aria-hidden />
+        </span>
+      </div>
+      <p className="mt-5 truncate font-display text-2xl font-medium text-navy">{value}</p>
+      <p className="mt-1 text-xs text-ink-muted">{detail}</p>
+    </Card>
   );
 }
 

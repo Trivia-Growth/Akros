@@ -2,6 +2,7 @@ import { AdminAgendaPage } from "@/features/agenda/interfaces/AdminAgendaPage";
 import { AgendaPage } from "@/features/agenda/interfaces/AgendaPage";
 import { ComunicacaoPage } from "@/features/comunicacao/interfaces/ComunicacaoPage";
 import { MensagensPage } from "@/features/comunicacao/interfaces/MensagensPage";
+import { ConfiguracoesPage } from "@/features/configuracoes/interfaces/ConfiguracoesPage";
 import { AdminDashboardPage } from "@/features/crm/interfaces/AdminDashboardPage";
 import { AprovacoesPage } from "@/features/crm/interfaces/AprovacoesPage";
 import { Clientes360Page } from "@/features/crm/interfaces/Clientes360Page";
@@ -75,6 +76,7 @@ export const router = createBrowserRouter([
       { path: "reativacao", element: <ReativacaoPage /> },
       { path: "comunicacao", element: <ComunicacaoPage /> },
       { path: "agenda", element: <AdminAgendaPage /> },
+      { path: "configuracoes", element: <ConfiguracoesPage /> },
     ],
   },
   {

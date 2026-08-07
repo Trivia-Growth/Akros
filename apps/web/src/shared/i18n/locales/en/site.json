@@ -2,15 +2,17 @@
   "home": {
     "hero": {
       "eyebrow": "Immigration to the United States",
-      "titleLead": "Elevating talent",
-      "titleAccent": "to the global top",
-      "subtitle": "Immigration consulting for highly qualified Brazilian professionals. We run your case from the first assessment to your landing in the United States.",
-      "ctaPrimary": "Schedule a consultation",
+      "titleLead": "Your talent deserves",
+      "titleAccent": "a world of possibilities.",
+      "subtitle": "We turn the dream of living in the United States into a tailored immigration plan, with strategy, confidence, and support through every stage of your new life.",
+      "ctaPrimary": "Start my journey",
       "ctaSecondary": "Explore visa options",
-      "trust": "Strategy validated by a US-licensed attorney before any case formally begins.",
+      "trust": "Every strategy is carefully assessed so your family can move forward with clarity, confidence, and purpose.",
       "photoAlt": "Natalia Luz, CEO and founder of Akros Immigration Solutions",
-      "credentialTitle": "Green Card based on exceptional ability",
-      "credentialSubtitle": "Earned in 2020 by our own founder"
+      "journeyAlt": "Brazilian family celebrating a new life in the United States",
+      "imageBadge": "A new chapter for your whole family",
+      "credentialTitle": "More than a visa.",
+      "credentialSubtitle": "A life-changing move built with strategy and human support."
     },
     "stats": {
       "families": "families served",
@@ -20,7 +22,7 @@
     "categories": {
       "eyebrow": "Who we serve",
       "title": "How we can help you",
-      "subtitle": "We support different professional profiles on the path to legal immigration to the US.",
+      "subtitle": "From the career you have built to the life your family wants to live: we find the immigration path that fits your profile.",
       "cta": "See all services",
       "qualified": {
         "title": "Qualified Professionals",
@@ -70,7 +72,7 @@
       "eyebrow": "Who's behind your case",
       "name": "Natalia Luz",
       "role": "CEO & Founder",
-      "bio": "Attorney graduated from PUC/SP (2010), with over 14 years of experience in civil law and intellectual property. Natalia received her own Green Card in 2020 based on exceptional ability — and now dedicates her career to opening that same path for other Brazilian professionals.",
+      "bio": "A PUC/SP-trained attorney, Natalia had her abilities recognized by the United States when she earned her own Green Card in 2020 based on exceptional ability. As an immigrant, she turns expertise, rigor, and empathy into real paths for Brazilian families.",
       "quote": "I went through this process myself before guiding anyone else's. I know exactly where it hurts.",
       "photoAlt": "Portrait of Natalia Luz",
       "cta": "Learn our story"
@@ -78,14 +80,14 @@
     "testimonials": {
       "eyebrow": "Testimonials",
       "title": "Those who walked this path with us",
-      "subtitle": "Real stories from clients who earned their Green Card."
+      "subtitle": "Stories from people who found the confidence to turn a complex process into a new life."
     },
     "cta": {
-      "title": "Ready to take the first step?",
-      "subtitle": "Talk to our team and discover the best path for your profile.",
-      "button": "Talk to a specialist",
+      "title": "Your dream deserves a strategy to match.",
+      "subtitle": "Talk to our team and discover the path that best fits you and your family.",
+      "button": "Schedule my consultation",
       "secondary": "See the methodology",
-      "note": "We reply within 5 business days. No commitment."
+      "note": "Your case will be assessed individually."
     }
   },
   "contact": {
@@ -121,11 +123,11 @@
   },
   "aboutPage": {
     "eyebrow": "About us",
-    "title": "Specialists in turning careers into new journeys",
-    "intro": "Akros Immigration Solutions is a specialized consulting firm for US immigration, focused on highly qualified professionals. We've helped over 300 families earn their Green Card with transparency, professionalism, and close support at every step.",
+    "title": "We turn talent, purpose, and family into new beginnings.",
+    "intro": "Akros Immigration Solutions turns the immigration dream of highly qualified professionals into reality. We bring together strategy, close support, and a specialized network to guide every decision — from career to your family’s integration in the United States.",
     "teamEyebrow": "Our team",
     "teamTitle": "Who runs your case",
-    "teamSubtitle": "Every case goes through an attorney, a strategist, and a career mentor — no step is left without an owner.",
+    "teamSubtitle": "Immigration law, business strategy, and career preparation in one team, so no detail of your project is left without direction.",
     "photoAlt": "Portrait of {{name}}",
     "team": {
       "natalia": {
@@ -168,8 +170,8 @@
   },
   "visasPage": {
     "eyebrow": "Visas",
-    "title": "Find the right path for you",
-    "subtitle": "Explore the main visa types for immigration and work in the United States.",
+    "title": "Your project deserves the right visa.",
+    "subtitle": "Explore the most sought-after categories to live, work, invest, or study in the United States. Eligibility depends on your background and is assessed individually.",
     "filterAll": "All",
     "filterImmigrant": "Immigrant",
     "filterNonImmigrant": "Non-immigrant",
@@ -227,62 +229,64 @@
   },
   "methodologyPage": {
     "eyebrow": "Methodology",
-    "title": "How we run your process",
-    "subtitle": "A structured 7-step path, from first contact to your new life in the US.",
-    "journeyNote": "Steps 4 through 7 correspond to the journey tracked in your Client Portal — Introduction + 5 phases.",
+    "title": "Strategy for the process. Care for the move.",
+    "subtitle": "Every client is unique. That is why we guide your journey through seven clear steps, with technical care and close support from the first assessment to preparation for your new life.",
+    "journeyNote": "You understand where you are, what comes next, and who is responsible for each stage. No guesswork, no being left in the dark.",
+    "imageAlt": "Personalized planning for a new life in the United States",
     "steps": {
       "1": {
         "title": "Profile and goals analysis",
-        "description": "We understand your professional background and immigration goals."
+        "description": "We start by understanding your background, your present moment, and the future you want to build in the United States."
       },
       "2": {
         "title": "Specialist consultation",
-        "description": "Detailed case evaluation and budget presentation."
+        "description": "We thoroughly assess your options for immigration processes or non-immigrant visas and present the investment required."
       },
       "3": {
         "title": "Partner attorney consultation",
-        "description": "Dra. Denise Sarchiapone confirms the legal strategy for your case."
+        "description": "Our partner attorney reviews your information and confirms the legal strategy best suited to your case."
       },
       "4": {
         "title": "Contract and initial payment",
-        "description": "Formalizing the service, with financing options available."
+        "description": "With the strategy defined, we formalize the engagement and align the best way to start your journey."
       },
       "5": {
         "title": "Document organization",
-        "description": "Our case managers lead the collection and preparation of all documentation."
+        "description": "With a Case Manager’s support, we organize documents and forms so each piece of information is complete and consistent."
       },
       "6": {
         "title": "Approval and USCIS filing",
-        "description": "You review and approve the process before official submission."
+        "description": "Your process only moves forward to USCIS after final review and your approval."
       },
       "7": {
         "title": "Relocation preparation",
-        "description": "Support for your move and settling in the United States."
+        "description": "While the decision is pending, you can begin preparing for the move with more clarity and confidence."
       }
     },
     "cta": "Start my journey"
   },
   "servicesPage": {
     "eyebrow": "Other services",
-    "title": "We support different professional profiles",
-    "subtitle": "Beyond EB-2 NIW, we support other categories on the path to legal US immigration.",
+    "title": "The process is only the beginning of your new life.",
+    "subtitle": "Beyond immigration strategy, we bring together services that give shape to your life project and strengthen your professional story in the United States.",
     "cta": "Talk to a specialist",
+    "imageAlt": "Personalized consulting for Brazilian professionals",
     "categories": {
-      "qualified": {
-        "title": "Qualified Professionals",
-        "description": "Bachelor's degree holders with market experience eligible for permanent residency (Green Card), with a focus on exceptional ability and relevant contributions in their field."
+      "immigrationPlan": {
+        "title": "Immigration plan",
+        "description": "Immigration takes courage and planning. We help you understand housing, schools, climate, security, and the business environment of the region you hope to call home."
       },
-      "athletes": {
-        "title": "Athletes & Artists",
-        "description": "Recognized sports and arts professionals can obtain work visas (P-1) or a Green Card (EB-1)."
+      "businessPlan": {
+        "title": "Business plan",
+        "description": "With specialized partners, we structure a Business Plan with project execution, market analysis, management, and financial projections — a key asset for several immigration strategies."
       },
-      "religious": {
-        "title": "Religious Workers",
-        "description": "Invited to work at US churches in pastoral or technical roles, through the R visa or EB-4."
+      "americanResume": {
+        "title": "American-format resume",
+        "description": "We turn your background into a resume that highlights professional growth, essential skills, and achievements that matter for your new plans."
       },
-      "legalization": {
-        "title": "Legalization",
-        "description": "Support for those already in the US seeking a status adjustment or Green Card, with guidance on the best legal path available."
+      "recommendationLetters": {
+        "title": "Recommendation letters",
+        "description": "We support the structure of letters from colleagues, leaders, clients, or respected references to demonstrate your experience and the value of your work."
       }
     }
   },

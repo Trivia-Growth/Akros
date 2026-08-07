@@ -2,15 +2,17 @@
   "home": {
     "hero": {
       "eyebrow": "Imigração para os Estados Unidos",
-      "titleLead": "Elevando talentos",
-      "titleAccent": "ao topo global",
-      "subtitle": "Consultoria de imigração para profissionais brasileiros altamente qualificados. Conduzimos o seu caso do primeiro diagnóstico ao pouso nos Estados Unidos.",
-      "ctaPrimary": "Agendar consulta",
+      "titleLead": "Seu talento merece",
+      "titleAccent": "um mundo de possibilidades.",
+      "subtitle": "Transformamos o sonho de viver nos Estados Unidos em um plano de imigração personalizado, com estratégia, segurança e suporte em cada etapa da sua nova vida.",
+      "ctaPrimary": "Começar minha jornada",
       "ctaSecondary": "Conhecer os vistos",
-      "trust": "Estratégia validada por advogada licenciada nos EUA antes de qualquer processo começar.",
+      "trust": "Cada estratégia é analisada com cuidado para que sua família avance com clareza, segurança e propósito.",
       "photoAlt": "Natalia Luz, CEO e fundadora da Akros Immigration Solutions",
-      "credentialTitle": "Green Card por habilidade excepcional",
-      "credentialSubtitle": "Conquistado em 2020 pela própria fundadora"
+      "journeyAlt": "Família brasileira celebrando uma nova vida nos Estados Unidos",
+      "imageBadge": "Um novo capítulo para toda a família",
+      "credentialTitle": "Mais do que um visto.",
+      "credentialSubtitle": "Uma mudança de vida construída com estratégia e acompanhamento humano."
     },
     "stats": {
       "families": "famílias atendidas",
@@ -20,7 +22,7 @@
     "categories": {
       "eyebrow": "Perfis que atendemos",
       "title": "Como podemos ajudar você",
-      "subtitle": "Atendemos diferentes perfis profissionais rumo à imigração legal para os EUA.",
+      "subtitle": "Da carreira que você construiu à vida que sua família quer viver: encontramos o caminho de imigração mais alinhado ao seu perfil.",
       "cta": "Ver todos os serviços",
       "qualified": {
         "title": "Profissionais Qualificados",
@@ -70,7 +72,7 @@
       "eyebrow": "Quem cuida do seu processo",
       "name": "Natalia Luz",
       "role": "CEO & Fundadora",
-      "bio": "Advogada formada pela PUC/SP (2010), com mais de 14 anos de experiência em direito civil e propriedade intelectual. Natalia recebeu seu próprio Green Card em 2020 por habilidade excepcional — e hoje dedica sua carreira a abrir esse mesmo caminho para outros profissionais brasileiros.",
+      "bio": "Advogada formada pela PUC/SP, Natalia teve sua habilidade reconhecida pelos Estados Unidos ao conquistar, em 2020, seu próprio Green Card por habilidade excepcional. Como imigrante, transforma experiência, rigor e empatia em caminhos reais para outras famílias brasileiras.",
       "quote": "Eu passei por esse processo antes de conduzir o de alguém. Sei exatamente onde ele dói.",
       "photoAlt": "Retrato de Natalia Luz",
       "cta": "Conhecer nossa história"
@@ -78,14 +80,14 @@
     "testimonials": {
       "eyebrow": "Depoimentos",
       "title": "Quem já trilhou esse caminho com a gente",
-      "subtitle": "Histórias reais de clientes que conquistaram o Green Card."
+      "subtitle": "Histórias de quem encontrou na Akros confiança para transformar um processo complexo em uma nova vida."
     },
     "cta": {
-      "title": "Pronto para dar o primeiro passo?",
-      "subtitle": "Fale com nossa equipe e descubra o melhor caminho para o seu perfil.",
-      "button": "Falar com um especialista",
+      "title": "Seu sonho merece uma estratégia à altura.",
+      "subtitle": "Converse com nossa equipe e descubra o caminho mais adequado para você e sua família.",
+      "button": "Agendar minha consulta",
       "secondary": "Ver a metodologia",
-      "note": "Resposta em até 5 dias úteis. Sem compromisso."
+      "note": "Seu caso será avaliado de forma individual."
     }
   },
   "contact": {
@@ -121,32 +123,32 @@
   },
   "aboutPage": {
     "eyebrow": "Quem somos",
-    "title": "Especialistas em transformar carreiras em novas jornadas",
-    "intro": "A Akros Immigration Solutions é uma consultoria especializada em imigração para os Estados Unidos, com foco em profissionais altamente qualificados. Já ajudamos mais de 300 famílias a conquistar o Green Card com transparência, profissionalismo e acompanhamento próximo em cada etapa.",
+    "title": "Transformamos talento, propósito e família em novos começos.",
+    "intro": "A Akros Immigration Solutions transforma o sonho de imigrar de profissionais altamente qualificados em realidade. Unimos estratégia, atendimento próximo e uma rede especializada para apoiar cada decisão — da carreira à integração da sua família nos Estados Unidos.",
     "teamEyebrow": "Nosso time",
     "teamTitle": "Quem conduz o seu processo",
-    "teamSubtitle": "Cada caso passa por advogada, estrategista e mentora de carreira — nenhuma etapa fica sem dono.",
+    "teamSubtitle": "Advocacia, estratégia de negócios e preparação de carreira em um mesmo time, para que nenhum detalhe do seu projeto fique sem direção.",
     "photoAlt": "Retrato de {{name}}",
     "team": {
       "natalia": {
         "name": "Natalia Luz",
         "role": "CEO & Fundadora",
-        "bio": "Advogada formada pela PUC/SP em 2010, com mais de 14 anos de experiência em direito civil e propriedade intelectual. Em 2020 recebeu seu próprio Green Card por habilidade excepcional — a jornada que a levou a abrir esse mesmo caminho para outros profissionais brasileiros."
+        "bio": "Advogada formada pela PUC/SP em 2010, com mais de 14 anos de experiência em direito civil e propriedade intelectual. Em 2020, conquistou seu próprio Green Card por habilidade excepcional e passou a dedicar sua experiência à jornada de outras famílias brasileiras."
       },
       "denise": {
         "name": "Dra. Denise Sarchiapone",
         "role": "Advogada parceira nos EUA",
-        "bio": "Advogada licenciada nos Estados Unidos, na região de Washington DC, com MBA em Negócios Internacionais e 18 anos morando no país. Confirma a estratégia jurídica de cada caso antes do início formal do processo."
+        "bio": "Advogada licenciada nos Estados Unidos, com escritório na região de Washington, DC, MBA em Negócios Internacionais e mais de 18 anos de experiência vivendo no país. É responsável por revisar a estratégia jurídica de cada caso."
       },
       "bruno": {
         "name": "Bruno Luz",
         "role": "Estrategista de Business Plan",
-        "bio": "Economista pela Universidade Mackenzie, com mais de 15 anos em bancos e consultoria empresarial. Desde 2020 já estruturou mais de 250 business plans para investidores estrangeiros nos Estados Unidos."
+        "bio": "Economista pela Universidade Mackenzie, com mais de 15 anos de experiência em bancos e consultoria empresarial. Desde 2020, desenvolveu mais de 250 planos de negócios para investidores estrangeiros e imigrantes nos Estados Unidos."
       },
       "elem": {
         "name": "Elem Tluczek",
         "role": "Mentora de Carreira",
-        "bio": "Profissional de RH com 10 anos de experiência em ciclo de vida do colaborador, programas de diversidade e compliance trabalhista brasileiro e americano. Prepara o cliente para o mercado dos EUA."
+        "bio": "Profissional de Recursos Humanos com 10 anos de experiência em ciclo de vida do colaborador, diversidade e compliance trabalhista brasileiro e americano. Ajuda cada cliente a se preparar para o mercado dos EUA."
       }
     },
     "values": {
@@ -168,8 +170,8 @@
   },
   "visasPage": {
     "eyebrow": "Vistos",
-    "title": "Encontre o caminho certo para você",
-    "subtitle": "Conheça os principais tipos de visto para imigração e trabalho nos Estados Unidos.",
+    "title": "Seu projeto merece o visto certo.",
+    "subtitle": "Conheça as categorias mais procuradas para viver, trabalhar, investir ou estudar nos Estados Unidos. A elegibilidade depende da sua trajetória e será avaliada individualmente.",
     "filterAll": "Todos",
     "filterImmigrant": "Imigrantes",
     "filterNonImmigrant": "Não-imigrantes",
@@ -230,62 +232,64 @@
   },
   "methodologyPage": {
     "eyebrow": "Metodologia",
-    "title": "Como conduzimos o seu processo",
-    "subtitle": "Um caminho estruturado em 7 passos, do primeiro contato à sua nova vida nos EUA.",
-    "journeyNote": "Os passos 4 a 7 correspondem à jornada acompanhada no seu Portal do Cliente — Introdução + 5 fases.",
+    "title": "Estratégia para o processo. Cuidado para a mudança.",
+    "subtitle": "Cada cliente é único. Por isso, conduzimos sua jornada em sete passos claros, com atenção técnica e acompanhamento próximo do primeiro diagnóstico à preparação para a nova vida.",
+    "journeyNote": "Você entende onde está, o que vem a seguir e quem cuida de cada etapa. Sem improviso, sem ficar no escuro.",
+    "imageAlt": "Planejamento personalizado para uma nova vida nos Estados Unidos",
     "steps": {
       "1": {
         "title": "Análise de perfil e objetivos",
-        "description": "Entendemos sua trajetória profissional e seus objetivos de imigração."
+        "description": "Começamos entendendo sua trajetória, seu momento e o futuro que você quer construir nos Estados Unidos."
       },
       "2": {
         "title": "Consulta com especialista",
-        "description": "Avaliação detalhada do seu caso e apresentação do orçamento."
+        "description": "Avaliamos com profundidade suas possibilidades para processos imigratórios ou vistos de não-imigrante e apresentamos o investimento necessário."
       },
       "3": {
         "title": "Consulta com advogada parceira",
-        "description": "A Dra. Denise Sarchiapone confirma a estratégia jurídica do seu caso."
+        "description": "Nossa advogada parceira revisa suas informações e confirma a estratégia jurídica mais adequada para o seu caso."
       },
       "4": {
         "title": "Contrato e pagamento inicial",
-        "description": "Formalização da assessoria, com opções de financiamento."
+        "description": "Com a estratégia definida, formalizamos a assessoria e alinhamos a melhor forma de iniciar sua jornada."
       },
       "5": {
         "title": "Organização de documentos",
-        "description": "Nossos case managers conduzem a coleta e preparação de toda a documentação."
+        "description": "Com apoio de um Case Manager, organizamos documentos e formulários para que cada informação esteja completa e consistente."
       },
       "6": {
         "title": "Aprovação e envio à USCIS",
-        "description": "Você revisa e aprova o processo antes do envio oficial."
+        "description": "Seu processo só segue para a USCIS após a revisão final e a sua aprovação."
       },
       "7": {
         "title": "Preparação para relocation",
-        "description": "Suporte para a mudança e instalação nos Estados Unidos."
+        "description": "Enquanto acompanha o resultado, você já pode se preparar para a mudança com mais clareza e segurança."
       }
     },
     "cta": "Iniciar minha jornada"
   },
   "servicesPage": {
     "eyebrow": "Outros serviços",
-    "title": "Atendemos diferentes perfis profissionais",
-    "subtitle": "Além do EB-2 NIW, apoiamos outras categorias rumo à imigração legal para os EUA.",
+    "title": "O processo é só o começo da sua nova vida.",
+    "subtitle": "Além da estratégia imigratória, reunimos serviços que dão forma ao seu projeto de vida e fortalecem sua história profissional nos Estados Unidos.",
     "cta": "Falar com especialista",
+    "imageAlt": "Consultoria personalizada para profissionais brasileiros",
     "categories": {
-      "qualified": {
-        "title": "Profissionais Qualificados",
-        "description": "Bacharéis com experiência de mercado elegíveis à residência permanente (Green Card), com foco em habilidades excepcionais e contribuições relevantes na sua área."
+      "immigrationPlan": {
+        "title": "Plano de imigração",
+        "description": "Imigrar exige coragem e planejamento. Ajudamos você a entender habitação, escola, clima, segurança e ambiente de negócios da região que pretende chamar de lar."
       },
-      "athletes": {
-        "title": "Atletas & Artistas",
-        "description": "Profissionais do esporte e das artes com reconhecimento na sua área podem obter vistos de trabalho (P-1) ou Green Card (EB-1)."
+      "businessPlan": {
+        "title": "Plano de negócios",
+        "description": "Com parceiros especializados, estruturamos um Business Plan com execução do projeto, análise de mercado, gestão e projeções financeiras — um ativo essencial para diversas estratégias imigratórias."
       },
-      "religious": {
-        "title": "Trabalhadores Religiosos",
-        "description": "Convidados para atuar em igrejas nos Estados Unidos em funções pastorais ou técnicas, através do visto R ou EB-4."
+      "americanResume": {
+        "title": "Currículo em formato americano",
+        "description": "Transformamos sua trajetória em um currículo que evidencia evolução profissional, competências essenciais e conquistas relevantes para seus novos planos."
       },
-      "legalization": {
-        "title": "Legalização",
-        "description": "Suporte para quem já está nos EUA buscando ajuste de status ou Green Card, com orientação sobre o melhor caminho legal disponível."
+      "recommendationLetters": {
+        "title": "Cartas de recomendação",
+        "description": "Apoiamos a estruturação de cartas de colegas, líderes, clientes ou referências renomadas para demonstrar sua experiência e o valor do seu trabalho."
       }
     }
   },

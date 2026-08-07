@@ -6,6 +6,7 @@ import type {
   EventoComunicacao,
   RegraAtendimentoIA,
 } from "@/features/comunicacao/domain/types";
+import type { IntegracaoExterna } from "@/features/configuracoes/domain/types";
 import type { Cliente, Proposta } from "@/features/crm/domain/types";
 import type {
   AnaliseDocumento,
@@ -15,6 +16,7 @@ import type {
 import { instanciarJornada } from "@/features/jornada/application/instanciar-jornada";
 import type { Jornada } from "@/features/jornada/domain/types";
 import type { Pagamento } from "@/features/pagamentos/domain/types";
+import type { Programa } from "@/features/programas/domain/types";
 import type { Depoimento, PostBlog } from "@/features/site/domain/types";
 import type {
   EstagioLead,
@@ -24,7 +26,7 @@ import type {
   PerfilLead,
 } from "@/shared/contracts/lead";
 
-import { regraAtendimentoIA as regraAtendimentoIASeed } from "./agente-ia";
+import { agentesAtendimentoIA, regraAtendimentoIA as regraAtendimentoIASeed } from "./agente-ia";
 import { depoimentos as depoimentosSeed, posts as postsSeed } from "./blog";
 import { toquesCadenciaMock } from "./cadencia";
 import { conversas as conversasSeed } from "./conversas";
@@ -32,6 +34,7 @@ import {
   documentos as documentosSeed,
   solicitacoesAssinatura as solicitacoesSeed,
 } from "./documentos";
+import { integracoes as integracoesSeed } from "./integracoes";
 import { leads as leadsSeed } from "./leads";
 import { pagamentos as pagamentosSeed } from "./pagamentos";
 import { personas } from "./personas";
@@ -70,6 +73,9 @@ interface MockDbState {
   posts: PostBlog[];
   depoimentos: Depoimento[];
   regraAtendimentoIA: RegraAtendimentoIA;
+  agentesIA: RegraAtendimentoIA[];
+  programas: Programa[];
+  integracoes: IntegracaoExterna[];
 
   // --- Leads / CRM ---
   criarLead: (input: NovoLead) => Lead;
@@ -110,6 +116,15 @@ interface MockDbState {
   // --- Comunicação (WhatsApp inbox, E04-S01) ---
   enviarMensagemConversa: (conversaId: string, texto: string) => void;
   atualizarConfigAgente: (patch: Partial<RegraAtendimentoIA>) => void;
+  salvarAgenteIA: (agente: RegraAtendimentoIA) => void;
+
+  // --- Produto configurável ---
+  salvarPrograma: (programa: Programa) => void;
+  duplicarPrograma: (programaId: string) => Programa | null;
+  atualizarIntegracao: (
+    integracaoId: string,
+    patch: Pick<Partial<IntegracaoExterna>, "ativa"> & { apiKey?: string },
+  ) => void;
 
   // --- Propostas ---
   criarProposta: (input: Omit<Proposta, "id" | "status" | "criadoEm">) => Proposta;
@@ -147,6 +162,8 @@ export interface MockDbSeed {
   conversas: Conversa[];
   propostas: Proposta[];
   eventosComunicacao: EventoComunicacao[];
+  programas: Programa[];
+  integracoes: IntegracaoExterna[];
 }
 
 function seedPadrao(): MockDbSeed {
@@ -162,6 +179,8 @@ function seedPadrao(): MockDbSeed {
     conversas: [...conversasSeed],
     propostas: [...propostasSeed],
     eventosComunicacao: [],
+    programas: structuredClone(catalogoProgramas),
+    integracoes: structuredClone(integracoesSeed),
   };
 }
 
@@ -170,6 +189,9 @@ export const useMockDb = create<MockDbState>((set, get) => ({
   posts: [...postsSeed],
   depoimentos: [...depoimentosSeed],
   regraAtendimentoIA: { ...regraAtendimentoIASeed },
+  agentesIA: structuredClone(agentesAtendimentoIA),
+  programas: structuredClone(catalogoProgramas),
+  integracoes: structuredClone(integracoesSeed),
 
   criarLead: (input) => {
     const lead: Lead = {
@@ -202,7 +224,7 @@ export const useMockDb = create<MockDbState>((set, get) => ({
     const lead = get().leads.find((l) => l.id === leadId);
     if (!lead) throw new Error(`Lead ${leadId} não encontrado`);
 
-    const programa = catalogoProgramas.find((p) => p.codigo === programaCodigo);
+    const programa = get().programas.find((p) => p.codigo === programaCodigo);
     if (!programa) throw new Error(`Programa ${programaCodigo} não encontrado`);
 
     const clienteId = novoId("cliente");
@@ -273,6 +295,14 @@ export const useMockDb = create<MockDbState>((set, get) => ({
   },
 
   concluirEtapa: (clienteId, etapaId) => {
+    const jornadaAntes = get().jornadas.find((jornada) => jornada.clienteId === clienteId);
+    const faseDaEtapa = jornadaAntes?.fases.find((fase) =>
+      fase.etapas.some((etapa) => etapa.id === etapaId),
+    );
+    const etapa = faseDaEtapa?.etapas.find((item) => item.id === etapaId);
+    const concluiFase =
+      faseDaEtapa !== undefined &&
+      faseDaEtapa.etapas.filter((item) => item.status === "pendente").length === 1;
     set((s) => ({
       jornadas: s.jornadas.map((j) => {
         if (j.clienteId !== clienteId) return j;
@@ -292,6 +322,18 @@ export const useMockDb = create<MockDbState>((set, get) => ({
         return { ...j, fases };
       }),
     }));
+    if (etapa && faseDaEtapa) {
+      get().registrarEvento({
+        clienteOuLeadId: clienteId,
+        canal: "sistema",
+        direcao: "interno",
+        autor: "Cliente",
+        conteudo: concluiFase
+          ? `Concluiu a fase "${faseDaEtapa.titulo}".`
+          : `Concluiu a etapa "${etapa.titulo}".`,
+        ocorridoEm: agora(),
+      });
+    }
   },
 
   registrarEnvioDocumento: (id, urlMock) => {
@@ -470,7 +512,67 @@ export const useMockDb = create<MockDbState>((set, get) => ({
   },
 
   atualizarConfigAgente: (patch) => {
-    set((s) => ({ regraAtendimentoIA: { ...s.regraAtendimentoIA, ...patch } }));
+    set((s) => {
+      const regraAtualizada = { ...s.regraAtendimentoIA, ...patch };
+      return {
+        regraAtendimentoIA: regraAtualizada,
+        agentesIA: s.agentesIA.map((agente) =>
+          agente.id === regraAtualizada.id ? regraAtualizada : agente,
+        ),
+      };
+    });
+  },
+
+  salvarAgenteIA: (agente) => {
+    set((s) => ({
+      agentesIA: s.agentesIA.map((atual) =>
+        atual.id === agente.id ? structuredClone(agente) : atual,
+      ),
+      regraAtendimentoIA:
+        s.regraAtendimentoIA.id === agente.id ? structuredClone(agente) : s.regraAtendimentoIA,
+    }));
+  },
+
+  salvarPrograma: (programa) => {
+    set((s) => ({
+      programas: s.programas.map((atual) =>
+        atual.id === programa.id ? structuredClone(programa) : atual,
+      ),
+    }));
+  },
+
+  duplicarPrograma: (programaId) => {
+    const origem = get().programas.find((programa) => programa.id === programaId);
+    if (!origem) return null;
+    const sufixo = crypto.randomUUID().slice(0, 4);
+    const copia: Programa = {
+      ...structuredClone(origem),
+      id: `programa-${sufixo}`,
+      codigo: `${origem.codigo}-${sufixo}`,
+      nome: `${origem.nome} — cópia`,
+      versao: "0.1",
+      ativo: false,
+    };
+    set((s) => ({ programas: [...s.programas, copia] }));
+    return copia;
+  },
+
+  atualizarIntegracao: (integracaoId, patch) => {
+    set((s) => ({
+      integracoes: s.integracoes.map((integracao) => {
+        if (integracao.id !== integracaoId) return integracao;
+        const segredoFinal = patch.apiKey?.trim()
+          ? patch.apiKey.trim().slice(-4).toUpperCase()
+          : integracao.segredoFinal;
+        return {
+          ...integracao,
+          ativa: patch.ativa ?? integracao.ativa,
+          segredoConfigurado: segredoFinal ? true : integracao.segredoConfigurado,
+          segredoFinal,
+          atualizadoEm: agora(),
+        };
+      }),
+    }));
   },
 
   criarProposta: (input) => {
@@ -642,10 +744,20 @@ export const useMockDb = create<MockDbState>((set, get) => ({
   },
 
   resetarDemo: () => {
-    set({ ...seedPadrao() });
+    set({
+      ...seedPadrao(),
+      regraAtendimentoIA: structuredClone(regraAtendimentoIASeed),
+      agentesIA: structuredClone(agentesAtendimentoIA),
+    });
   },
 
   carregarCenario: (fabrica) => {
-    set((s) => ({ ...s, ...seedPadrao(), ...fabrica() }));
+    set((s) => ({
+      ...s,
+      ...seedPadrao(),
+      regraAtendimentoIA: structuredClone(regraAtendimentoIASeed),
+      agentesIA: structuredClone(agentesAtendimentoIA),
+      ...fabrica(),
+    }));
   },
 }));

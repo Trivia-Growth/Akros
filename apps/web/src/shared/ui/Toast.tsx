@@ -63,7 +63,7 @@ export function ToastViewport() {
           <output
             key={t.id}
             className={cn(
-              "pointer-events-auto flex items-start gap-2.5 rounded-md border px-4 py-3 text-sm shadow-elevated",
+              "toast-enter pointer-events-auto flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm shadow-elevated",
               "min-w-[280px] max-w-sm",
               variantClasses[t.variant],
             )}

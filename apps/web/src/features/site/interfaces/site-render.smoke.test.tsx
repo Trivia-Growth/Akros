@@ -33,7 +33,9 @@ describe("Site — smoke test de render", () => {
   it("HomePage mostra a foto da fundadora no hero", async () => {
     renderWithRouter(<HomePage />, ["/"]);
     const fotos = await screen.findAllByRole("img");
-    expect(fotos.some((img) => img.getAttribute("src") === "/equipe/natalia-luz.jpg")).toBe(true);
+    expect(
+      fotos.some((img) => img.getAttribute("src") === "/equipe/natalia-luz-portrait.png"),
+    ).toBe(true);
   });
 
   it("QuemSomosPage renderiza os 4 integrantes com foto", async () => {
@@ -43,7 +45,7 @@ describe("Site — smoke test de render", () => {
     const srcs = fotos.map((img) => img.getAttribute("src"));
     expect(srcs).toEqual(
       expect.arrayContaining([
-        "/equipe/natalia-luz.jpg",
+        "/equipe/natalia-luz-portrait.png",
         "/equipe/denise-sarchiapone.jpg",
         "/equipe/bruno-luz.jpg",
         "/equipe/elem-tluczek.jpg",

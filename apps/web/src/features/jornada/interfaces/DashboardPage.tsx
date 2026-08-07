@@ -9,8 +9,8 @@ import {
   usePrevisao,
 } from "@/features/jornada/application/hooks";
 import { usePagamentosCliente } from "@/features/pagamentos/application/hooks";
-import { Badge, Button, Card, Progress, Stepper, type StepperItem } from "@/shared/ui";
-import { CalendarDays, FileText, Gauge, Wallet } from "lucide-react";
+import { Badge, Card, Progress, Stepper, type StepperItem } from "@/shared/ui";
+import { ArrowUpRight, CalendarDays, FileText, Gauge, Map as MapIcon, Wallet } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -47,31 +47,60 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold text-navy">
-          {t("dashboard.greeting", { nome: cliente.nome.split(" ")[0] })}
-        </h1>
-        <p className="mt-1 text-sm text-ink-soft">
-          {t("dashboard.visaType")}: <strong className="text-navy">{cliente.tipoVisto}</strong> ·{" "}
-          {t("dashboard.caseManager")}: <strong className="text-navy">{cliente.caseManager}</strong>
-        </p>
-      </div>
+      <section className="relative overflow-hidden rounded-2xl bg-navy p-6 text-white shadow-elevated sm:p-8">
+        <div
+          aria-hidden
+          className="absolute -right-10 top-0 h-48 w-48 rounded-full bg-gold/15 blur-3xl"
+        />
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-label text-gold">Portal Akros</p>
+            <h1 className="mt-3 font-display text-3xl font-medium sm:text-4xl">
+              {t("dashboard.greeting", { nome: cliente.nome.split(" ")[0] })}
+            </h1>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/65">
+              {t("dashboard.visaType")}:{" "}
+              <strong className="font-medium text-white">{cliente.tipoVisto}</strong> ·{" "}
+              {t("dashboard.caseManager")}:{" "}
+              <strong className="font-medium text-white">{cliente.caseManager}</strong>
+            </p>
+          </div>
+          {faseAtual && (
+            <Link
+              to="/portal/jornada"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/15"
+            >
+              <MapIcon className="h-4 w-4 text-gold" aria-hidden />
+              {faseAtual.titulo}
+              <ArrowUpRight className="h-4 w-4" aria-hidden />
+            </Link>
+          )}
+        </div>
+      </section>
 
-      <Card>
-        <Progress value={progresso} label={t("dashboard.progress")} className="mb-6" />
+      <Card className="border-gold-200 p-6">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-label text-gold-700">
+              {t("dashboard.progress")}
+            </p>
+            <p className="mt-1 font-display text-2xl font-medium text-navy">
+              {progresso}% da jornada
+            </p>
+          </div>
+          <Link to="/portal/jornada" className="text-sm font-medium text-gold-700 hover:text-navy">
+            {t("dashboard.viewJourney")} →
+          </Link>
+        </div>
+        <Progress value={progresso} className="mb-7" />
         <div className="overflow-x-auto">
           <Stepper items={stepperItems} />
         </div>
-        <Link to="/portal/jornada" className="mt-6 inline-block">
-          <Button variant="secondary" size="sm">
-            {t("dashboard.viewJourney")}
-          </Button>
-        </Link>
       </Card>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-label text-gold-700">
+        <Card className="p-6">
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-label text-gold-700">
             {t("dashboard.ballWith")}
           </h2>
           <div className="flex flex-col gap-2 text-sm">
@@ -89,7 +118,7 @@ export function DashboardPage() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="p-6">
           <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-label text-gold-700">
             <Gauge className="h-3.5 w-3.5" aria-hidden />
             {t("dashboard.forecastTitle")}
@@ -115,7 +144,7 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="p-6">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-label text-gold-700">
           {t("dashboard.nextActions")}
         </h2>
@@ -127,7 +156,7 @@ export function DashboardPage() {
               <li key={etapa.id}>
                 <Link
                   to="/portal/jornada"
-                  className="flex items-center justify-between rounded-md border border-border px-4 py-3 text-sm transition-colors hover:border-gold-300 hover:bg-gold-50/30"
+                  className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm transition-all hover:border-gold-300 hover:bg-gold-50/30"
                 >
                   <span className="font-medium text-navy">{etapa.titulo}</span>
                   <Badge variant="gold">{t("common:status.pending")}</Badge>
@@ -203,7 +232,7 @@ interface ShortcutCardProps {
 function ShortcutCard({ icon: Icon, title, value, alert, to }: ShortcutCardProps) {
   return (
     <Link to={to}>
-      <Card className="transition-shadow hover:shadow-elevated">
+      <Card className="h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-navy-50 text-navy">
             <Icon className="h-4 w-4" aria-hidden />

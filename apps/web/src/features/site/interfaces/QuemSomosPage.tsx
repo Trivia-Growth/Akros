@@ -7,7 +7,7 @@ const VALUE_ICONS = [ShieldCheck, Users, HeartHandshake] as const;
 const VALUE_KEYS = ["transparency", "professionalism", "closeness"] as const;
 
 const TEAM = [
-  { key: "natalia", photo: "/equipe/natalia-luz.jpg" },
+  { key: "natalia", photo: "/equipe/natalia-luz-portrait.png" },
   { key: "denise", photo: "/equipe/denise-sarchiapone.jpg" },
   { key: "bruno", photo: "/equipe/bruno-luz.jpg" },
   { key: "elem", photo: "/equipe/elem-tluczek.jpg" },
