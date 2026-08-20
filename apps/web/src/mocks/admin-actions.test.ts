@@ -42,10 +42,12 @@ describe("ações do admin (E03)", () => {
     const proposta = await container.propostas.criar({
       leadOuClienteId: "lead-001",
       escopo: "Assessoria EB-2 NIW completa",
+      itensEscopo: ["Business Plan", "Cartas de recomendação"],
       tipoVisto: "EB-2 NIW",
       valor: 20000,
       moeda: "BRL",
       condicoes: "Entrada + 4x",
+      validoAte: "2026-09-30T23:59:59-03:00",
     });
     expect(proposta.status).toBe("rascunho");
 

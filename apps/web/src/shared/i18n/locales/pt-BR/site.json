@@ -114,6 +114,17 @@
       "professionPlaceholder": "Ex: Engenharia de Software",
       "message": "Mensagem (opcional)",
       "messagePlaceholder": "Conte mais sobre o seu caso",
+      "messageGuide": {
+        "eb2Niw": "Ajuda: formação (mestrado/doutorado), anos de experiência, área de atuação e impacto do seu trabalho (projetos, publicações, prêmios).",
+        "eb1": "Ajuda: prêmios ou reconhecimentos recebidos, publicações, cobertura de mídia especializada, participação em bancas/júris na sua área.",
+        "eb2": "Ajuda: se já tem oferta de emprego nos EUA, cargo pretendido, formação exigida para a vaga.",
+        "eb3": "Ajuda: se já tem oferta de emprego nos EUA, tipo de cargo (qualificado ou não) e formação/experiência exigida.",
+        "o1": "Ajuda: área de talento extraordinário, prêmios, contratos ou projetos nos EUA, evidências de reconhecimento na sua área.",
+        "h1b": "Ajuda: oferta de emprego nos EUA, cargo, empresa patrocinadora, formação superior na área da vaga.",
+        "l1": "Ajuda: vínculo com empresa multinacional, cargo (executivo/gerencial ou especializado) e tempo de casa.",
+        "e2": "Ajuda: valor de investimento planejado, nacionalidade (para tratado com os EUA) e plano de negócio.",
+        "outro": "Ajuda: descreva seu objetivo migratório e sua situação atual."
+      },
       "consent": "Autorizo o contato da Akros e concordo com o tratamento dos meus dados conforme a política de privacidade.",
       "submit": "Enviar formulário",
       "submitting": "Enviando...",

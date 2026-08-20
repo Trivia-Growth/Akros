@@ -134,4 +134,16 @@ export const leads: Lead[] = [
     criadoEm: "2026-06-01T12:00:00-03:00",
     notas: ["Perfil não se enquadra em nenhum visto disponível no momento."],
   },
+  {
+    id: "lead-agendamento-camila",
+    nome: "Camila Duarte",
+    email: "camila.duarte@example.com",
+    telefone: "+55 41 91234-5008",
+    origem: "WhatsApp",
+    tipoVistoInteresse: "EB-1",
+    areaProfissao: "Pesquisa científica",
+    estagio: "reuniao_agendada",
+    criadoEm: "2026-08-18T10:02:00-03:00",
+    notas: ["Reunião marcada pelo agente de IA via tool de agendamento (ADR-0007)."],
+  },
 ];

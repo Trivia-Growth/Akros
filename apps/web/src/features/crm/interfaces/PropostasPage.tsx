@@ -1,8 +1,10 @@
 import { container } from "@/app/di";
 import { useMockDb } from "@/mocks/store";
 import { Badge, Button, Card, Input, Modal, Select, Textarea, toast } from "@/shared/ui";
-import { useMemo, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 const STATUS_VARIANT = {
   rascunho: "neutral",
@@ -23,6 +25,7 @@ export function PropostasPage() {
   const propostas = useMockDb((s) => s.propostas);
   const leads = useMockDb((s) => s.leads);
   const [modalOpen, setModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const nomePara = (id: string) => leads.find((l) => l.id === id)?.nome ?? id;
 
@@ -66,6 +69,13 @@ export function PropostasPage() {
               </p>
               <p className="text-xs text-ink-muted">{p.condicoes}</p>
               <div className="mt-4 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => navigate(`/admin/propostas/${p.id}`)}
+                >
+                  Ver documento
+                </Button>
                 {p.status === "rascunho" && (
                   <Button size="sm" onClick={() => handleEnviar(p.id)}>
                     {t("proposals.send")}
@@ -107,31 +117,43 @@ function NovaPropostaModal({ open, onClose }: { open: boolean; onClose: () => vo
     () => todosLeads.filter((l) => l.estagio === "em_negociacao"),
     [todosLeads],
   );
+  const proximoItemId = useRef(1);
   const [leadId, setLeadId] = useState("");
   const [escopo, setEscopo] = useState("");
+  const [itensEscopo, setItensEscopo] = useState<{ id: number; texto: string }[]>([
+    { id: 0, texto: "" },
+  ]);
   const [tipoVisto, setTipoVisto] = useState("EB-2 NIW");
   const [valor, setValor] = useState("");
   const [condicoes, setCondicoes] = useState("");
+  const [validoAte, setValidoAte] = useState("");
   const [criando, setCriando] = useState(false);
 
+  const itensPreenchidos = itensEscopo.map((item) => item.texto.trim()).filter(Boolean);
+
   async function handleCriar() {
-    if (!leadId || !escopo || !valor || criando) return;
+    if (!leadId || !escopo || !valor || !validoAte || itensPreenchidos.length === 0 || criando)
+      return;
     setCriando(true);
     try {
       await container.propostas.criar({
         leadOuClienteId: leadId,
         escopo,
+        itensEscopo: itensPreenchidos,
         tipoVisto,
         valor: Number(valor),
         moeda: "BRL",
         condicoes,
+        validoAte: new Date(validoAte).toISOString(),
       });
       toast.success(t("proposals.createdSuccess"));
       onClose();
       setLeadId("");
       setEscopo("");
+      setItensEscopo([{ id: 0, texto: "" }]);
       setValor("");
       setCondicoes("");
+      setValidoAte("");
     } finally {
       setCriando(false);
     }
@@ -156,6 +178,46 @@ function NovaPropostaModal({ open, onClose }: { open: boolean; onClose: () => vo
           value={escopo}
           onChange={(e) => setEscopo(e.target.value)}
         />
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-navy">Itens do escopo</p>
+          {itensEscopo.map((item) => (
+            <div key={item.id} className="flex items-center gap-2">
+              <Input
+                value={item.texto}
+                onChange={(e) =>
+                  setItensEscopo(
+                    itensEscopo.map((atual) =>
+                      atual.id === item.id ? { ...atual, texto: e.target.value } : atual,
+                    ),
+                  )
+                }
+                placeholder="Ex.: Business Plan completo"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={itensEscopo.length === 1}
+                onClick={() => setItensEscopo(itensEscopo.filter((atual) => atual.id !== item.id))}
+                aria-label="Remover item"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() =>
+              setItensEscopo([...itensEscopo, { id: proximoItemId.current++, texto: "" }])
+            }
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            Adicionar item
+          </Button>
+        </div>
         <Input
           label={t("proposals.visaType")}
           value={tipoVisto}
@@ -173,10 +235,18 @@ function NovaPropostaModal({ open, onClose }: { open: boolean; onClose: () => vo
           value={condicoes}
           onChange={(e) => setCondicoes(e.target.value)}
         />
+        <Input
+          type="date"
+          label="Válida até"
+          value={validoAte}
+          onChange={(e) => setValidoAte(e.target.value)}
+        />
         <Button
           onClick={handleCriar}
           loading={criando}
-          disabled={criando || !leadId || !escopo || !valor}
+          disabled={
+            criando || !leadId || !escopo || !valor || !validoAte || itensPreenchidos.length === 0
+          }
         >
           {t("proposals.create")}
         </Button>

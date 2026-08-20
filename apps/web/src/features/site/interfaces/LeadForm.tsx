@@ -8,6 +8,18 @@ import { useTranslation } from "react-i18next";
 
 const TIPOS_VISTO = ["EB-2 NIW", "EB-1", "EB-2", "EB-3", "O-1", "H-1B", "L-1", "E-2", "Outro"];
 
+const GUIA_MENSAGEM_POR_VISTO: Record<string, string> = {
+  "EB-2 NIW": "eb2Niw",
+  "EB-1": "eb1",
+  "EB-2": "eb2",
+  "EB-3": "eb3",
+  "O-1": "o1",
+  "H-1B": "h1b",
+  "L-1": "l1",
+  "E-2": "e2",
+  Outro: "outro",
+};
+
 interface FormState {
   nome: string;
   email: string;
@@ -135,6 +147,13 @@ export function LeadForm() {
         <Textarea
           label={t("site:contact.form.message")}
           placeholder={t("site:contact.form.messagePlaceholder")}
+          hint={
+            GUIA_MENSAGEM_POR_VISTO[values.tipoVistoInteresse]
+              ? t(
+                  `site:contact.form.messageGuide.${GUIA_MENSAGEM_POR_VISTO[values.tipoVistoInteresse]}`,
+                )
+              : undefined
+          }
           value={values.mensagem}
           onChange={(e) => setField("mensagem", e.target.value)}
         />

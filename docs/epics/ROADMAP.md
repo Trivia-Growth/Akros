@@ -59,6 +59,7 @@ concluídas e implementadas — nasceu da mensagem do Bruno Luz de 06/08/2026. V
 | E03-S03 | Gestão de jornada | Liberar próxima fase (gate central da gamificação) | @claude-code | 🟩 | ✅ |
 | E03-S04 | Proposta comercial | Criar/enviar/aceitar, formatação de moeda | @claude-code | 🟩 | ✅ |
 | E03-S05 | Dashboard admin | Funil, clientes por fase, saúde, receita (dataviz) | @claude-code | 🟩 | ✅ |
+| E03-S06 | Documento de proposta | Visualização HTML formatada e imprimível da proposta, identidade Akros | @claude-code | 🟩 | ✅ |
 
 ## E04 — Integrações (mockadas, UI realista)
 
@@ -68,6 +69,13 @@ concluídas e implementadas — nasceu da mensagem do Bruno Luz de 06/08/2026. V
 | E04-S02 | Agentes IA | Config + simulação de resposta com handoff | @claude-code | 🟩 | ✅ |
 | E04-S03 | Agenda (Gmail/Outlook) | Status conexão mock, sincronização, todas reuniões | @claude-code | 🟩 | ✅ |
 | E04-S04 | Transcrições (Fireflies) | Resumo + action items, evidência na visão 360 | @claude-code | 🟩 | ✅ |
+| E04-S05 | Custo de IA nas conversas | Badge de custo (USD) por conversa atendida por IA, no inbox admin | @claude-code | 🟩 | ✅ |
+| E04-S06 | Canal Instagram / Meta | Credenciais Meta Graph API + Instagram como canal do agente de IA | @claude-code | 🟩 | ✅ |
+| E04-S07 | Tool de agenda do agente | Contas Google/Microsoft/Calendly + agente marca reunião direto (ADR-0007) | @claude-code | 🟩 | ✅ |
+| E04-S08 | Transcrição configurável | Fireflies / Microsoft Teams como integração de transcrição em /admin/configuracoes | @claude-code | 🟩 | ✅ |
+| E04-S09 | Agente simplificado | Remove Skills/MCPs, adiciona correções e UI de horários de atendimento | @claude-code | 🟩 | ✅ |
+| E04-S10 | Base de conhecimento compartilhada | Catálogo único entre agentes, aba geral em /admin/comunicacao | @claude-code | 🟩 | ✅ |
+| E04-S11 | Múltiplas contas por canal | WhatsApp/Instagram com várias contas, agente escolhe conta específica | @claude-code | 🟩 | ✅ |
 
 ## E05 — Demo & Impersonação
 

@@ -1,6 +1,8 @@
 import { container } from "@/app/di";
 import { useConversas } from "@/features/comunicacao/application/hooks";
 import type { RegraAtendimentoIA } from "@/features/comunicacao/domain/types";
+import type { CanalComunicacao } from "@/features/comunicacao/domain/types";
+import type { ProvedorCanal } from "@/features/configuracoes/domain/types";
 import { useMockDb } from "@/mocks/store";
 import {
   Avatar,
@@ -8,6 +10,7 @@ import {
   Button,
   Card,
   Input,
+  Select,
   Tabs,
   TabsContent,
   TabsList,
@@ -17,18 +20,45 @@ import {
 } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
 import {
+  AlertTriangle,
   BookOpenCheck,
   Bot,
   Brain,
-  DatabaseZap,
+  CalendarClock,
+  Clock,
+  Instagram,
   MessageCircle,
+  Plus,
   Send,
   ShieldCheck,
   Sparkles,
-  Wrench,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+
+function formatarCustoIA(valor: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(valor);
+}
+
+const CANAL_ICON: Record<CanalComunicacao, typeof MessageCircle> = {
+  whatsapp_oficial: MessageCircle,
+  evolution: MessageCircle,
+  instagram: Instagram,
+};
+
+const CANAL_I18N_KEY: Record<CanalComunicacao, string> = {
+  whatsapp_oficial: "comunicacao.channelOfficial",
+  evolution: "comunicacao.channelEvolution",
+  instagram: "comunicacao.channelInstagram",
+};
+
+const PROVEDOR_CANAL_ICON: Record<ProvedorCanal, typeof MessageCircle> = {
+  whatsapp_oficial: MessageCircle,
+  evolution: MessageCircle,
+  instagram: Instagram,
+};
 
 export function ComunicacaoPage() {
   const { t } = useTranslation("admin");
@@ -44,12 +74,16 @@ export function ComunicacaoPage() {
         <TabsList>
           <TabsTrigger value="inbox">{t("comunicacao.tabInbox")}</TabsTrigger>
           <TabsTrigger value="agent">{t("comunicacao.tabAgent")}</TabsTrigger>
+          <TabsTrigger value="knowledge">Base de conhecimento</TabsTrigger>
         </TabsList>
         <TabsContent value="inbox">
           <Inbox />
         </TabsContent>
         <TabsContent value="agent">
           <AgentConfig />
+        </TabsContent>
+        <TabsContent value="knowledge">
+          <KnowledgeBaseCatalog />
         </TabsContent>
       </Tabs>
     </div>
@@ -86,6 +120,7 @@ function Inbox() {
         {conversas.map((c) => {
           const naoLidas = c.mensagens.filter((m) => !m.lida && m.autor === "cliente").length;
           const ultima = c.mensagens[c.mensagens.length - 1];
+          const CanalIcon = CANAL_ICON[c.canal];
           return (
             <button
               key={c.id}
@@ -105,11 +140,22 @@ function Inbox() {
                   {naoLidas > 0 && <Badge variant="gold">{naoLidas}</Badge>}
                 </div>
                 <p className="truncate text-xs text-ink-muted">{ultima?.texto}</p>
+                <p className="mt-0.5 flex items-center gap-1 text-[11px] text-ink-muted">
+                  <CanalIcon className="h-3 w-3" aria-hidden />
+                  {t(CANAL_I18N_KEY[c.canal])}
+                </p>
                 {c.atendidoPorIA && (
-                  <Badge variant="navy" className="mt-1">
-                    <Bot className="h-3 w-3" aria-hidden />
-                    {t("comunicacao.handledByAI")}
-                  </Badge>
+                  <div className="mt-1 flex flex-wrap items-center gap-1">
+                    <Badge variant="navy">
+                      <Bot className="h-3 w-3" aria-hidden />
+                      {t("comunicacao.handledByAI")}
+                    </Badge>
+                    {c.custoIA !== undefined && (
+                      <Badge variant="gold">
+                        {t("comunicacao.aiCost", { valor: formatarCustoIA(c.custoIA) })}
+                      </Badge>
+                    )}
+                  </div>
                 )}
               </div>
             </button>
@@ -122,6 +168,14 @@ function Inbox() {
           <p className="text-sm text-ink-muted">{t("comunicacao.selectConversation")}</p>
         ) : (
           <>
+            {selecionada.atendidoPorIA && selecionada.custoIA !== undefined && (
+              <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
+                <p className="text-sm font-medium text-navy">{selecionada.clienteNome}</p>
+                <Badge variant="gold">
+                  {t("comunicacao.aiCost", { valor: formatarCustoIA(selecionada.custoIA) })}
+                </Badge>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto">
               <div className="flex flex-col gap-2">
                 {selecionada.mensagens.map((m) => (
@@ -167,6 +221,9 @@ function Inbox() {
 function AgentConfig() {
   const agentes = useMockDb((state) => state.agentesIA);
   const salvarAgenteIA = useMockDb((state) => state.salvarAgenteIA);
+  const contasAgenda = useMockDb((state) => state.contasAgenda);
+  const contasCanal = useMockDb((state) => state.contasCanal);
+  const basesConhecimento = useMockDb((state) => state.basesConhecimento);
   const [selecionadoId, setSelecionadoId] = useState(agentes[0]?.id ?? "");
   const selecionado = agentes.find((agente) => agente.id === selecionadoId) ?? agentes[0];
   const [config, setConfig] = useState<RegraAtendimentoIA | null>(
@@ -174,6 +231,7 @@ function AgentConfig() {
   );
   const [pergunta, setPergunta] = useState("");
   const [resposta, setResposta] = useState<{ resposta: string; handoff: boolean } | null>(null);
+  const [novaCorrecao, setNovaCorrecao] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -275,12 +333,12 @@ function AgentConfig() {
             <AgentSignal
               icon={BookOpenCheck}
               label="Base de conhecimento"
-              value={`${config.baseConhecimento.length} fontes`}
+              value={`${config.baseConhecimentoIds.length} fontes`}
             />
             <AgentSignal
-              icon={Wrench}
-              label="Skills ativas"
-              value={`${config.skills.filter((skill) => skill.ativa).length} de ${config.skills.length}`}
+              icon={AlertTriangle}
+              label="Correções registradas"
+              value={`${config.correcoes.length}`}
             />
             <AgentSignal
               icon={Brain}
@@ -289,6 +347,129 @@ function AgentConfig() {
             />
           </div>
         </section>
+
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-4 w-4 text-gold-700" aria-hidden />
+            <h3 className="font-semibold text-navy">Canais atendidos</h3>
+          </div>
+          <p className="text-xs text-ink-muted">
+            Quais contas conectadas (WhatsApp/Instagram) este agente atende.
+          </p>
+          {contasCanal.length === 0 ? (
+            <p className="rounded-lg bg-cream-100 p-3 text-sm text-ink-soft">
+              Nenhuma conta de canal conectada ainda.{" "}
+              <Link to="/admin/configuracoes" className="font-medium text-gold-700 underline">
+                Conectar em Configurações →
+              </Link>
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {contasCanal
+                .filter((conta) => conta.ativa)
+                .map((conta) => {
+                  const Icon = PROVEDOR_CANAL_ICON[conta.provedor];
+                  const marcado = config.contasCanalIds.includes(conta.id);
+                  return (
+                    <label
+                      key={conta.id}
+                      className="flex cursor-pointer items-center gap-2 rounded-lg border border-border p-3"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={marcado}
+                        onChange={(event) =>
+                          setConfig({
+                            ...config,
+                            contasCanalIds: event.target.checked
+                              ? [...config.contasCanalIds, conta.id]
+                              : config.contasCanalIds.filter((id) => id !== conta.id),
+                          })
+                        }
+                        className="h-4 w-4 accent-gold-600"
+                      />
+                      <Icon className="h-4 w-4 text-navy" aria-hidden />
+                      <span className="text-sm text-navy">
+                        {conta.nomeExibicao}{" "}
+                        <span className="text-ink-muted">· {conta.identificador}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+            </div>
+          )}
+        </Card>
+
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <CalendarClock className="h-4 w-4 text-gold-700" aria-hidden />
+            <h3 className="font-semibold text-navy">Ferramenta de agendamento</h3>
+          </div>
+          <p className="text-xs text-ink-muted">
+            Com a ferramenta ativa, o agente pergunta dia/período, consulta disponibilidade e marca
+            a reunião direto na conversa — sem aprovação humana por reunião (ADR-0007).
+          </p>
+          {contasAgenda.length === 0 ? (
+            <p className="rounded-lg bg-cream-100 p-3 text-sm text-ink-soft">
+              Nenhuma conta de agenda conectada ainda.{" "}
+              <Link to="/admin/configuracoes" className="font-medium text-gold-700 underline">
+                Conectar em Configurações →
+              </Link>
+            </p>
+          ) : (
+            <>
+              <label className="flex cursor-pointer items-center justify-between rounded-lg border border-border p-3.5">
+                <span className="text-sm font-medium text-navy">Ativar ferramenta</span>
+                <input
+                  type="checkbox"
+                  checked={config.ferramentaAgendamento?.ativa ?? false}
+                  onChange={(event) =>
+                    setConfig({
+                      ...config,
+                      ferramentaAgendamento: {
+                        ativa: event.target.checked,
+                        contasAgendaIds: config.ferramentaAgendamento?.contasAgendaIds ?? [],
+                      },
+                    })
+                  }
+                  className="h-4 w-4 accent-gold-600"
+                />
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {contasAgenda
+                  .filter((conta) => conta.ativa)
+                  .map((conta) => {
+                    const contasSelecionadas = config.ferramentaAgendamento?.contasAgendaIds ?? [];
+                    const marcado = contasSelecionadas.includes(conta.id);
+                    return (
+                      <label
+                        key={conta.id}
+                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border p-3"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={marcado}
+                          onChange={(event) =>
+                            setConfig({
+                              ...config,
+                              ferramentaAgendamento: {
+                                ativa: config.ferramentaAgendamento?.ativa ?? false,
+                                contasAgendaIds: event.target.checked
+                                  ? [...contasSelecionadas, conta.id]
+                                  : contasSelecionadas.filter((id) => id !== conta.id),
+                              },
+                            })
+                          }
+                          className="h-4 w-4 accent-gold-600"
+                        />
+                        <span className="text-sm text-navy">{conta.nomeExibicao}</span>
+                      </label>
+                    );
+                  })}
+              </div>
+            </>
+          )}
+        </Card>
 
         <div className="grid gap-5 lg:grid-cols-2">
           <Card className="flex flex-col gap-4">
@@ -303,10 +484,10 @@ function AgentConfig() {
             />
             <Textarea
               label="Alma do agente"
-              rows={5}
+              rows={8}
               value={config.alma}
               onChange={(event) => setConfig({ ...config, alma: event.target.value })}
-              hint="Define tom de voz, limites e como o agente deve conduzir a conversa."
+              hint="Prompt de instruções: tom de voz, limites, como conduzir a conversa — e quando consultar cada base de conhecimento selecionada abaixo."
             />
             <Textarea
               label="Mensagem de handoff"
@@ -317,130 +498,207 @@ function AgentConfig() {
           </Card>
 
           <Card>
-            <div className="flex items-center gap-2">
-              <BookOpenCheck className="h-4 w-4 text-gold-700" aria-hidden />
-              <h3 className="font-semibold text-navy">Base de conhecimento</h3>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <BookOpenCheck className="h-4 w-4 text-gold-700" aria-hidden />
+                <h3 className="font-semibold text-navy">Base de conhecimento</h3>
+              </div>
             </div>
             <p className="mt-1 text-xs text-ink-muted">
-              Fontes indexadas que o agente pode consultar antes de responder.
+              Fontes do catálogo geral que este agente pode consultar. Cadastre novas fontes na aba
+              "Base de conhecimento" acima.
             </p>
-            <div className="mt-4 flex flex-col gap-2">
-              {config.baseConhecimento.map((fonte) => (
-                <div
-                  key={fonte.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-navy">{fonte.nome}</p>
-                    <p className="mt-0.5 text-xs text-ink-muted">
-                      {fonte.tipo} · {fonte.itens} itens
+            {basesConhecimento.length === 0 ? (
+              <p className="mt-3 text-sm text-ink-soft">Nenhuma fonte cadastrada ainda.</p>
+            ) : (
+              <div className="mt-4 flex flex-col gap-2">
+                {basesConhecimento.map((fonte) => {
+                  const marcado = config.baseConhecimentoIds.includes(fonte.id);
+                  return (
+                    <label
+                      key={fonte.id}
+                      className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border p-3"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-navy">{fonte.nome}</p>
+                        <p className="mt-0.5 text-xs text-ink-muted">
+                          {fonte.tipo} · {fonte.itens} itens
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={fonte.status === "pronta" ? "success" : "warning"}>
+                          {fonte.status === "pronta" ? "Pronta" : "Indexando"}
+                        </Badge>
+                        <input
+                          type="checkbox"
+                          checked={marcado}
+                          onChange={(event) =>
+                            setConfig({
+                              ...config,
+                              baseConhecimentoIds: event.target.checked
+                                ? [...config.baseConhecimentoIds, fonte.id]
+                                : config.baseConhecimentoIds.filter((id) => id !== fonte.id),
+                            })
+                          }
+                          className="h-4 w-4 accent-gold-600"
+                        />
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+
+          <Card className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-gold-700" aria-hidden />
+              <h3 className="font-semibold text-navy">Correções</h3>
+            </div>
+            <p className="text-xs text-ink-muted">
+              Registre explicitamente algo que o agente fez e não deve repetir.
+            </p>
+            <div className="flex flex-col gap-2">
+              {config.correcoes.length === 0 ? (
+                <p className="text-sm text-ink-soft">Nenhuma correção registrada ainda.</p>
+              ) : (
+                config.correcoes.map((correcao) => (
+                  <div key={correcao.id} className="rounded-lg border border-border p-3">
+                    <p className="text-sm text-navy">{correcao.texto}</p>
+                    <p className="mt-1 text-[11px] text-ink-muted">
+                      {new Date(correcao.registradoEm).toLocaleDateString("pt-BR")}
                     </p>
                   </div>
-                  <Badge variant={fonte.status === "pronta" ? "success" : "warning"}>
-                    {fonte.status === "pronta" ? "Pronta" : "Indexando"}
-                  </Badge>
+                ))
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Ex.: Não prometer prazo exato de aprovação"
+                value={novaCorrecao}
+                onChange={(event) => setNovaCorrecao(event.target.value)}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!novaCorrecao.trim()}
+                onClick={() => {
+                  setConfig({
+                    ...config,
+                    correcoes: [
+                      ...config.correcoes,
+                      {
+                        id: crypto.randomUUID(),
+                        texto: novaCorrecao.trim(),
+                        registradoEm: new Date().toISOString(),
+                      },
+                    ],
+                  });
+                  setNovaCorrecao("");
+                }}
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                Adicionar
+              </Button>
+            </div>
+          </Card>
+
+          <Card className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-gold-700" aria-hidden />
+              <h3 className="font-semibold text-navy">Horários de atendimento</h3>
+            </div>
+            <p className="text-xs text-ink-muted">Janelas em que o agente responde.</p>
+            <div className="flex flex-col gap-2">
+              {config.janelasAtendimento.map((janela, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: janelas não têm id próprio no domínio; lista curta, sem reordenação
+                <div key={`janela-${index}`} className="flex items-center gap-2">
+                  <Input
+                    type="time"
+                    value={janela.inicio}
+                    onChange={(event) =>
+                      setConfig({
+                        ...config,
+                        janelasAtendimento: config.janelasAtendimento.map((item, i) =>
+                          i === index ? { ...item, inicio: event.target.value } : item,
+                        ),
+                      })
+                    }
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-ink-muted">até</span>
+                  <Input
+                    type="time"
+                    value={janela.fim}
+                    onChange={(event) =>
+                      setConfig({
+                        ...config,
+                        janelasAtendimento: config.janelasAtendimento.map((item, i) =>
+                          i === index ? { ...item, fim: event.target.value } : item,
+                        ),
+                      })
+                    }
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={config.janelasAtendimento.length === 1}
+                    onClick={() =>
+                      setConfig({
+                        ...config,
+                        janelasAtendimento: config.janelasAtendimento.filter((_, i) => i !== index),
+                      })
+                    }
+                    aria-label="Remover janela"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                  </Button>
                 </div>
               ))}
             </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                setConfig({
+                  ...config,
+                  janelasAtendimento: [
+                    ...config.janelasAtendimento,
+                    { inicio: "09:00", fim: "18:00" },
+                  ],
+                })
+              }
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              Adicionar janela
+            </Button>
           </Card>
 
           <Card>
-            <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-gold-700" aria-hidden />
-              <h3 className="font-semibold text-navy">Skills</h3>
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-sm font-medium text-navy">
+                <Brain className="h-4 w-4 text-gold-700" aria-hidden />
+                Memória {config.memoria.escopo === "por_cliente" ? "por cliente" : "por conversa"}
+              </span>
+              <input
+                type="checkbox"
+                checked={config.memoria.ativa}
+                onChange={(event) =>
+                  setConfig({
+                    ...config,
+                    memoria: { ...config.memoria, ativa: event.target.checked },
+                  })
+                }
+                className="h-4 w-4 accent-gold-600"
+              />
             </div>
-            <p className="mt-1 text-xs text-ink-muted">
-              Ações especializadas liberadas para este papel.
+            <p className="mt-2 text-xs text-ink-soft">
+              Retenção: {config.memoria.retencao}. Campos: {config.memoria.campos.join(", ")}.
             </p>
-            <div className="mt-4 flex flex-col gap-2">
-              {config.skills.map((skill) => (
-                <label
-                  key={skill.id}
-                  className="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-border p-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-navy">{skill.nome}</p>
-                    <p className="mt-0.5 text-xs text-ink-muted">{skill.descricao}</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={skill.ativa}
-                    onChange={(event) =>
-                      setConfig({
-                        ...config,
-                        skills: config.skills.map((item) =>
-                          item.id === skill.id ? { ...item, ativa: event.target.checked } : item,
-                        ),
-                      })
-                    }
-                    className="mt-1 h-4 w-4 accent-gold-600"
-                  />
-                </label>
-              ))}
-            </div>
-          </Card>
-
-          <Card>
-            <div className="flex items-center gap-2">
-              <DatabaseZap className="h-4 w-4 text-gold-700" aria-hidden />
-              <h3 className="font-semibold text-navy">MCPs e memória</h3>
-            </div>
-            <p className="mt-1 text-xs text-ink-muted">
-              Conectores autorizados e contexto que pode persistir entre conversas.
-            </p>
-            <div className="mt-4 flex flex-col gap-2">
-              {config.mcps.map((mcp) => (
-                <label
-                  key={mcp.id}
-                  className="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-border p-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-navy">
-                      {mcp.nome}{" "}
-                      <span className="font-normal text-ink-muted">
-                        · {mcp.permissao === "leitura" ? "somente leitura" : "leitura e escrita"}
-                      </span>
-                    </p>
-                    <p className="mt-0.5 text-xs text-ink-muted">{mcp.descricao}</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={mcp.ativo}
-                    onChange={(event) =>
-                      setConfig({
-                        ...config,
-                        mcps: config.mcps.map((item) =>
-                          item.id === mcp.id ? { ...item, ativo: event.target.checked } : item,
-                        ),
-                      })
-                    }
-                    className="mt-1 h-4 w-4 accent-gold-600"
-                  />
-                </label>
-              ))}
-            </div>
-            <div className="mt-3 rounded-lg bg-navy-50 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2 text-sm font-medium text-navy">
-                  <Brain className="h-4 w-4" aria-hidden />
-                  Memória {config.memoria.escopo === "por_cliente" ? "por cliente" : "por conversa"}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={config.memoria.ativa}
-                  onChange={(event) =>
-                    setConfig({
-                      ...config,
-                      memoria: { ...config.memoria, ativa: event.target.checked },
-                    })
-                  }
-                  className="h-4 w-4 accent-gold-600"
-                />
-              </div>
-              <p className="mt-1 text-xs text-ink-soft">
-                Retenção: {config.memoria.retencao}. Campos: {config.memoria.campos.join(", ")}.
-              </p>
-            </div>
           </Card>
         </div>
 
@@ -481,7 +739,8 @@ function AgentConfig() {
               <ShieldCheck className="h-5 w-5 text-gold-700" aria-hidden />
               <p className="mt-3 text-sm font-semibold text-navy">Guardrails visíveis</p>
               <p className="mt-1 text-xs text-ink-soft">
-                Cada acesso MCP é concedido por agente. Memória e fontes ficam separadas por papel.
+                Correções registradas ficam explícitas no prompt do agente. Memória e canais
+                atendidos ficam separados por papel.
               </p>
             </div>
             <Button onClick={handleSave} loading={saving} disabled={saving}>
@@ -506,6 +765,106 @@ function AgentSignal({
         <p className="text-sm font-medium text-white">{value}</p>
         <p className="text-[11px] text-slate-400">{label}</p>
       </div>
+    </div>
+  );
+}
+
+const TIPO_FONTE_LABEL = {
+  documento: "Documento",
+  url: "URL",
+  faq: "FAQ",
+  base_interna: "Base interna",
+} as const;
+
+function KnowledgeBaseCatalog() {
+  const basesConhecimento = useMockDb((state) => state.basesConhecimento);
+  const salvarBaseConhecimento = useMockDb((state) => state.salvarBaseConhecimento);
+  const agentes = useMockDb((state) => state.agentesIA);
+  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState<keyof typeof TIPO_FONTE_LABEL>("documento");
+  const [status, setStatus] = useState<"pronta" | "indexando">("pronta");
+  const [itens, setItens] = useState("");
+
+  function agentesQueUsam(fonteId: string): string {
+    const nomes = agentes
+      .filter((agente) => agente.baseConhecimentoIds.includes(fonteId))
+      .map((agente) => agente.nomeAgente);
+    return nomes.length > 0 ? nomes.join(", ") : "Nenhum agente ainda";
+  }
+
+  function adicionar() {
+    if (!nome.trim()) return;
+    salvarBaseConhecimento({ nome: nome.trim(), tipo, status, itens: Number(itens) || 0 });
+    toast.success("Fonte adicionada ao catálogo.");
+    setNome("");
+    setItens("");
+  }
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
+      <Card>
+        <h3 className="font-semibold text-navy">Catálogo de fontes</h3>
+        <p className="mt-1 text-xs text-ink-muted">
+          Cadastradas aqui uma vez, disponíveis pra qualquer agente selecionar.
+        </p>
+        <div className="mt-4 flex flex-col gap-2">
+          {basesConhecimento.length === 0 ? (
+            <p className="text-sm text-ink-soft">Nenhuma fonte cadastrada ainda.</p>
+          ) : (
+            basesConhecimento.map((fonte) => (
+              <div
+                key={fonte.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-navy">{fonte.nome}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    {TIPO_FONTE_LABEL[fonte.tipo]} · {fonte.itens} itens · usada por:{" "}
+                    {agentesQueUsam(fonte.id)}
+                  </p>
+                </div>
+                <Badge variant={fonte.status === "pronta" ? "success" : "warning"}>
+                  {fonte.status === "pronta" ? "Pronta" : "Indexando"}
+                </Badge>
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
+
+      <Card className="flex flex-col gap-3">
+        <h3 className="font-semibold text-navy">Adicionar fonte</h3>
+        <Input label="Nome" value={nome} onChange={(event) => setNome(event.target.value)} />
+        <Select
+          label="Tipo"
+          value={tipo}
+          onChange={(event) => setTipo(event.target.value as keyof typeof TIPO_FONTE_LABEL)}
+        >
+          {Object.entries(TIPO_FONTE_LABEL).map(([valor, label]) => (
+            <option key={valor} value={valor}>
+              {label}
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="Status"
+          value={status}
+          onChange={(event) => setStatus(event.target.value as "pronta" | "indexando")}
+        >
+          <option value="pronta">Pronta</option>
+          <option value="indexando">Indexando</option>
+        </Select>
+        <Input
+          type="number"
+          label="Itens"
+          value={itens}
+          onChange={(event) => setItens(event.target.value)}
+        />
+        <Button onClick={adicionar} disabled={!nome.trim()}>
+          <Plus className="h-4 w-4" aria-hidden />
+          Adicionar fonte
+        </Button>
+      </Card>
     </div>
   );
 }

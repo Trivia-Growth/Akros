@@ -1,4 +1,4 @@
-export type CanalComunicacao = "whatsapp_oficial" | "evolution";
+export type CanalComunicacao = "whatsapp_oficial" | "evolution" | "instagram";
 export type AutorMensagem = "cliente" | "agente_ia" | "humano";
 
 /**
@@ -44,6 +44,22 @@ export interface Conversa {
   canal: CanalComunicacao;
   mensagens: Mensagem[];
   atendidoPorIA: boolean;
+  /** Custo acumulado (USD) do atendimento por IA nesta conversa. Só presente quando atendidoPorIA. */
+  custoIA?: number;
+}
+
+/** Tool de agendamento direto (ADR-0007) — separada do mcp-calendar (só leitura). */
+export interface FerramentaAgendamento {
+  ativa: boolean;
+  /** Ids de ContaAgendaConectada (features/configuracoes) que este agente pode usar. */
+  contasAgendaIds: string[];
+}
+
+/** Correção explícita registrada pra evitar que o agente repita um comportamento (E04-S09). */
+export interface CorrecaoAgente {
+  id: string;
+  texto: string;
+  registradoEm: string;
 }
 
 export interface RegraAtendimentoIA {
@@ -51,16 +67,18 @@ export interface RegraAtendimentoIA {
   ativo: boolean;
   nomeAgente: string;
   funcao: string;
-  canais: CanalComunicacao[];
+  /** Ids de ContaCanalConectada (features/configuracoes) que este agente atende (E04-S11). */
+  contasCanalIds: string[];
   alma: string;
   saudacao: string;
   janelasAtendimento: { inicio: string; fim: string }[];
   topicos: { pergunta: string; resposta: string }[];
   mensagemHandoff: string;
-  baseConhecimento: FonteConhecimento[];
-  skills: SkillAgente[];
-  mcps: ConectorMCP[];
+  /** Ids de FonteConhecimento no catálogo compartilhado (E04-S10). */
+  baseConhecimentoIds: string[];
+  correcoes: CorrecaoAgente[];
   memoria: ConfiguracaoMemoria;
+  ferramentaAgendamento?: FerramentaAgendamento;
 }
 
 export interface FonteConhecimento {
@@ -69,21 +87,6 @@ export interface FonteConhecimento {
   tipo: "documento" | "url" | "faq" | "base_interna";
   status: "pronta" | "indexando";
   itens: number;
-}
-
-export interface SkillAgente {
-  id: string;
-  nome: string;
-  descricao: string;
-  ativa: boolean;
-}
-
-export interface ConectorMCP {
-  id: string;
-  nome: string;
-  descricao: string;
-  ativo: boolean;
-  permissao: "leitura" | "leitura_escrita";
 }
 
 export interface ConfiguracaoMemoria {

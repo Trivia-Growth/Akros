@@ -39,6 +39,16 @@ export const reunioes: Reuniao[] = [
     canal: "outlook",
     status: "realizada",
   },
+  {
+    id: "reuniao-camila-primeira-conversa",
+    clienteId: "lead-agendamento-camila",
+    titulo: "Primeira conversa — EB-1",
+    inicio: "2026-08-27T15:30:00-03:00",
+    fim: "2026-08-27T16:15:00-03:00",
+    canal: "gmail",
+    status: "agendada",
+    criadaPor: "agente_ia",
+  },
 ];
 
 export const transcricoes: Transcricao[] = [
@@ -55,6 +65,7 @@ export const transcricoes: Transcricao[] = [
       "Enviar diploma e histórico traduzidos (Carlos)",
     ],
     criadoEm: "2026-06-05T16:00:00-03:00",
+    provedor: "fireflies",
   },
   {
     id: "transcricao-renata-checkpoint1",
@@ -68,5 +79,6 @@ export const transcricoes: Transcricao[] = [
       "Renata enviar resumo da ideia de negócio por e-mail",
     ],
     criadoEm: "2026-06-20T12:00:00-03:00",
+    provedor: "fireflies",
   },
 ];

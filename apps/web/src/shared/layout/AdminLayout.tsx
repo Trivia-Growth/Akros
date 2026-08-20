@@ -145,8 +145,8 @@ export function AdminLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <div className="flex flex-1 bg-cream-200">
-        <aside className="hidden w-64 shrink-0 flex-col bg-navy-950 px-4 py-6 lg:flex">
+      <div className="flex flex-1 bg-cream-200 print:bg-white">
+        <aside className="hidden w-64 shrink-0 flex-col bg-navy-950 px-4 py-6 lg:flex print:hidden">
           <SidebarContent />
         </aside>
 
@@ -168,7 +168,7 @@ export function AdminLayout() {
         )}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-[4.5rem] items-center justify-between border-b border-border bg-white/95 px-5 backdrop-blur-sm lg:px-8">
+          <header className="flex h-[4.5rem] items-center justify-between border-b border-border bg-white/95 px-5 backdrop-blur-sm lg:px-8 print:hidden">
             <button
               type="button"
               className="p-2 text-navy lg:hidden"
@@ -188,7 +188,7 @@ export function AdminLayout() {
               <NotificationCenter items={notificacoes} label="Fila de atenção" />
             </div>
           </header>
-          <main className="workspace-main flex-1 px-5 py-7 lg:px-8 lg:py-9">
+          <main className="workspace-main flex-1 px-5 py-7 lg:px-8 lg:py-9 print:p-0">
             <Outlet />
           </main>
         </div>

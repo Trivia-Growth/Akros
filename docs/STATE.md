@@ -7,10 +7,63 @@ alwaysApply: false
 # STATE.md — Estado de Trabalho Akros
 
 Sessão atual:
-- **Data:** 2026-08-06
+- **Data:** 2026-08-19
 - **Owner:** Claude (execução autônoma solicitada pelo usuário)
 - **Rodada 1 (E00–E05, 25 stories):** 🟩 concluída e implementada
-- **Rodada 2 (E06–E11 + E10-S01, 22 stories):** 🟩 especificada e implementada nesta sessão
+- **Rodada 2 (E06–E11 + E10-S01, 22 stories):** 🟩 especificada e implementada
+- **E04-S05 — Custo de IA nas conversas:** 🟩 especificada e implementada nesta sessão. Campo
+  `Conversa.custoIA` (USD, mockado) exibido como badge no inbox admin (`/admin/comunicacao`),
+  na lista e no cabeçalho da conversa aberta, só quando `atendidoPorIA`. Ver
+  `specs/E04-S05-custo-ia-conversas/spec.md`.
+- **E04-S06 — Canal Instagram / Meta:** 🟩 especificada e implementada nesta sessão. Instagram
+  Direct (Meta Graph API) vira canal de fato: `CanalComunicacao` ganha `"instagram"`, formulário
+  de credenciais da Meta em `/admin/configuracoes` (App ID, App Secret, Access Token, Webhook
+  Verify Token, Instagram Business Account ID), seletor de canais no agente de IA em
+  `/admin/comunicacao` (aba Agente IA — fechou gap pré-existente sem UI), badge de canal por
+  conversa no inbox, e conversa de exemplo atendida por IA vinda do Instagram. Ver
+  `specs/E04-S06-canal-instagram-meta/spec.md`.
+- **E03-S06 — Documento de proposta:** 🟩 especificada e implementada nesta sessão. `Proposta`
+  ganha `validoAte` e `itensEscopo[]`; nova rota `/admin/propostas/:id`
+  (`PropostaDocumentoPage.tsx`) renderiza a proposta como documento estilo papel A4, com logo
+  real da Akros, paleta navy/gold/cream, e botão "Imprimir / Salvar PDF" (`window.print()`);
+  `AdminLayout` ganhou `print:hidden`/`print:p-0` na sidebar/topbar/main pra impressão sair limpa
+  em qualquer tela admin. Ver `specs/E03-S06-documento-proposta/spec.md`.
+- **Guia de mensagem por tipo de visto (site/Contatos):** trivial, sem spec formal. `LeadForm.tsx`
+  mostra um `hint` (dica) sob o campo "Mensagem (opcional)" conforme o tipo de visto escolhido,
+  pt-BR/en, ainda opcional — não bloqueia o envio.
+- **E04-S08 — Transcrição configurável:** 🟩 especificada e implementada nesta sessão. Fireflies e
+  Microsoft Teams viram integrações reais no catálogo de `/admin/configuracoes` (categoria
+  `transcricao`); `/admin/agenda` só oferece "Ver transcrição" quando o provedor daquela
+  transcrição está ativo; badge do modal deixou de ser hardcoded "Fireflies" e passou a refletir
+  `Transcricao.provedor`. Ver `specs/E04-S08-transcricao-configuravel/spec.md`.
+- **E04-S07 — Tool de agenda do agente:** 🟩 especificada e implementada nesta sessão.
+  **Decisão de produto sinalizada e registrada em ADR-0007** (não confirmada com a Akros): o
+  agente de IA agora pode marcar reunião direto na conversa, sem aprovação humana por reunião —
+  exceção escopada ao princípio de humano no loop (ADR-0005), condicionada a duas autorizações
+  humanas explícitas (conectar conta em `/admin/configuracoes` + ativar a tool no agente em
+  `/admin/comunicacao` → Agente IA). O gate humano de E11-S04 (qualificação de lead) **não foi
+  alterado** — caminho separado. `ContaAgendaConectada` (Google/Microsoft/Calendly, múltiplas
+  contas por provedor) + `RegraAtendimentoIA.ferramentaAgendamento` + `Reuniao.criadaPor`.
+  Conversa de exemplo com diálogo completo de agendamento em `/admin/comunicacao` (Camila Duarte)
+  e reunião correspondente rastreável em `/admin/agenda` (badge "Agendado pelo agente"). Ver
+  `docs/adr/0007-agente-agenda-reuniao-sem-gate.md`,
+  `specs/E04-S07-agenda-tool-agente/{design,spec}.md`.
+- **E04-S09/S10/S11 — Agente reformulado:** 🟩 especificadas e implementadas nesta sessão, 3
+  stories em sequência:
+  - **S09:** removidos `SkillAgente`/`ConectorMCP` do domínio e da UI (Agente IA). A "Alma do
+    agente" absorve o papel de prompt de instruções (inclusive quando consultar cada base de
+    conhecimento). Novo `CorrecaoAgente[]` (texto + data) — card "Correções" pra registrar
+    comportamento a não repetir. `janelasAtendimento` ganhou UI (nunca tinha tido).
+  - **S10:** `baseConhecimento` deixou de ser embutido por agente — vira catálogo compartilhado
+    (`basesConhecimento`, nova aba "Base de conhecimento" em `/admin/comunicacao`); cada agente
+    referencia por `baseConhecimentoIds: string[]`.
+  - **S11:** `RegraAtendimentoIA.canais` (tipo fixo) virou `contasCanalIds: string[]`, referenciando
+    `ContaCanalConectada` — catálogo dinâmico em `/admin/configuracoes` (nova seção "Contas de
+    canal conectadas"), várias contas por provedor (WhatsApp/Instagram), como já era possível com
+    calendário (E04-S07) e e-mail.
+  Ver `specs/E04-S09-agente-simplificado/spec.md`,
+  `specs/E04-S10-base-conhecimento-compartilhada/spec.md`,
+  `specs/E04-S11-multiconta-canal/spec.md`.
 - **Stories em progresso:** Nenhuma
 
 ## Última entrega desta sessão

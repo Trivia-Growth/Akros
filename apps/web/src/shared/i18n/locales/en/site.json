@@ -114,6 +114,17 @@
       "professionPlaceholder": "E.g.: Software Engineering",
       "message": "Message (optional)",
       "messagePlaceholder": "Tell us more about your case",
+      "messageGuide": {
+        "eb2Niw": "Helpful to include: education (master's/PhD), years of experience, field of work, and the impact of your work (projects, publications, awards).",
+        "eb1": "Helpful to include: awards or recognitions received, publications, specialized media coverage, judging/panel participation in your field.",
+        "eb2": "Helpful to include: whether you already have a US job offer, intended role, and the education required for the role.",
+        "eb3": "Helpful to include: whether you already have a US job offer, type of role (skilled or unskilled), and required education/experience.",
+        "o1": "Helpful to include: your area of extraordinary talent, awards, US contracts or projects, evidence of recognition in your field.",
+        "h1b": "Helpful to include: US job offer, role, sponsoring employer, and higher education in the role's field.",
+        "l1": "Helpful to include: link to a multinational company, role (executive/managerial or specialized knowledge), and tenure.",
+        "e2": "Helpful to include: planned investment amount, nationality (for a US treaty country), and business plan.",
+        "outro": "Helpful to include: describe your immigration goal and current situation."
+      },
       "consent": "I authorize Akros to contact me and agree to the processing of my data according to the privacy policy.",
       "submit": "Submit form",
       "submitting": "Submitting...",

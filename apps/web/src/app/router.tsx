@@ -8,6 +8,7 @@ import { AprovacoesPage } from "@/features/crm/interfaces/AprovacoesPage";
 import { Clientes360Page } from "@/features/crm/interfaces/Clientes360Page";
 import { KanbanPage } from "@/features/crm/interfaces/KanbanPage";
 import { PerfilPage } from "@/features/crm/interfaces/PerfilPage";
+import { PropostaDocumentoPage } from "@/features/crm/interfaces/PropostaDocumentoPage";
 import { PropostasPage } from "@/features/crm/interfaces/PropostasPage";
 import { ReativacaoPage } from "@/features/crm/interfaces/ReativacaoPage";
 import { DocumentosPage } from "@/features/documentos/interfaces/DocumentosPage";
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
       { path: "clientes", element: <Clientes360Page /> },
       { path: "documentos", element: <FilaRevisaoPage /> },
       { path: "propostas", element: <PropostasPage /> },
+      { path: "propostas/:id", element: <PropostaDocumentoPage /> },
       { path: "pagamentos", element: <ConciliacaoPage /> },
       { path: "programas", element: <ProgramasPage /> },
       { path: "operacao", element: <OperacaoPage /> },
