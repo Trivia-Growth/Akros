@@ -1,19 +1,38 @@
 import { useMockDb } from "@/mocks/store";
 import { Badge, Button, Card, Modal, toast } from "@/shared/ui";
-import { CalendarDays, CheckCircle2, FileAudio, RefreshCw } from "lucide-react";
+import { Bot, CalendarDays, CheckCircle2, FileAudio, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
+const INTEGRACAO_POR_PROVEDOR: Record<string, string> = {
+  fireflies: "fireflies",
+  microsoft_teams: "teams-transcricao",
+};
+
+const NOME_PROVEDOR: Record<string, string> = {
+  fireflies: "Fireflies",
+  microsoft_teams: "Microsoft Teams",
+};
 
 export function AdminAgendaPage() {
   const { t } = useTranslation("admin");
   const reunioes = useMockDb((s) => s.reunioes);
   const transcricoes = useMockDb((s) => s.transcricoes);
   const clientes = useMockDb((s) => s.clientes);
+  const leads = useMockDb((s) => s.leads);
+  const integracoes = useMockDb((s) => s.integracoes);
   const [syncing, setSyncing] = useState(false);
   const [transcricaoSelecionada, setTranscricaoSelecionada] = useState<string | null>(null);
 
+  function provedorAtivo(provedor: string): boolean {
+    const integracaoId = INTEGRACAO_POR_PROVEDOR[provedor];
+    return integracoes.find((i) => i.id === integracaoId)?.ativa ?? false;
+  }
+
   const nomeCliente = (clienteId: string) =>
-    clientes.find((c) => c.id === clienteId)?.nome ?? clienteId;
+    clientes.find((c) => c.id === clienteId)?.nome ??
+    leads.find((l) => l.id === clienteId)?.nome ??
+    clienteId;
 
   async function handleSync() {
     if (syncing) return;
@@ -71,13 +90,21 @@ export function AdminAgendaPage() {
                   <CalendarDays className="h-4 w-4" aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-navy">{r.titulo}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-navy">{r.titulo}</p>
+                    {r.criadaPor === "agente_ia" && (
+                      <Badge variant="gold">
+                        <Bot className="h-3 w-3" aria-hidden />
+                        Agendado pelo agente
+                      </Badge>
+                    )}
+                  </div>
                   <p className="truncate text-xs text-ink-muted">
                     {t("agendaAdmin.client")}: {nomeCliente(r.clienteId)} ·{" "}
                     {new Date(r.inicio).toLocaleDateString("pt-BR")} · {r.canal}
                   </p>
                 </div>
-                {transcricao && (
+                {transcricao && provedorAtivo(transcricao.provedor) && (
                   <Button
                     size="sm"
                     variant="secondary"
@@ -117,7 +144,7 @@ export function AdminAgendaPage() {
               </ul>
             </div>
             <Badge variant="neutral" className="w-fit">
-              Fireflies
+              {NOME_PROVEDOR[transcricaoAtiva.provedor]}
             </Badge>
           </div>
         )}

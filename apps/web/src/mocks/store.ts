@@ -4,9 +4,18 @@ import type { Reuniao, Transcricao } from "@/features/agenda/domain/types";
 import type {
   Conversa,
   EventoComunicacao,
+  FonteConhecimento,
   RegraAtendimentoIA,
 } from "@/features/comunicacao/domain/types";
-import type { IntegracaoExterna } from "@/features/configuracoes/domain/types";
+import type {
+  ContaAgendaConectada,
+  ContaCanalConectada,
+  CredenciaisContaAgenda,
+  CredenciaisMeta,
+  IntegracaoExterna,
+  ProvedorAgenda,
+  ProvedorCanal,
+} from "@/features/configuracoes/domain/types";
 import type { Cliente, Proposta } from "@/features/crm/domain/types";
 import type {
   AnaliseDocumento,
@@ -27,8 +36,11 @@ import type {
 } from "@/shared/contracts/lead";
 
 import { agentesAtendimentoIA, regraAtendimentoIA as regraAtendimentoIASeed } from "./agente-ia";
+import { basesConhecimento as basesConhecimentoSeed } from "./bases-conhecimento";
 import { depoimentos as depoimentosSeed, posts as postsSeed } from "./blog";
 import { toquesCadenciaMock } from "./cadencia";
+import { contasAgenda as contasAgendaSeed } from "./contas-agenda";
+import { contasCanal as contasCanalSeed } from "./contas-canal";
 import { conversas as conversasSeed } from "./conversas";
 import {
   documentos as documentosSeed,
@@ -76,6 +88,9 @@ interface MockDbState {
   agentesIA: RegraAtendimentoIA[];
   programas: Programa[];
   integracoes: IntegracaoExterna[];
+  contasAgenda: ContaAgendaConectada[];
+  contasCanal: ContaCanalConectada[];
+  basesConhecimento: FonteConhecimento[];
 
   // --- Leads / CRM ---
   criarLead: (input: NovoLead) => Lead;
@@ -125,6 +140,32 @@ interface MockDbState {
     integracaoId: string,
     patch: Pick<Partial<IntegracaoExterna>, "ativa"> & { apiKey?: string },
   ) => void;
+  atualizarCredenciaisMeta: (
+    integracaoId: string,
+    patch: {
+      ativa: boolean;
+      appId: string;
+      appSecret?: string;
+      accessToken?: string;
+      webhookVerifyToken: string;
+      contaInstagramId: string;
+    },
+  ) => void;
+  conectarContaAgenda: (input: {
+    provedor: ProvedorAgenda;
+    nomeExibicao: string;
+    credenciais: CredenciaisContaAgenda;
+  }) => ContaAgendaConectada;
+  desconectarContaAgenda: (contaId: string) => void;
+  conectarContaCanal: (input: {
+    provedor: ProvedorCanal;
+    nomeExibicao: string;
+    identificador: string;
+  }) => ContaCanalConectada;
+  desconectarContaCanal: (contaId: string) => void;
+  salvarBaseConhecimento: (
+    fonte: Omit<FonteConhecimento, "id"> & { id?: string },
+  ) => FonteConhecimento;
 
   // --- Propostas ---
   criarProposta: (input: Omit<Proposta, "id" | "status" | "criadoEm">) => Proposta;
@@ -164,6 +205,9 @@ export interface MockDbSeed {
   eventosComunicacao: EventoComunicacao[];
   programas: Programa[];
   integracoes: IntegracaoExterna[];
+  contasAgenda: ContaAgendaConectada[];
+  contasCanal: ContaCanalConectada[];
+  basesConhecimento: FonteConhecimento[];
 }
 
 function seedPadrao(): MockDbSeed {
@@ -181,6 +225,9 @@ function seedPadrao(): MockDbSeed {
     eventosComunicacao: [],
     programas: structuredClone(catalogoProgramas),
     integracoes: structuredClone(integracoesSeed),
+    contasAgenda: structuredClone(contasAgendaSeed),
+    contasCanal: structuredClone(contasCanalSeed),
+    basesConhecimento: structuredClone(basesConhecimentoSeed),
   };
 }
 
@@ -573,6 +620,83 @@ export const useMockDb = create<MockDbState>((set, get) => ({
         };
       }),
     }));
+  },
+
+  atualizarCredenciaisMeta: (integracaoId, patch) => {
+    set((s) => ({
+      integracoes: s.integracoes.map((integracao) => {
+        if (integracao.id !== integracaoId) return integracao;
+        const anterior = integracao.credenciaisMeta;
+        const appSecretFinal = patch.appSecret?.trim()
+          ? patch.appSecret.trim().slice(-4).toUpperCase()
+          : anterior?.appSecretFinal;
+        const accessTokenFinal = patch.accessToken?.trim()
+          ? patch.accessToken.trim().slice(-4).toUpperCase()
+          : anterior?.accessTokenFinal;
+        const credenciaisMeta: CredenciaisMeta = {
+          appId: patch.appId,
+          appSecretConfigurado: appSecretFinal ? true : (anterior?.appSecretConfigurado ?? false),
+          appSecretFinal,
+          accessTokenConfigurado: accessTokenFinal
+            ? true
+            : (anterior?.accessTokenConfigurado ?? false),
+          accessTokenFinal,
+          webhookVerifyToken: patch.webhookVerifyToken,
+          contaInstagramId: patch.contaInstagramId,
+        };
+        return {
+          ...integracao,
+          ativa: patch.ativa,
+          segredoConfigurado: credenciaisMeta.appSecretConfigurado,
+          credenciaisMeta,
+          atualizadoEm: agora(),
+        };
+      }),
+    }));
+  },
+
+  conectarContaAgenda: (input) => {
+    const conta: ContaAgendaConectada = {
+      id: novoId("agenda"),
+      provedor: input.provedor,
+      nomeExibicao: input.nomeExibicao,
+      ativa: true,
+      conectadoEm: agora(),
+      credenciais: input.credenciais,
+    };
+    set((s) => ({ contasAgenda: [...s.contasAgenda, conta] }));
+    return conta;
+  },
+
+  desconectarContaAgenda: (contaId) => {
+    set((s) => ({ contasAgenda: s.contasAgenda.filter((c) => c.id !== contaId) }));
+  },
+
+  conectarContaCanal: (input) => {
+    const conta: ContaCanalConectada = {
+      id: novoId("canal"),
+      provedor: input.provedor,
+      nomeExibicao: input.nomeExibicao,
+      identificador: input.identificador,
+      ativa: true,
+      conectadoEm: agora(),
+    };
+    set((s) => ({ contasCanal: [...s.contasCanal, conta] }));
+    return conta;
+  },
+
+  desconectarContaCanal: (contaId) => {
+    set((s) => ({ contasCanal: s.contasCanal.filter((c) => c.id !== contaId) }));
+  },
+
+  salvarBaseConhecimento: (fonte) => {
+    const salva: FonteConhecimento = { ...fonte, id: fonte.id ?? novoId("kb") };
+    set((s) => ({
+      basesConhecimento: s.basesConhecimento.some((f) => f.id === salva.id)
+        ? s.basesConhecimento.map((f) => (f.id === salva.id ? salva : f))
+        : [...s.basesConhecimento, salva],
+    }));
+    return salva;
   },
 
   criarProposta: (input) => {

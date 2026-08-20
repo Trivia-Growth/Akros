@@ -24,10 +24,12 @@ export interface Proposta {
   id: string;
   leadOuClienteId: string;
   escopo: string;
+  itensEscopo: string[];
   tipoVisto: string;
   valor: number;
   moeda: "BRL" | "USD";
   condicoes: string;
+  validoAte: string;
   status: PropostaStatus;
   criadoEm: string;
 }
