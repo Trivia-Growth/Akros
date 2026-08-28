@@ -44,7 +44,7 @@
     "niw": {
       "eyebrow": "Our flagship service",
       "title": "EB-2 National Interest Waiver",
-      "description": "Employment-based Green Card for professionals with exceptional ability — no job offer required, when benefit to the US national interest is demonstrated.",
+      "description": "Employment-based Green Card for professionals with exceptional ability. No job offer is required when benefit to the US national interest is demonstrated.",
       "cta": "See EB-2 NIW requirements",
       "points": {
         "noOffer": {
@@ -57,7 +57,7 @@
         },
         "selfPetition": {
           "title": "You are the petitioner",
-          "description": "The case is yours — and so is your career once you land in the US."
+          "description": "You are the case holder and remain in charge of your career in the United States."
         }
       },
       "note": "Every case goes through an eligibility assessment before any contract."
@@ -65,7 +65,7 @@
     "method": {
       "eyebrow": "The Akros method",
       "title": "Seven steps, nothing improvised",
-      "subtitle": "From the profile assessment to landing in the United States — you always know which step you're on.",
+      "subtitle": "From the profile assessment to landing in the United States, you always know which step you are on.",
       "cta": "See the full methodology"
     },
     "about": {
@@ -135,7 +135,7 @@
   "aboutPage": {
     "eyebrow": "About us",
     "title": "We turn talent, purpose, and family into new beginnings.",
-    "intro": "Akros Immigration Solutions turns the immigration dream of highly qualified professionals into reality. We bring together strategy, close support, and a specialized network to guide every decision — from career to your family’s integration in the United States.",
+    "intro": "Akros Immigration Solutions serves highly qualified professionals who want to immigrate. We combine strategy, close support, and a specialized network to guide decisions about career and family integration in the United States.",
     "teamEyebrow": "Our team",
     "teamTitle": "Who runs your case",
     "teamSubtitle": "Immigration law, business strategy, and career preparation in one team, so no detail of your project is left without direction.",
@@ -144,7 +144,7 @@
       "natalia": {
         "name": "Natalia Luz",
         "role": "CEO & Founder",
-        "bio": "Attorney graduated from PUC/SP in 2010, with over 14 years of experience in civil law and intellectual property. In 2020 she received her own Green Card based on exceptional ability — the journey that led her to open the same path for other Brazilian professionals."
+        "bio": "Attorney graduated from PUC/SP in 2010, with over 14 years of experience in civil law and intellectual property. In 2020 she received her own Green Card based on exceptional ability. That journey led her to open the same path for other Brazilian professionals."
       },
       "denise": {
         "name": "Dra. Denise Sarchiapone",
@@ -174,7 +174,7 @@
       },
       "closeness": {
         "title": "Close support",
-        "description": "You never walk alone — our team is by your side from start to finish."
+        "description": "Our team supports you from start to finish."
       }
     },
     "cta": "Talk to our team"
@@ -289,7 +289,7 @@
       },
       "businessPlan": {
         "title": "Business plan",
-        "description": "With specialized partners, we structure a Business Plan with project execution, market analysis, management, and financial projections — a key asset for several immigration strategies."
+        "description": "With specialized partners, we structure a Business Plan with project execution, market analysis, management, and financial projections. It is a key asset for several immigration strategies."
       },
       "americanResume": {
         "title": "American-format resume",

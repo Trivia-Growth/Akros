@@ -13,8 +13,18 @@ export class MockJornadaRepository implements JornadaRepository {
     return comLatencia(undefined);
   }
 
-  async concluirEtapa(clienteId: string, etapaId: string): Promise<void> {
-    useMockDb.getState().concluirEtapa(clienteId, etapaId);
+  async enviarEtapaParaAvaliacao(clienteId: string, etapaId: string): Promise<void> {
+    useMockDb.getState().enviarEtapaParaAvaliacao(clienteId, etapaId);
+    return comLatencia(undefined);
+  }
+
+  async aprovarEtapa(clienteId: string, etapaId: string): Promise<void> {
+    useMockDb.getState().aprovarEtapa(clienteId, etapaId);
+    return comLatencia(undefined);
+  }
+
+  async devolverEtapaParaAjuste(clienteId: string, etapaId: string, motivo: string): Promise<void> {
+    useMockDb.getState().devolverEtapaParaAjuste(clienteId, etapaId, motivo);
     return comLatencia(undefined);
   }
 }

@@ -1,11 +1,35 @@
 import { useMockDb } from "@/mocks/store";
 import { Badge, Button, Card, Input, Modal, Select, Textarea, toast } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
-import { Copy, FileText, Layers3, PencilLine, Plus, Route, UserRound, X } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { EtapaTemplate, FaseTemplate, Programa, ResponsavelEtapa } from "../domain/types";
+import {
+  Copy,
+  FileText,
+  Layers3,
+  Paperclip,
+  PencilLine,
+  Plus,
+  Route,
+  Sparkles,
+  UserRound,
+  X,
+} from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import type {
+  EmissorDocumento,
+  EtapaTemplate,
+  FaseTemplate,
+  Programa,
+  RequisitoDocumento,
+  ResponsavelEtapa,
+} from "../domain/types";
 
 const RESPONSAVEIS: ResponsavelEtapa[] = ["cliente", "akros", "terceiro", "uscis"];
+const EMISSORES: EmissorDocumento[] = [
+  "cliente",
+  "empregador",
+  "instituicao",
+  "terceiro_certificado",
+];
 
 export function ProgramasPage() {
   const programas = useMockDb((state) => state.programas);
@@ -164,6 +188,35 @@ export function ProgramasPage() {
                           </span>
                         ))}
                       </div>
+                      {selecionado.documentosExigidos.some(
+                        (requisito) => requisito.faseTemplateId === fase.id,
+                      ) && (
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-dashed border-border pt-3">
+                          {selecionado.documentosExigidos
+                            .filter((requisito) => requisito.faseTemplateId === fase.id)
+                            .map((requisito) => (
+                              <span
+                                key={requisito.id}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-2.5 py-1.5 text-xs text-ink-soft"
+                              >
+                                <FileText
+                                  className="h-3.5 w-3.5 shrink-0 text-ink-muted"
+                                  aria-hidden
+                                />
+                                {requisito.titulo}
+                                {requisito.analiseIA?.habilitada && (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-full bg-gold-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-label text-gold-800"
+                                    title="Análise por IA configurada para este requisito"
+                                  >
+                                    <Sparkles className="h-3 w-3" aria-hidden />
+                                    IA
+                                  </span>
+                                )}
+                              </span>
+                            ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </li>
@@ -172,10 +225,11 @@ export function ProgramasPage() {
           </Card>
 
           <Card className="flex items-center gap-3 border-gold-200 bg-gold-50/45">
-            <FileText className="h-5 w-5 shrink-0 text-gold-700" aria-hidden />
+            <Sparkles className="h-5 w-5 shrink-0 text-gold-700" aria-hidden />
             <p className="text-sm text-ink-soft">
-              Documentos exigidos permanecem vinculados ao programa. Na próxima evolução, eles
-              ganham o mesmo editor visual das etapas.
+              Documentos exigidos usam o mesmo editor visual das etapas. Em cada um, você pode ligar
+              a análise por IA e dar a ela uma instrução (skill) e um arquivo de referência próprios
+              — o parecer fica mais preciso, mas a aprovação continua sempre humana.
             </p>
           </Card>
         </div>
@@ -273,6 +327,42 @@ function ProgramaEditor({ programa, onClose }: { programa: Programa; onClose: ()
     }));
   }
 
+  function adicionarRequisito(faseId: string) {
+    setDraft((atual) => ({
+      ...atual,
+      documentosExigidos: [
+        ...atual.documentosExigidos,
+        {
+          id: `requisito-${crypto.randomUUID().slice(0, 6)}`,
+          faseTemplateId: faseId,
+          tipo: "outro",
+          titulo: "Novo documento",
+          objetivo: "Descreva para que este documento serve.",
+          obrigatorio: true,
+          emitidoPor: "cliente",
+        } satisfies RequisitoDocumento,
+      ],
+    }));
+  }
+
+  function atualizarRequisito(requisitoId: string, patch: Partial<RequisitoDocumento>) {
+    setDraft((atual) => ({
+      ...atual,
+      documentosExigidos: atual.documentosExigidos.map((requisito) =>
+        requisito.id === requisitoId ? { ...requisito, ...patch } : requisito,
+      ),
+    }));
+  }
+
+  function removerRequisito(requisitoId: string) {
+    setDraft((atual) => ({
+      ...atual,
+      documentosExigidos: atual.documentosExigidos.filter(
+        (requisito) => requisito.id !== requisitoId,
+      ),
+    }));
+  }
+
   function salvar() {
     const limpo = {
       ...draft,
@@ -282,6 +372,15 @@ function ProgramaEditor({ programa, onClose }: { programa: Programa; onClose: ()
     };
     if (!limpo.nome || !limpo.codigo) {
       toast.error("Informe nome e código do programa.");
+      return;
+    }
+    const requisitoSemSkill = limpo.documentosExigidos.find(
+      (requisito) => requisito.analiseIA?.habilitada && !requisito.analiseIA.skill.trim(),
+    );
+    if (requisitoSemSkill) {
+      toast.error(
+        `"${requisitoSemSkill.titulo}" tem análise por IA ligada mas sem instrução (skill). Preencha ou desligue a análise.`,
+      );
       return;
     }
     salvarPrograma(limpo);
@@ -409,6 +508,33 @@ function ProgramaEditor({ programa, onClose }: { programa: Programa; onClose: ()
                   Adicionar etapa
                 </Button>
               </div>
+
+              <div className="mt-5 border-t border-border pt-4">
+                <p className="text-xs font-semibold uppercase tracking-label text-gold-700">
+                  Documentos exigidos desta fase
+                </p>
+                <div className="mt-3 flex flex-col gap-3">
+                  {draft.documentosExigidos
+                    .filter((requisito) => requisito.faseTemplateId === fase.id)
+                    .map((requisito) => (
+                      <RequisitoEditor
+                        key={requisito.id}
+                        requisito={requisito}
+                        onChange={(patch) => atualizarRequisito(requisito.id, patch)}
+                        onRemover={() => removerRequisito(requisito.id)}
+                      />
+                    ))}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="self-start"
+                    onClick={() => adicionarRequisito(fase.id)}
+                  >
+                    <Plus className="h-4 w-4" aria-hidden />
+                    Adicionar documento exigido
+                  </Button>
+                </div>
+              </div>
             </section>
           ))}
           <Button variant="secondary" className="self-start" onClick={adicionarFase}>
@@ -424,6 +550,167 @@ function ProgramaEditor({ programa, onClose }: { programa: Programa; onClose: ()
         <Button onClick={salvar}>Salvar configuração</Button>
       </div>
     </Modal>
+  );
+}
+
+function RequisitoEditor({
+  requisito,
+  onChange,
+  onRemover,
+}: {
+  requisito: RequisitoDocumento;
+  onChange: (patch: Partial<RequisitoDocumento>) => void;
+  onRemover: () => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const analiseIA = requisito.analiseIA;
+  const habilitada = analiseIA?.habilitada ?? false;
+
+  function alternarAnaliseIA() {
+    onChange({
+      analiseIA: {
+        habilitada: !habilitada,
+        skill: analiseIA?.skill ?? "",
+        arquivoReferenciaNome: analiseIA?.arquivoReferenciaNome,
+      },
+    });
+  }
+
+  function atualizarSkill(skill: string) {
+    onChange({
+      analiseIA: {
+        habilitada: true,
+        skill,
+        arquivoReferenciaNome: analiseIA?.arquivoReferenciaNome,
+      },
+    });
+  }
+
+  function anexarArquivo(file: File | undefined) {
+    if (!file) return;
+    // Mock: só o metadado (nome) é guardado — sem persistência de binário, mesma regra do
+    // upload de documento do cliente (E02-S03).
+    onChange({
+      analiseIA: {
+        habilitada: true,
+        skill: analiseIA?.skill ?? "",
+        arquivoReferenciaNome: file.name,
+      },
+    });
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-3">
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_11rem_auto]">
+        <Input
+          value={requisito.titulo}
+          aria-label="Título do documento"
+          onChange={(event) => onChange({ titulo: event.target.value })}
+        />
+        <Input
+          value={requisito.tipo}
+          aria-label="Tipo do documento"
+          placeholder="tipo (ex: carta_experiencia)"
+          onChange={(event) => onChange({ tipo: event.target.value })}
+        />
+        <Select
+          value={requisito.emitidoPor}
+          aria-label="Emitido por"
+          onChange={(event) => onChange({ emitidoPor: event.target.value as EmissorDocumento })}
+        >
+          {EMISSORES.map((emissor) => (
+            <option key={emissor} value={emissor}>
+              {emissor}
+            </option>
+          ))}
+        </Select>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onRemover}
+          aria-label="Remover documento exigido"
+        >
+          <X className="h-4 w-4" aria-hidden />
+        </Button>
+      </div>
+      <Textarea
+        className="mt-2"
+        rows={1}
+        value={requisito.objetivo}
+        aria-label="Objetivo do documento"
+        onChange={(event) => onChange({ objetivo: event.target.value })}
+      />
+      <label className="mt-2 flex items-center gap-2 text-xs text-ink-soft">
+        <input
+          type="checkbox"
+          checked={requisito.obrigatorio}
+          onChange={(event) => onChange({ obrigatorio: event.target.checked })}
+          className="h-3.5 w-3.5 accent-gold-600"
+        />
+        Obrigatório
+      </label>
+
+      <div className="mt-3 rounded-md border border-dashed border-gold-200 bg-gold-50/35 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-2 text-sm font-medium text-navy">
+            <Sparkles className="h-4 w-4 text-gold-700" aria-hidden />
+            Analisar com IA
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={habilitada}
+            onClick={alternarAnaliseIA}
+            className={cn(
+              "relative h-6 w-11 shrink-0 rounded-full transition-colors duration-150",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2",
+              habilitada ? "bg-gold-600" : "bg-cream-300",
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-subtle transition-transform duration-150",
+                habilitada ? "translate-x-[1.375rem]" : "translate-x-0.5",
+              )}
+            />
+          </button>
+        </div>
+
+        {habilitada && (
+          <div className="mt-3 flex flex-col gap-2.5">
+            <Textarea
+              label="Skill: instrução para a IA"
+              rows={2}
+              value={analiseIA?.skill ?? ""}
+              placeholder="Ex.: Verifique se a carta está em papel timbrado, assinada, e menciona cargo e datas de início/fim. Compare o cargo com o currículo enviado."
+              onChange={(event) => atualizarSkill(event.target.value)}
+              hint="Usada pela IA para gerar o parecer deste requisito. A aprovação continua sempre humana."
+            />
+            <div>
+              <p className="text-sm font-medium text-ink">Arquivo de referência (opcional)</p>
+              <div className="mt-1.5 flex items-center gap-2">
+                <Button size="sm" variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                  <Paperclip className="h-3.5 w-3.5" aria-hidden />
+                  {analiseIA?.arquivoReferenciaNome ? "Trocar arquivo" : "Anexar arquivo"}
+                </Button>
+                {analiseIA?.arquivoReferenciaNome && (
+                  <span className="truncate text-xs text-ink-soft">
+                    {analiseIA.arquivoReferenciaNome}
+                  </span>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                  onChange={(event) => anexarArquivo(event.target.files?.[0])}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

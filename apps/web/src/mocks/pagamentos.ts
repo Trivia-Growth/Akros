@@ -4,7 +4,7 @@ export const pagamentos: Pagamento[] = [
   {
     id: "pag-carlos-entrada",
     clienteId: "cliente-carlos",
-    descricao: "Entrada — honorários Akros",
+    descricao: "Entrada: honorários Akros",
     valor: 8000,
     moeda: "BRL",
     status: "pago",
@@ -15,7 +15,7 @@ export const pagamentos: Pagamento[] = [
   {
     id: "pag-carlos-parcela-1",
     clienteId: "cliente-carlos",
-    descricao: "Parcela 2/6 — honorários Akros",
+    descricao: "Parcela 2/6: honorários Akros",
     valor: 4000,
     moeda: "BRL",
     status: "em_conferencia",
@@ -27,7 +27,7 @@ export const pagamentos: Pagamento[] = [
   {
     id: "pag-renata-entrada",
     clienteId: "cliente-renata",
-    descricao: "Entrada — honorários Akros",
+    descricao: "Entrada: honorários Akros",
     valor: 8000,
     moeda: "BRL",
     status: "pago",
@@ -38,7 +38,7 @@ export const pagamentos: Pagamento[] = [
   {
     id: "pag-renata-parcela-2",
     clienteId: "cliente-renata",
-    descricao: "Parcela 3/6 — honorários Akros",
+    descricao: "Parcela 3/6: honorários Akros",
     valor: 4000,
     moeda: "BRL",
     status: "atrasado",
@@ -70,7 +70,7 @@ export const pagamentos: Pagamento[] = [
   {
     id: "pag-fernanda-final",
     clienteId: "cliente-fernanda",
-    descricao: "Parcela final — honorários Akros",
+    descricao: "Parcela final: honorários Akros",
     valor: 4000,
     moeda: "BRL",
     status: "pago",

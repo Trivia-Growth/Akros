@@ -1,6 +1,6 @@
 import { useMockDb } from "@/mocks/store";
 import { useMemo } from "react";
-import type { Conversa, EventoComunicacao } from "../domain/types";
+import type { Conversa, EmailThread, EventoComunicacao } from "../domain/types";
 
 export function useConversaCliente(clienteId: string | undefined): Conversa | undefined {
   return useMockDb((s) => s.conversas.find((c) => c.clienteId === clienteId));
@@ -8,6 +8,10 @@ export function useConversaCliente(clienteId: string | undefined): Conversa | un
 
 export function useConversas(): Conversa[] {
   return useMockDb((s) => s.conversas);
+}
+
+export function useEmailThreads(): EmailThread[] {
+  return useMockDb((s) => s.emailThreads);
 }
 
 /**
@@ -18,6 +22,7 @@ export function useConversas(): Conversa[] {
 export function useTimeline(clienteOuLeadId: string | undefined): EventoComunicacao[] {
   const eventos = useMockDb((s) => s.eventosComunicacao);
   const conversas = useMockDb((s) => s.conversas);
+  const emailThreads = useMockDb((s) => s.emailThreads);
 
   return useMemo(() => {
     if (!clienteOuLeadId) return [];
@@ -33,6 +38,25 @@ export function useTimeline(clienteOuLeadId: string | undefined): EventoComunica
       ocorridoEm: m.enviadoEm,
       origemId: m.id,
     }));
-    return [...doEventos, ...doWhatsapp].sort((a, b) => a.ocorridoEm.localeCompare(b.ocorridoEm));
-  }, [eventos, conversas, clienteOuLeadId]);
+    // E04-S12 — mesma regra do WhatsApp: EmailThread guarda seu próprio storage; a timeline
+    // funde na leitura, sem duplicar em eventosComunicacao.
+    const doEmail: EventoComunicacao[] = emailThreads
+      .filter((thread) => thread.clienteOuLeadId === clienteOuLeadId)
+      .flatMap((thread) =>
+        thread.mensagens.map((m) => ({
+          id: m.id,
+          clienteOuLeadId,
+          canal: "email" as const,
+          direcao: m.direcao === "entrada" ? ("entrada" as const) : ("saida" as const),
+          autor: m.direcao === "entrada" ? (m.deNome ?? m.de) : m.de,
+          conteudo: `${thread.assunto}\n\n${m.corpo}`,
+          anexos: m.anexoNome ? [{ nome: m.anexoNome }] : undefined,
+          ocorridoEm: m.recebidoEm,
+          origemId: m.id,
+        })),
+      );
+    return [...doEventos, ...doWhatsapp, ...doEmail].sort((a, b) =>
+      a.ocorridoEm.localeCompare(b.ocorridoEm),
+    );
+  }, [eventos, conversas, emailThreads, clienteOuLeadId]);
 }

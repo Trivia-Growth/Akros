@@ -25,19 +25,85 @@ import { useTranslation } from "react-i18next";
 import { NavLink, Outlet } from "react-router-dom";
 
 const NAV_ITEMS = [
-  { to: "/admin", icon: LayoutDashboard, label: "Dashboard", end: true },
-  { to: "/admin/leads", icon: KanbanSquare, label: "Leads (Kanban)" },
-  { to: "/admin/aprovacoes", icon: CheckCircle2, label: "Aprovações" },
-  { to: "/admin/clientes", icon: Users, label: "Clientes" },
-  { to: "/admin/documentos", icon: FileSearch, label: "Revisão de documentos" },
-  { to: "/admin/propostas", icon: ScrollText, label: "Propostas" },
-  { to: "/admin/pagamentos", icon: Wallet, label: "Conciliação" },
-  { to: "/admin/programas", icon: BookOpen, label: "Programas" },
-  { to: "/admin/operacao", icon: Activity, label: "Operação" },
-  { to: "/admin/reativacao", icon: RotateCcw, label: "Reativação" },
-  { to: "/admin/comunicacao", icon: MessageCircle, label: "Comunicação" },
-  { to: "/admin/agenda", icon: CalendarClock, label: "Agenda" },
-  { to: "/admin/configuracoes", icon: Settings2, label: "Configurações" },
+  {
+    to: "/admin",
+    icon: LayoutDashboard,
+    label: "Dashboard",
+    end: true,
+    descricao: "Visão geral: funil de leads, clientes por fase, saúde dos casos e receita.",
+  },
+  {
+    to: "/admin/leads",
+    icon: KanbanSquare,
+    label: "Leads (Kanban)",
+    descricao: "Funil comercial: arraste leads entre estágios até fechar como cliente.",
+  },
+  {
+    to: "/admin/aprovacoes",
+    icon: CheckCircle2,
+    label: "Aprovações",
+    descricao: "Gate humano de agendamento. Nada vai para a agenda sem aprovação.",
+  },
+  {
+    to: "/admin/clientes",
+    icon: Users,
+    label: "Clientes",
+    descricao: "Visão 360° de cada cliente: dados, jornada, documentos, pagamentos, conversas.",
+  },
+  {
+    to: "/admin/documentos",
+    icon: FileSearch,
+    label: "Revisão de documentos",
+    descricao: "Fila de revisão humana com o parecer da IA. A IA nunca aprova sozinha.",
+  },
+  {
+    to: "/admin/propostas",
+    icon: ScrollText,
+    label: "Propostas",
+    descricao: "Cria e envia propostas comerciais; gera o documento formatado pra imprimir.",
+  },
+  {
+    to: "/admin/pagamentos",
+    icon: Wallet,
+    label: "Conciliação",
+    descricao: "Concilia comprovantes de transferência enviados pelos clientes.",
+  },
+  {
+    to: "/admin/programas",
+    icon: BookOpen,
+    label: "Programas",
+    descricao: "Catálogo dos tipos de visto e suas jornadas. Somente leitura.",
+  },
+  {
+    to: "/admin/operacao",
+    icon: Activity,
+    label: "Operação",
+    descricao: "Onde os casos travam, por quanto tempo, e alertas de inatividade.",
+  },
+  {
+    to: "/admin/reativacao",
+    icon: RotateCcw,
+    label: "Reativação",
+    descricao: "Base de leads descartados/inativos, segmentada por objeção.",
+  },
+  {
+    to: "/admin/comunicacao",
+    icon: MessageCircle,
+    label: "Comunicação",
+    descricao: "Inbox das conversas, configuração do agente de IA e base de conhecimento.",
+  },
+  {
+    to: "/admin/agenda",
+    icon: CalendarClock,
+    label: "Agenda",
+    descricao: "Todas as reuniões, transcrições e status de conexão com o calendário.",
+  },
+  {
+    to: "/admin/configuracoes",
+    icon: Settings2,
+    label: "Configurações",
+    descricao: "Integrações externas, contas de agenda e de canal (WhatsApp/Instagram).",
+  },
 ];
 
 function SidebarContent({

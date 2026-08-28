@@ -1,161 +1,86 @@
 ---
 name: impeccable
-description: Polishing UI to look human-made, not AI-generated. Refine design, spacing, typography, interactions, consistency.
+description: Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface. Covers websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, and empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, anti-patterns, typography, fonts, spacing, layout, alignment, color, motion, micro-interactions, UX copy, error states, edge cases, i18n, and reusable design systems or tokens. Also use for bland designs that need to become bolder or more delightful, loud designs that should become quieter, live browser iteration on UI elements, or ambitious visual effects that should feel technically extraordinary. Not for backend-only or non-UI tasks.
+version: 4.1.1
+user-invocable: true
+argument-hint: "[shape · audit|critique · animate|bolder|colorize|delight|layout|overdrive|quieter|typeset · adapt|clarify|distill · harden|onboard|optimize|polish · init|document|extract|live] [target]"
+license: Apache 2.0
+allowed-tools:
+  - Bash(npx impeccable *)
+  - Bash(node .claude/skills/impeccable/scripts/*)
 ---
 
-# impeccable — UI Polish & Design Consistency
+This skill gives you the tools and permission to create design that earns to be called out-of-distribution craft: Whereas before, your design work would have been safe, timid and measured, you now approach every design task as a award-winning design director with impeccable understanding for what makes exceptional design work: production-grade code, peak creativity, a clear POV, deep understanding of the needs of the client and users, and exceptional craft.
 
-> Skill para "humanizar" e polir UI, removendo artefatos de geração AI e garantindo design consistente.
-> Baseado em https://github.com/pbakaus/impeccable
+Core principles:
+- Go all out. No hedging, no shortcuts. The deliverable must be complete (except assets the user must provide).
+- Dream big and bold. Distinct, beautiful, outstanding and highly inspiring work.
+- Verify in bounded passes, not a loop, and the ceiling covers the whole cycle: screenshots, defect scans, micro-edits, and rebuilds alike. Build fully, inspect once with a batched round (desktop and mobile together on the web; the shipped device classes on a native platform), fix everything it shows in one batch, confirm with at most one more round, and stop polishing. Open-ended self-QA burns the user's money doing worse what the finish handoffs do better.
 
-## O que é
+## Setup
 
-Muitos UIs gerados por AI têm "marca de AI": spacing perfeito demais, tipografia genérica, animações abruptas, nenhum detalhe que traísse intenção. Impeccable é um framework mental pra detectar e corrigir essas características — fazendo o design parecer intencional, handcrafted, com personalidade.
+1. Run `node <skill-base-dir>/scripts/context.mjs` once per session, where `<skill-base-dir>` is the loaded base directory the runtime reports for this skill; keep cwd at the user's project. That base directory resolves every `node .claude/skills/impeccable/scripts/...` command in this skill and its references, and `.claude/skills/impeccable/scripts` is the fallback only when the runtime reports no base directory. Pass a named source file or route as `--target <path>`. It loads PRODUCT.md, DESIGN.md, the matching surface brief, and native-platform guidance when applicable; follow its directives and do not rerun it.
+2. Before acting, load the one playbook that owns the request: the Commands table's reference for an explicit or clearly implied sub-command, or [reference/new-work.md](reference/new-work.md) for a new surface or replacement visual world. Then inspect the target and at least one representative source of incumbent visual truth (tokens, theme, CSS, component, or asset) before editing.
+3. After analysis and direction are resolved, load [reference/craft-floor.md](reference/craft-floor.md) immediately before editing UI. It carries the quality floor, the absolute bans, and the reflexes no detector catches. Do not load it for planning-only work.
 
-## Quando usar
+## How to design
 
-- **Finalizando feature visual** (quase pronta, falta o polish)
-- **Antes de release/demo** (quer impressionar stakeholder, parecer profissional)
-- **Ao revisar design** (checklist adversarial pra UI)
-- **Componente novo no design system** (deve passar aqui antes de ir pra library)
+- **The brief wins.** Honor pinned aesthetics, eras, materials, fonts, and palettes even when they conflict with a saturated-pattern warning. Redirecting a clear brief toward your taste is failure.
+- **Refinement preserves; redesign replaces.** Refinement keeps the incumbent identity, behavior, copy, and everything outside scope. Ask before replacing factual copy or adding claims. Redesign keeps product truth, content, function, native affordances, and constraints, but treats the old look as evidence and anti-reference; choose a replacement world in new-work and replace DESIGN.md. Never split the difference into polish on the discarded look.
+- **Visual authority is evidence, not a filename.** Missing DESIGN.md alone does not make a project greenfield; new-work decides whether to preserve, expand, or replace the incumbent world.
 
-## 5 Pilares do Impeccable
+## Modes
 
-### 1. **Spacing & Alignment**
-Espaçamento não é "ótimo" — é **intencional**.
+The mode names what the visitor's success looks like on this surface.
 
-- Não use grid perfeito (8px). Varie: 12px, 16px, 20px, 24px (quebra monotonia).
-- Espaço branco estratégico (breathing room pra leitura).
-- Alinhamento visual (não matemático) — texto alinhado pra "parecer" centrado, às vezes é offset.
-- Density diferente por seção (cabeçalho apertado, conteúdo espaçoso).
+- **Persuade:** the visitor decides and acts; design is the product. Landing pages, marketing, campaigns, pricing. Earn attention and action. Ship real imagery when the brief needs it; follow the committed world, not category habit.
+- **Operate:** the visitor completes a task. App UI, dashboards, editors, admin, settings, tools. Scanability, consistency, native expectations, and the real usage scene outrank expression. Brand lives in precise details.
+- **Read:** the visitor understands something. Docs, articles, guides, help, changelogs. Structure for comprehension, then make the reading experience worth staying in.
+- **Experience:** the visitor is inside the work itself. Portfolios, galleries, showcases. Let the artifact lead from the first viewport; the interface recedes.
 
-**Checklist:**
-- [ ] Padding/margin tem "razão" (não copypaste)
-- [ ] Whitespace agrupa conceitos relacionados
-- [ ] Não há "branco vazio" no meio (indica design incompleto)
+Choose the mode from the requested surface, not the product, and persist it only in that surface brief. A tool's landing page is still Persuade; a fashion house's documentation is still Read; a docs index is Read, not Persuade. See [new-work.md](reference/new-work.md) for new surfaces and [operate.md](reference/operate.md) for deeper Operate/Read guidance.
 
-### 2. **Typography**
-Fonte é a personalidade.
+## Commands
 
-- Não use default (Tailwind's sans). Escolha fonte com caráter (Geist, Inter, Suisse, etc).
-- Tamanhos em escala harmônica (não qualquer número): 12→14→16→18→20→24→32→40→48.
-- Line-height varia por tamanho (pequeno: 1.5, grande: 1.2).
-- Font-weight intencional (not just bold/normal).
-- Letter-spacing ajustado pra maiúsculas (títulos, badges, labels).
+| Command | Category | Description | Reference |
+|---|---|---|---|
+| `craft [feature]` | Build | Deprecated alias for an ordinary new-work request | [reference/craft.md](reference/craft.md) |
+| `shape [feature]` | Build | Plan UX/UI before writing code | [reference/shape.md](reference/shape.md) |
+| `init` | Build | Capture durable product context in PRODUCT.md | [reference/init.md](reference/init.md) |
+| `document` | Build | Generate DESIGN.md from existing project code | [reference/document.md](reference/document.md) |
+| `extract [target]` | Build | Pull reusable tokens and components into design system | [reference/extract.md](reference/extract.md) |
+| `critique [target]` | Evaluate | UX design review with heuristic scoring | [reference/critique.md](reference/critique.md) |
+| `audit [target]` | Evaluate | Technical quality checks (a11y, perf, responsive) | [reference/audit.md](reference/audit.md) · native: [reference/audit.native.md](reference/audit.native.md) |
+| `polish [target]` | Refine | Final quality pass before shipping | [reference/polish.md](reference/polish.md) |
+| `bolder [target]` | Refine | Amplify safe or bland designs | [reference/bolder.md](reference/bolder.md) |
+| `quieter [target]` | Refine | Tone down aggressive or overstimulating designs | [reference/quieter.md](reference/quieter.md) |
+| `distill [target]` | Refine | Strip to essence, remove complexity | [reference/distill.md](reference/distill.md) |
+| `harden [target]` | Refine | Production-ready: errors, i18n, edge cases | [reference/harden.md](reference/harden.md) |
+| `onboard [target]` | Refine | Design first-run flows, empty states, activation | [reference/onboard.md](reference/onboard.md) |
+| `animate [target]` | Enhance | Add purposeful animations and motion | [reference/animate.md](reference/animate.md) |
+| `colorize [target]` | Enhance | Add strategic color to monochromatic UIs | [reference/colorize.md](reference/colorize.md) |
+| `typeset [target]` | Enhance | Improve typography hierarchy and fonts | [reference/typeset.md](reference/typeset.md) |
+| `layout [target]` | Enhance | Fix spacing, rhythm, and visual hierarchy | [reference/layout.md](reference/layout.md) |
+| `delight [target]` | Enhance | Add personality and memorable touches | [reference/delight.md](reference/delight.md) |
+| `overdrive [target]` | Enhance | Push past conventional limits | [reference/overdrive.md](reference/overdrive.md) |
+| `clarify [target]` | Fix | Improve UX copy, labels, and error messages | [reference/clarify.md](reference/clarify.md) |
+| `adapt [target]` | Fix | Adapt for different devices and screen sizes | [reference/adapt.md](reference/adapt.md) · native: [reference/adapt.native.md](reference/adapt.native.md) |
+| `optimize [target]` | Fix | Diagnose and fix UI performance | [reference/optimize.md](reference/optimize.md) |
+| `live` | Iterate | Visual variant mode: pick elements in the browser, generate alternatives | [reference/live.md](reference/live.md) |
 
-**Checklist:**
-- [ ] Font escolhida é não-genérica (tem personalidade)
-- [ ] Tamanhos seguem escala (não random)
-- [ ] Contrast suficiente (WCAG AA)
-- [ ] Ligaduras/kerning ativas se fonte suporta
+Routing:
 
-### 3. **Color & Contrast**
-Cor é emoção e usabilidade.
+- **No argument:** read [routing.md](reference/routing.md) and present its context-aware menu; never auto-run a command.
+- **Explicit or clearly implied command:** load its reference (native variant on native platforms) and follow it. Ask once if two commands fit.
+- **Otherwise:** treat the request as general design work. Missing PRODUCT.md routes a new surface or replacement world through init, then new-work; a narrow refinement of existing code proceeds on the incumbent implementation as context.mjs directs, offering init afterward rather than blocking on it.
+- `teach` aliases `init`. `craft` is a deprecated alias for ordinary new-work and adds nothing. `shape` owns task discovery, then enters new-work only for visual-world and surface-concept decisions.
 
-- Paleta coerente (não 12 tons de azul).
-- Contrast suficiente (não apenas pra acessibilidade — pra legibilidade).
-- Cor tem "razão" (não "porque ficou bonito").
-- Saturação varia por contexto (destaque saturado, neutral dessaturado).
-- Modo escuro não é invert (repensar cores, não copiar).
+After init writes PRODUCT.md, resume without rerunning `context.mjs`; init loads the native platform reference itself when the platform it recorded is `ios`, `android`, or `adaptive`.
 
-**Checklist:**
-- [ ] Paleta tem identidade (não flat Tailwind)
-- [ ] Sem gradientes desnecessários
-- [ ] Hover/focus states existem e são claros
-- [ ] Dark mode é intentional (não auto-gerado)
+**Pin / Unpin:** `node .claude/skills/impeccable/scripts/pin.mjs <pin|unpin> <command>` creates or removes a standalone `/<command>` shortcut. Report the script's result concisely; relay stderr verbatim on error.
 
-### 4. **Interação & Animation**
-Movimento conta história.
+**Hooks:** `/impeccable hooks <on|off|status|ignore-rule|ignore-file|ignore-value|reset>` manages the design detector hook for this project (auto-runs the detector after UI file edits and surfaces findings). Load [reference/hooks.md](reference/hooks.md) when the user invokes it with any argument.
 
-- Duração tem razão (250ms pra feedback, 600ms pra reveal).
-- Easing natural (não linear). Usar cubic-bezier custom, não ease-in-out genérico.
-- Transição segue movimento real (objetos não "pulam").
-- Hover/focus/active estados são distintos visualmente.
-- Sem animação "só porque é legal" (toda animação serve propósito).
+**Doctor:** `/impeccable doctor` reports and repairs drift between this project's Impeccable artifacts (PRODUCT.md, DESIGN.md and its sidecar, config, surface briefs, the hook) and what this version reads. Load [reference/doctor.md](reference/doctor.md) when the user invokes it, or when they ask what is out of date, stale, or needs refreshing. A `CONTEXT_STALE` directive in Setup's output is the cheap subset of the same report; act on it there per its own instructions rather than running doctor unasked.
 
-**Checklist:**
-- [ ] Animações têm propósito (feedback, reveal, etc)
-- [ ] Duração é apropriada pra contexto
-- [ ] Easing não é linear
-- [ ] Modo prefers-reduced-motion respeitado
-- [ ] Loading states e skeletons são design-consistent
-
-### 5. **Consistência & Details**
-Detalhe mata diferença entre OK e wow.
-
-- Ícones combinam (mesma set, tamanho consistente).
-- Borders e radius coerentes (não variar sem razão).
-- Shadows profundidade clara (não 5 níveis de depth).
-- Form fields têm same height/padding (não variar).
-- Empty states, 404s, loading têm design (não placeholder genérico).
-
-**Checklist:**
-- [ ] Ícones são set único (não misturar Feather + Heroicons)
-- [ ] Border-radius tem escala (4px→8px→12px, não random)
-- [ ] Shadows consistentes (1-2 níveis, não 5)
-- [ ] Componentes similares tem same look
-- [ ] Edge cases (empty, loading, error) são designed
-
-## Como usar este skill
-
-1. **Rode após UI pronta** — não no meio da dev (distração).
-2. **Coma 1 pilar por vez** — não quer mudar tudo de uma vez.
-3. **Defenda suas mudanças** — "por que este espaço?" (não "porque ficou melhor").
-4. **Compare com referências** — olhe design premium (Vercel, Apple, Linear) e veja por quê.
-5. **Teste em device real** — Figma/dev tools não mostram tudo.
-
-## Gates
-
-Gate pra impeccable passar:
-
-```bash
-# Antes/depois screenshots side-by-side
-# Checklist dos 5 pilares preenchido
-# Sem "porque ficou mais bonito" — sempre tem razão
-# Recomendação: peer review (outro olho humano)
-```
-
-## Exemplo: Button Impeccable
-
-❌ **Antes (AI-generated):**
-```tsx
-<button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-  Click me
-</button>
-```
-Problema: padding genérico, color flat, hover abrupt.
-
-✅ **Depois (Impeccable):**
-```tsx
-<button className="px-4 py-3 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors duration-200 font-medium tracking-tight">
-  Click me
-</button>
-```
-Razões:
-- Padding 2px maior (visual breathing)
-- Dark blue instead of bright (less harsh)
-- Rounded-md instead of default (softer)
-- Hover transition smooth (not abrupt)
-- Font-medium + tracking-tight (typography intentional)
-
-## Referências
-
-- https://github.com/pbakaus/impeccable — framework original
-- Vercel design system (https://vercel.com/)
-- Linear app UX (https://linear.app/)
-- Apple design (https://www.apple.com/design/)
-
----
-
-## Checklist Rápido Pré-Release
-
-- [ ] Spacing intencional (não grid 8px everywhere)
-- [ ] Tipografia não-genérica (fonte com personalidade)
-- [ ] Cores satured→dessaturated por importância
-- [ ] Interações têm easing + duração apropriada
-- [ ] Ícones, borders, shadows consistentes
-- [ ] Dark mode designed (não auto-gerado)
-- [ ] Empty/loading/error states são polidos
-- [ ] Peer review passou (outro olho humano)
-
-Quando tudo verde, seu UI não parece "feito por AI" — parece feito por designer que sabe o que tá fazendo.
+**Never repair drift as a side effect of a design task.** A `CONTEXT_STALE` finding is reported, not acted on, unless the user asks. The one exception is a finding marked `auto`, which the next write to that file performs anyway.

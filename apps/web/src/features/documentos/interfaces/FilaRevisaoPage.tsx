@@ -1,10 +1,10 @@
 import { container } from "@/app/di";
 import { useMockDb } from "@/mocks/store";
 import { Badge, Button, Card, Modal, Textarea, toast } from "@/shared/ui";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, FolderOpen } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { requisitoDoDocumento } from "../application/hooks";
+import { requisitoDoDocumento, useCaminhoArquivoDrive } from "../application/hooks";
 import type { Documento } from "../domain/types";
 
 const ADERENCIA_VARIANT = {
@@ -13,6 +13,17 @@ const ADERENCIA_VARIANT = {
   nao_atende: "danger",
   tipo_incorreto: "danger",
 } as const;
+
+function CaminhoArquivoLegenda({ documento }: { documento: Documento }) {
+  const caminho = useCaminhoArquivoDrive(documento);
+  if (!caminho) return null;
+  return (
+    <p className="mt-0.5 flex items-center gap-1 text-[11px] text-ink-muted">
+      <FolderOpen className="h-3 w-3 shrink-0" aria-hidden />
+      {caminho}
+    </p>
+  );
+}
 
 function horasEsperando(doc: Documento): number {
   if (!doc.enviadoEm) return 0;
@@ -60,6 +71,7 @@ export function FilaRevisaoPage() {
                   <p className="text-xs text-ink-muted">
                     {nomeCliente(doc.clienteId)} · {requisito?.titulo ?? doc.tipo}
                   </p>
+                  <CaminhoArquivoLegenda documento={doc} />
                 </div>
                 <div className="flex items-center gap-3">
                   {doc.enviadoApesarDoAlerta && (
@@ -120,6 +132,7 @@ function RevisaoModal({ documento, onClose }: { documento: Documento; onClose: (
   return (
     <Modal open onClose={onClose} title={documento.nome} description={requisito?.objetivo}>
       <div className="flex flex-col gap-4">
+        <CaminhoArquivoLegenda documento={documento} />
         {documento.analise ? (
           <div className="rounded-md border border-border bg-cream-100 p-3 text-sm">
             <p className="font-medium text-navy">

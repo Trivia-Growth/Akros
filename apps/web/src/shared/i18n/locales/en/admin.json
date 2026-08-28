@@ -26,7 +26,7 @@
     "chooseProgramDescription": "The program defines the client's journey and document checklist.",
     "noProfile": "No profile data collected yet.",
     "noTimeline": "No communication recorded yet.",
-    "qualificationFictional": "Fictional demo script — not Akros' real intake form.",
+    "qualificationFictional": "Fictional demo script. It is not Akros' real intake form.",
     "qualificationNotStarted": "Qualification not started yet.",
     "tabs": {
       "overview": "Overview",
@@ -168,7 +168,7 @@
   },
   "docQueue": {
     "title": "Document review",
-    "subtitle": "Queue prioritized by wait time — the AI's parecer is input, the decision is always human.",
+    "subtitle": "Queue prioritized by wait time. The AI's opinion is input; the decision is always human.",
     "empty": "No documents awaiting review.",
     "review": "Review",
     "waitingFor": "waiting for {{hours}}h",
@@ -215,14 +215,14 @@
   },
   "gate": {
     "title": "Scheduling approvals",
-    "subtitle": "No lead reaches the calendar without this check — the decision is always yours, never automatic.",
+    "subtitle": "No lead reaches the calendar without this check. The decision is always yours, never automatic.",
     "empty": "No leads awaiting approval.",
     "review": "Review",
     "approve": "Approve scheduling",
     "reject": "Reject",
     "approved": "Scheduling approved.",
     "rejected": "Lead rejected and moved to the reactivation base.",
-    "fitSuggestion": "System suggestion: {{fit}} fit — final decision is yours.",
+    "fitSuggestion": "System suggestion: {{fit}} fit. The final decision is yours.",
     "rejectReasonLabel": "Reason for rejection (becomes the main objection in the reactivation base)",
     "rejectReasonPlaceholder": "E.g.: no matching budget at the moment",
     "status": {
@@ -233,7 +233,7 @@
   },
   "programs": {
     "title": "Programs",
-    "subtitle": "Visa program catalog — phases, steps, and required documents.",
+    "subtitle": "Visa program catalog: phases, steps, and required documents.",
     "readOnlyNote": "Read-only in this phase. Program editing is planned for a future round.",
     "subject": {
       "individuo": "Individual",
@@ -266,7 +266,7 @@
   },
   "reconciliation": {
     "title": "Payment reconciliation",
-    "subtitle": "Check the receipt and confirm — no gateway, reconciliation is manual.",
+    "subtitle": "Check the receipt and confirm. There is no gateway; reconciliation is manual.",
     "empty": "No payments awaiting reconciliation.",
     "review": "Review",
     "modalDescription": "Check the received receipt before confirming.",
@@ -279,7 +279,7 @@
   },
   "reactivation": {
     "title": "Reactivation base",
-    "subtitle": "Leads who didn't close — segmented by objection and life moment, ready for a future offer.",
+    "subtitle": "Leads who did not close. They are segmented by objection and life moment for a future offer.",
     "all": "All",
     "empty": "No leads in this base with the current filters.",
     "count": "{{count}} leads · {{suggested}} with a re-approach signal",

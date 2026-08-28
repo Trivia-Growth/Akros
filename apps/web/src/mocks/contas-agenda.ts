@@ -1,12 +1,15 @@
-import type { ContaAgendaConectada } from "@/features/configuracoes/domain/types";
+import type { ContaConectada } from "@/features/configuracoes/domain/types";
 
-export const contasAgenda: ContaAgendaConectada[] = [
+export const contasAgenda: ContaConectada[] = [
   {
-    id: "agenda-google-natalia",
+    id: "conta-google-natalia",
     provedor: "google",
-    nomeExibicao: "Natalia (fundadora) — Google Calendar",
+    nomeExibicao: "Natalia (fundadora), Google Workspace",
     ativa: true,
     conectadoEm: "2026-08-10T09:00:00-03:00",
+    escopos: ["agenda", "email"],
+    donoId: "usuario-natalia",
+    emailEndereco: "natalia@akrosimmigration.com",
     credenciais: {
       provedor: "google",
       dados: {
@@ -20,11 +23,14 @@ export const contasAgenda: ContaAgendaConectada[] = [
     },
   },
   {
-    id: "agenda-google-bruno",
+    id: "conta-google-bruno",
     provedor: "google",
-    nomeExibicao: "Bruno Luz — Google Calendar",
+    nomeExibicao: "Bruno Luz, Google Workspace",
     ativa: true,
     conectadoEm: "2026-08-14T11:30:00-03:00",
+    escopos: ["agenda", "email"],
+    donoId: "usuario-bruno",
+    emailEndereco: "bruno@akrosimmigration.com",
     credenciais: {
       provedor: "google",
       dados: {
@@ -38,11 +44,13 @@ export const contasAgenda: ContaAgendaConectada[] = [
     },
   },
   {
-    id: "agenda-calendly-atendimento",
+    id: "conta-calendly-atendimento",
     provedor: "calendly",
-    nomeExibicao: "Calendly — Reunião de atendimento",
+    nomeExibicao: "Calendly, reunião de atendimento",
     ativa: true,
     conectadoEm: "2026-08-11T15:00:00-03:00",
+    escopos: ["agenda"],
+    donoId: "usuario-elem",
     credenciais: {
       provedor: "calendly",
       dados: {
@@ -50,6 +58,50 @@ export const contasAgenda: ContaAgendaConectada[] = [
         personalAccessTokenFinal: "8KXP",
         organizationUri: "https://api.calendly.com/organizations/akros-immigration",
         eventTypeUri: "https://api.calendly.com/event_types/reuniao-de-atendimento",
+      },
+    },
+  },
+  {
+    id: "conta-microsoft-recepcao",
+    provedor: "microsoft",
+    nomeExibicao: "Recepção, Microsoft 365",
+    ativa: true,
+    conectadoEm: "2026-08-18T10:15:00-03:00",
+    escopos: ["email"],
+    donoId: "usuario-elem",
+    emailEndereco: "faleconosco@akrosimmigration.com",
+    // Caixa compartilhada: além da dona (Elem), Bruno/Natalia/Denise também enxergam esta conta.
+    compartilhadoComIds: ["usuario-bruno", "usuario-natalia", "usuario-denise"],
+    credenciais: {
+      provedor: "microsoft",
+      dados: {
+        clientId: "a1b2c3d4-akros-recepcao",
+        clientSecretConfigurado: true,
+        clientSecretFinal: "M9WZ",
+        tenantId: "akrosimmigration.onmicrosoft.com",
+        refreshTokenConfigurado: true,
+        refreshTokenFinal: "T3QF",
+      },
+    },
+  },
+  {
+    id: "conta-microsoft-documentos",
+    provedor: "microsoft",
+    nomeExibicao: "Documentos Akros, OneDrive",
+    ativa: true,
+    conectadoEm: "2026-08-19T08:40:00-03:00",
+    escopos: ["arquivos"],
+    donoId: "usuario-bruno",
+    pastaRaiz: "/Clientes Akros",
+    credenciais: {
+      provedor: "microsoft",
+      dados: {
+        clientId: "a1b2c3d4-akros-documentos",
+        clientSecretConfigurado: true,
+        clientSecretFinal: "D5RX",
+        tenantId: "akrosimmigration.onmicrosoft.com",
+        refreshTokenConfigurado: true,
+        refreshTokenFinal: "F8LK",
       },
     },
   },

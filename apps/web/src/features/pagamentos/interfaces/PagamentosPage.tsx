@@ -50,7 +50,7 @@ export function PagamentosPage() {
           value={
             proximoVencimento
               ? new Date(proximoVencimento.vencimento).toLocaleDateString("pt-BR")
-              : "—"
+              : "Sem vencimento previsto"
           }
         />
       </div>

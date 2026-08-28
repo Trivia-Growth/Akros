@@ -25,6 +25,14 @@ export interface IntegracaoExterna {
   credenciaisMeta?: CredenciaisMeta;
 }
 
+/** Time interno da Akros — dono e destinatários de compartilhamento de conta conectada (E04-S12). */
+export interface UsuarioAkros {
+  id: string;
+  nome: string;
+  cargo: string;
+  avatarUrl?: string;
+}
+
 export type ProvedorAgenda = "google" | "microsoft" | "calendly";
 
 export interface CredenciaisGoogleCalendar {
@@ -58,14 +66,31 @@ export type CredenciaisContaAgenda =
   | { provedor: "microsoft"; dados: CredenciaisMicrosoftCalendar }
   | { provedor: "calendly"; dados: CredenciaisCalendly };
 
-/** Conta de calendário conectada — várias contas por provedor são permitidas (ADR-0007). */
-export interface ContaAgendaConectada {
+/**
+ * Escopo que a conta Google/Microsoft conectada autoriza. Um único login cobre mais de um —
+ * o OAuth real do Google/Microsoft concede Agenda + E-mail + Arquivos na mesma concessão
+ * (E04-S12). Calendly só participa de "agenda" (não tem e-mail nem Drive/OneDrive).
+ */
+export type EscopoConta = "agenda" | "email" | "arquivos";
+
+/** Conta Google/Microsoft/Calendly conectada — várias contas por provedor são permitidas (ADR-0007). */
+export interface ContaConectada {
   id: string;
   provedor: ProvedorAgenda;
   nomeExibicao: string;
   ativa: boolean;
   conectadoEm: string;
   credenciais: CredenciaisContaAgenda;
+  /** O que esta conta autoriza. Controla em quais telas ela aparece (agenda/e-mail/arquivos). */
+  escopos: EscopoConta[];
+  /** Dono da conta — só ele vê por padrão; ver `compartilhadoComIds`. */
+  donoId: string;
+  /** Endereço de e-mail — presente quando `escopos` inclui "email". */
+  emailEndereco?: string;
+  /** Ids de UsuarioAkros com quem o dono compartilhou a caixa (ex.: faleconosco@ visível pra 3 pessoas). */
+  compartilhadoComIds?: string[];
+  /** Pasta raiz no OneDrive/Drive — presente quando `escopos` inclui "arquivos". */
+  pastaRaiz?: string;
 }
 
 /** Tipo local, não importa de `comunicacao` — mesmo desacoplamento de `CredenciaisMeta`. */

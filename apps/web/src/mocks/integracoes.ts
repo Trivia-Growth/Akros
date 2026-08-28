@@ -60,4 +60,15 @@ export const integracoes: IntegracaoExterna[] = [
     ativa: false,
     segredoConfigurado: false,
   },
+  {
+    id: "whisper",
+    nome: "Whisper",
+    fornecedor: "OpenAI",
+    categoria: "transcricao",
+    descricao: "Transcreve os áudios recebidos no inbox (WhatsApp/Instagram) automaticamente.",
+    ativa: true,
+    segredoConfigurado: true,
+    segredoFinal: "6P1M",
+    atualizadoEm: "2026-08-20T09:00:00-03:00",
+  },
 ];

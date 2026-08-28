@@ -28,6 +28,6 @@ export const toquesCadenciaMock: ToqueCadencia[] = [
   {
     numero: 4,
     diasAposUltimoContato: 14,
-    mensagem: "Sem pressa nenhuma — prefere que eu te procure mais para a frente?",
+    mensagem: "Sem pressa. Prefere que eu entre em contato mais adiante?",
   },
 ];

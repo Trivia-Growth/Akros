@@ -65,9 +65,10 @@ describe("useMockDb (E00-S04 — camada de mock + DI)", () => {
     expect(lead?.estagio).toBe("lead");
   });
 
-  it("progresso da jornada é calculado a partir das etapas concluídas", async () => {
+  it("progresso da jornada é calculado a partir das etapas aprovadas pela Akros", async () => {
     const percentualAntes = await container.progresso.calcularPercentual("cliente-carlos");
-    await container.jornada.concluirEtapa("cliente-carlos", "f1-2");
+    await container.jornada.enviarEtapaParaAvaliacao("cliente-carlos", "f1-2");
+    await container.jornada.aprovarEtapa("cliente-carlos", "f1-2");
     const percentualDepois = await container.progresso.calcularPercentual("cliente-carlos");
     expect(percentualDepois).toBeGreaterThan(percentualAntes);
   });

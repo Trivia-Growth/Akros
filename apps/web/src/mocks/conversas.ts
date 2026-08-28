@@ -29,6 +29,29 @@ export const conversas: Conversa[] = [
         enviadoEm: "2026-08-04T09:21:00-03:00",
         lida: true,
       },
+      {
+        id: "msg-c4",
+        autor: "cliente",
+        texto: "",
+        tipo: "imagem",
+        midiaNome: "foto_diploma.jpg",
+        enviadoEm: "2026-08-04T09:24:00-03:00",
+        lida: true,
+      },
+      {
+        id: "msg-c5",
+        autor: "humano",
+        texto: "",
+        tipo: "audio",
+        midiaNome: "audio_carlos_c5.m4a",
+        duracaoSegundos: 34,
+        enviadoEm: "2026-08-04T09:26:00-03:00",
+        lida: true,
+        metadadosFixture: {
+          transcricaoSimulada:
+            "Carlos, recebi a foto, mas pra petição a gente precisa do PDF do diploma escaneado em boa resolução, não foto de celular. Pode escanear ou pedir uma via digital pra secretaria da faculdade? Assim que tiver, é só mandar por aqui ou pelo e-mail mesmo.",
+        },
+      },
     ],
   },
   {
@@ -138,7 +161,7 @@ export const conversas: Conversa[] = [
         id: "msg-ag2",
         autor: "agente_ia",
         texto:
-          "Claro, Camila! Vou te ajudar a encontrar um horário. Você prefere qual dia da semana, e período — manhã ou tarde?",
+          "Claro, Camila. Vou ajudar você a encontrar um horário. Qual dia da semana e período você prefere: manhã ou tarde?",
         enviadoEm: "2026-08-18T10:03:00-03:00",
         lida: true,
       },

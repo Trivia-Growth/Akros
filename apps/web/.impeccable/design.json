@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-28T00:00:00-03:00",
+  "title": "Design System: Akros",
+  "extensions": {
+    "colorMeta": {
+      "navy": {
+        "role": "primary",
+        "displayName": "Azul Profundo Institucional",
+        "canonical": "#0D2240",
+        "tonalRamp": [
+          "#050F1E",
+          "#081930",
+          "#0D2240",
+          "#152D4C",
+          "#1E3E68",
+          "#2C5488",
+          "#6E93BC",
+          "#EAF0F8"
+        ]
+      },
+      "gold": {
+        "role": "secondary",
+        "displayName": "Dourado de Conquista",
+        "canonical": "#C6A254",
+        "tonalRamp": [
+          "#2C2210",
+          "#564320",
+          "#7F642E",
+          "#A9843C",
+          "#C6A254",
+          "#D4AF63",
+          "#EAD5A1",
+          "#FBF6EB"
+        ]
+      },
+      "cream": {
+        "role": "neutral",
+        "displayName": "Cream de Documento",
+        "canonical": "#F5F4F0",
+        "tonalRamp": [
+          "#595750",
+          "#87847C",
+          "#B7B3A9",
+          "#D6D2C8",
+          "#E8E5DC",
+          "#F5F4F0",
+          "#FBFAF8",
+          "#FFFFFF"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1A1A1A",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#383838",
+          "#555555",
+          "#717171",
+          "#8A8A8A",
+          "#AAAAAA",
+          "#CECECE",
+          "#F2F2F2"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Borda Mineral",
+        "canonical": "#E0DDD5",
+        "tonalRamp": [
+          "#5E5B55",
+          "#837F77",
+          "#AAA69C",
+          "#C9C5BB",
+          "#E0DDD5",
+          "#EBE9E3",
+          "#F4F3EF",
+          "#FCFCFA"
+        ]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Sucesso",
+        "canonical": "#047857",
+        "tonalRamp": [
+          "#022C22",
+          "#064E3B",
+          "#047857",
+          "#059669",
+          "#10B981",
+          "#6EE7B7",
+          "#A7F3D0",
+          "#ECFDF5"
+        ]
+      },
+      "warning": {
+        "role": "tertiary",
+        "displayName": "Atenção",
+        "canonical": "#B45309",
+        "tonalRamp": [
+          "#451A03",
+          "#78350F",
+          "#B45309",
+          "#D97706",
+          "#F59E0B",
+          "#FCD34D",
+          "#FDE68A",
+          "#FFFBEB"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Ação Crítica",
+        "canonical": "#DC2626",
+        "tonalRamp": [
+          "#450A0A",
+          "#7F1D1D",
+          "#B91C1C",
+          "#DC2626",
+          "#EF4444",
+          "#FCA5A5",
+          "#FECACA",
+          "#FEF2F2"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Fraunces Display",
+        "purpose": "Títulos de marco, hero e números de impacto."
+      },
+      "body": {
+        "displayName": "Inter Body",
+        "purpose": "Leitura, operação, listas e formulários."
+      },
+      "label": {
+        "displayName": "Inter Label",
+        "purpose": "Eyebrows, metadados e grupos de navegação."
+      }
+    },
+    "shadows": [
+      {
+        "name": "subtle",
+        "value": "0 1px 3px rgba(13, 34, 64, 0.08)",
+        "purpose": "Cartões e controles em repouso."
+      },
+      {
+        "name": "elevated",
+        "value": "0 10px 25px rgba(13, 34, 64, 0.12)",
+        "purpose": "Popovers e superfícies prioritárias."
+      },
+      {
+        "name": "gold",
+        "value": "0 4px 14px rgba(198, 162, 84, 0.25)",
+        "purpose": "CTA dourado e progresso importante."
+      }
+    ],
+    "motion": [
+      {
+        "name": "out-soft",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Entrada e transição principal."
+      },
+      { "name": "standard-fast", "value": "150ms", "purpose": "Hover e mudança de cor." },
+      {
+        "name": "standard",
+        "value": "200ms",
+        "purpose": "Estados de botão, navegação e controles."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação padrão de fluxo seguro e estruturado.",
+      "html": "<button class=\"ds-btn-primary\">Continuar</button>",
+      "css": ".ds-btn-primary { height:44px; padding:0 20px; border:0; border-radius:8px; background:#0D2240; color:#fff; font:500 14px Inter, sans-serif; letter-spacing:-0.01em; box-shadow:0 1px 3px rgba(13,34,64,.08); transition:background .2s cubic-bezier(.16,1,.3,1); } .ds-btn-primary:hover { background:#152D4C; } .ds-btn-primary:focus-visible { outline:2px solid #C6A254; outline-offset:2px; } .ds-btn-primary:active { background:#0D2240; }"
+    },
+    {
+      "name": "Gold Button",
+      "kind": "button",
+      "refersTo": "button-gold",
+      "description": "CTA prioritário para avanço e conquista.",
+      "html": "<button class=\"ds-btn-gold\">Agendar conversa</button>",
+      "css": ".ds-btn-gold { height:44px; padding:0 20px; border:0; border-radius:8px; background:#C6A254; color:#0D2240; font:500 14px Inter, sans-serif; box-shadow:0 4px 14px rgba(198,162,84,.25); transition:background .2s cubic-bezier(.16,1,.3,1); } .ds-btn-gold:hover { background:#A9843C; } .ds-btn-gold:focus-visible { outline:2px solid #C6A254; outline-offset:2px; } .ds-btn-gold:active { background:#7F642E; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Campo funcional de leitura fácil e estado de foco inequívoco.",
+      "html": "<label class=\"ds-field\">E-mail<input class=\"ds-input\" placeholder=\"voce@email.com\"></label>",
+      "css": ".ds-field { display:grid; gap:6px; color:#1A1A1A; font:500 14px Inter,sans-serif; } .ds-input { box-sizing:border-box; width:100%; height:44px; padding:0 14px; border:1px solid #E0DDD5; border-radius:8px; background:#fff; color:#1A1A1A; font:400 14px Inter,sans-serif; transition:border-color .15s; } .ds-input::placeholder { color:#8A8A8A; } .ds-input:focus-visible { outline:2px solid #C6A254; outline-offset:0; border-color:#C6A254; } .ds-input:disabled { background:#F5F4F0; color:#8A8A8A; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Contêiner base para informação agrupada em camadas sutis.",
+      "html": "<article class=\"ds-card\"><h3>Próxima etapa</h3><p>Envie documentos para revisão da Akros.</p></article>",
+      "css": ".ds-card { padding:24px; border:1px solid rgba(224,221,213,.9); border-radius:16px; background:#fff; box-shadow:0 1px 3px rgba(13,34,64,.08); } .ds-card h3 { margin:0; color:#0D2240; font:600 18px Inter,sans-serif; } .ds-card p { margin:8px 0 0; color:#555; font:400 14px/1.6 Inter,sans-serif; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-gold",
+      "description": "Indicador compacto de estado, nunca CTA.",
+      "html": "<span class=\"ds-badge\">Em andamento</span>",
+      "css": ".ds-badge { display:inline-flex; align-items:center; min-height:24px; padding:0 10px; border-radius:9999px; background:#FBF6EB; color:#7F642E; font:500 12px Inter,sans-serif; letter-spacing:.02em; }"
+    },
+    {
+      "name": "Sidebar Navigation Item",
+      "kind": "nav",
+      "refersTo": "sidebar-active",
+      "description": "Item de navegação operacional em fundo navy.",
+      "html": "<nav class=\"ds-sidebar\"><a class=\"ds-nav-item ds-nav-item-active\" href=\"#\">Visão geral</a><a class=\"ds-nav-item\" href=\"#\">Documentos</a></nav>",
+      "css": ".ds-sidebar { display:grid; gap:4px; padding:12px; background:#0D2240; } .ds-nav-item { padding:10px 12px; border-radius:12px; color:rgba(255,255,255,.6); font:500 14px Inter,sans-serif; text-decoration:none; transition:background .2s,color .2s; } .ds-nav-item:hover { background:rgba(255,255,255,.08); color:#fff; } .ds-nav-item-active { background:rgba(255,255,255,.12); box-shadow:0 1px 3px rgba(13,34,64,.08); color:#fff; outline:1px solid rgba(255,255,255,.1); } .ds-nav-item:focus-visible { outline:2px solid #C6A254; outline-offset:2px; }"
+    },
+    {
+      "name": "Progress",
+      "kind": "custom",
+      "refersTo": "progress-default",
+      "description": "Progresso dourado com base cream e leitura numérica opcional.",
+      "html": "<div class=\"ds-progress\" role=\"progressbar\" aria-valuenow=\"64\" aria-valuemin=\"0\" aria-valuemax=\"100\"><span></span></div>",
+      "css": ".ds-progress { overflow:hidden; height:8px; border-radius:9999px; background:#E8E5DC; } .ds-progress span { display:block; width:64%; height:100%; border-radius:inherit; background:linear-gradient(90deg,#C6A254,#A9843C); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Horizonte Dourado",
+    "overview": "Akros combina orientação humana e precisão operacional. Superfícies claras, azul profundo e dourado pontual fazem cada etapa parecer uma travessia bem conduzida, não um labirinto burocrático. Interface refinada e segura: riqueza reservada para títulos, momentos de progresso e ações decisivas; operação diária permanece legível, silenciosa e objetiva.",
+    "keyCharacteristics": [
+      "Azul profundo institucional como âncora de confiança.",
+      "Dourado de Conquista para progresso, orientação e ação prioritária.",
+      "Fraunces editorial em títulos; Inter funcional no trabalho diário.",
+      "Cartões claros, bordas quentes e profundidade baixa.",
+      "Movimento curto que esclarece estado, respeitando redução de movimento."
+    ],
+    "rules": [
+      {
+        "name": "The Guided Gold Rule",
+        "body": "Dourado marca direção, conquista e decisão; nunca vira cor-base ou enfeite repetitivo.",
+        "section": "colors"
+      },
+      {
+        "name": "The Clear Surface Rule",
+        "body": "Transparência pode suavizar cabeçalho ou sobrepor imagem, mas conteúdo operacional sempre lê sobre superfície estável.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Voices Rule",
+        "body": "Fraunces abre direção e significado; Inter entrega informação e ação. Não introduzir terceira família tipográfica.",
+        "section": "typography"
+      },
+      {
+        "name": "The Quiet Lift Rule",
+        "body": "Sombra confirma hierarquia ou interação; não cria profundidade cenográfica.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do usar Azul Profundo Institucional para estrutura, navegação e decisões estáveis.",
+      "Do reservar Dourado de Conquista para foco, progresso e CTA prioritário.",
+      "Do manter cartões claros, borda mineral e sombras de baixa intensidade.",
+      "Do usar Fraunces somente para significado, marco ou narrativa; Inter para operação.",
+      "Do respeitar prefers-reduced-motion e usar transições curtas (150–300ms) para mudança de estado."
+    ],
+    "donts": [
+      "Don't usar neon, glow excessivo ou gradientes decorativos como linguagem padrão.",
+      "Don't usar glassmorphism em conteúdos operacionais.",
+      "Don't transformar a interface em visual jurídico frio, monocromático ou intimidatório.",
+      "Don't usar dourado como fundo dominante ou substituir navy em elementos estruturais.",
+      "Don't adicionar terceira fonte, raios aleatórios ou sombras pesadas."
+    ]
+  }
+}

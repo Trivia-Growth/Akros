@@ -247,7 +247,7 @@ export const programaEb2Niw: Programa = {
       faseTemplateId: "fase-2",
       tipo: "carta_recomendacao",
       titulo: "Carta de recomendação",
-      objetivo: "Terceiro atesta a qualidade do seu trabalho — não comprova tempo de vínculo.",
+      objetivo: "Terceiro atesta a qualidade do seu trabalho. Não comprova tempo de vínculo.",
       obrigatorio: true,
       emitidoPor: "terceiro_certificado",
     },
@@ -257,7 +257,7 @@ export const programaEb2Niw: Programa = {
       tipo: "carta_experiencia",
       titulo: "Carta de experiência profissional",
       objetivo:
-        "Comprovar tempo de vínculo, cargo e responsabilidades — emitida pela empresa, não por um colega.",
+        "Comprovar tempo de vínculo, cargo e responsabilidades. Deve ser emitida pela empresa, não por um colega.",
       obrigatorio: true,
       emitidoPor: "empregador",
     },

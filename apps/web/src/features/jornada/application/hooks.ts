@@ -33,8 +33,20 @@ export function obterFaseAtual(jornada: Jornada | undefined): Fase | undefined {
   );
 }
 
-export async function concluirEtapa(clienteId: string, etapaId: string): Promise<void> {
-  await container.jornada.concluirEtapa(clienteId, etapaId);
+export async function enviarEtapaParaAvaliacao(clienteId: string, etapaId: string): Promise<void> {
+  await container.jornada.enviarEtapaParaAvaliacao(clienteId, etapaId);
+}
+
+export async function aprovarEtapa(clienteId: string, etapaId: string): Promise<void> {
+  await container.jornada.aprovarEtapa(clienteId, etapaId);
+}
+
+export async function devolverEtapaParaAjuste(
+  clienteId: string,
+  etapaId: string,
+  motivo: string,
+): Promise<void> {
+  await container.jornada.devolverEtapaParaAjuste(clienteId, etapaId, motivo);
 }
 
 export async function liberarFase(clienteId: string, faseId: string): Promise<void> {

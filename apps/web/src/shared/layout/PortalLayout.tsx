@@ -159,6 +159,36 @@ export function PortalLayout() {
             href: "/portal/jornada",
             tone: "gold" as const,
           })),
+        ...eventos
+          .filter(
+            (evento) =>
+              evento.clienteOuLeadId === clienteAtivo.id &&
+              evento.canal === "sistema" &&
+              evento.conteudo.includes("aprovada"),
+          )
+          .slice(-2)
+          .map((evento) => ({
+            id: `etapa-aprovada-${evento.id}`,
+            title: "Etapa aprovada pela Akros",
+            description: evento.conteudo,
+            href: "/portal/jornada",
+            tone: "gold" as const,
+          })),
+        ...eventos
+          .filter(
+            (evento) =>
+              evento.clienteOuLeadId === clienteAtivo.id &&
+              evento.canal === "sistema" &&
+              evento.conteudo.includes("devolvida para ajustes"),
+          )
+          .slice(-2)
+          .map((evento) => ({
+            id: `etapa-ajuste-${evento.id}`,
+            title: "Etapa devolvida para ajustes",
+            description: evento.conteudo,
+            href: "/portal/jornada",
+            tone: "danger" as const,
+          })),
       ]
     : [];
 

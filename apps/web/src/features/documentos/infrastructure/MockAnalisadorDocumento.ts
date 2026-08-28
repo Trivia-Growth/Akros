@@ -33,20 +33,20 @@ const REGRAS_LACUNA: Partial<
     },
     ressalvas: {
       texto_generico:
-        "O texto está genérico — um exemplo específico do seu trabalho fortalece a carta.",
+        "O texto está genérico. Inclua um exemplo específico do seu trabalho para fortalecer a carta.",
     },
   },
 };
 
 const SUGESTAO_TIPO_INCORRETO: Partial<Record<string, string>> = {
   "carta_experiencia<-carta_recomendacao":
-    "Este documento parece uma carta de recomendação (atesta a qualidade do trabalho), não uma carta de experiência (comprova tempo e cargo). São coisas diferentes — peça a carta de experiência à empresa.",
+    "Este documento parece uma carta de recomendação (atesta a qualidade do trabalho), não uma carta de experiência (comprova tempo e cargo). Peça a carta de experiência à empresa.",
   "carta_recomendacao<-carta_experiencia":
     "Este documento parece uma carta de experiência (comprova tempo e cargo), não uma carta de recomendação (avalia a qualidade do trabalho). Peça a um profissional que te conhece uma carta de recomendação.",
 };
 
 const CTPS_SUGESTAO =
-  "Este documento não tem valor para a imigração americana — carteira de trabalho comprova vínculo local, não a atuação profissional que a petição exige. Peça à empresa uma carta de experiência com cargo, período e responsabilidades.";
+  "Este documento não tem valor para a imigração americana. A carteira de trabalho comprova vínculo local, não a atuação profissional que a petição exige. Peça à empresa uma carta de experiência com cargo, período e responsabilidades.";
 
 function novoId(prefixo: string): string {
   return `${prefixo}-${crypto.randomUUID().slice(0, 8)}`;
@@ -98,7 +98,7 @@ function construirParecer(
       sugestoes:
         faltando.length > 0
           ? [
-              "Este tipo de documento ainda não tem regra detalhada de análise — revisão humana recomendada.",
+              "Este tipo de documento ainda não tem regra detalhada de análise. Recomendamos revisão humana.",
             ]
           : [],
     };

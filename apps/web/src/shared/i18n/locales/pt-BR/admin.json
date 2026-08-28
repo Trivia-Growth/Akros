@@ -26,7 +26,7 @@
     "chooseProgramDescription": "O programa define a jornada e o checklist de documentos do cliente.",
     "noProfile": "Nenhum dado de perfil coletado ainda.",
     "noTimeline": "Nenhum registro de comunicação ainda.",
-    "qualificationFictional": "Roteiro fictício de demonstração — não é o formulário real da Akros.",
+    "qualificationFictional": "Roteiro fictício de demonstração. Não é o formulário real da Akros.",
     "qualificationNotStarted": "Qualificação ainda não iniciada.",
     "tabs": {
       "overview": "Visão geral",
@@ -168,7 +168,7 @@
   },
   "docQueue": {
     "title": "Revisão de documentos",
-    "subtitle": "Fila priorizada por tempo de espera — o parecer da IA é insumo, a decisão é sempre humana.",
+    "subtitle": "Fila priorizada por tempo de espera. O parecer da IA é um insumo; a decisão é sempre humana.",
     "empty": "Nenhum documento aguardando revisão.",
     "review": "Revisar",
     "waitingFor": "esperando há {{hours}}h",
@@ -215,14 +215,14 @@
   },
   "gate": {
     "title": "Aprovações de agendamento",
-    "subtitle": "Nenhum lead vai para a agenda sem essa validação — a decisão é sempre sua, nunca automática.",
+    "subtitle": "Nenhum lead vai para a agenda sem esta validação. A decisão é sempre sua, nunca automática.",
     "empty": "Nenhum lead aguardando aprovação.",
     "review": "Revisar",
     "approve": "Aprovar agendamento",
     "reject": "Recusar",
     "approved": "Agendamento aprovado.",
     "rejected": "Lead recusado e movido para a base de reativação.",
-    "fitSuggestion": "Sugestão do sistema: fit {{fit}} — decisão final é sua.",
+    "fitSuggestion": "Sugestão do sistema: fit {{fit}}. A decisão final é sua.",
     "rejectReasonLabel": "Motivo da recusa (vira objeção principal na base de reativação)",
     "rejectReasonPlaceholder": "Ex: sem orçamento compatível no momento",
     "status": {
@@ -233,7 +233,7 @@
   },
   "programs": {
     "title": "Programas",
-    "subtitle": "Catálogo de programas de visto — fases, etapas e documentos exigidos.",
+    "subtitle": "Catálogo de programas de visto: fases, etapas e documentos exigidos.",
     "readOnlyNote": "Somente leitura nesta fase. Edição de programas fica para uma rodada futura.",
     "subject": {
       "individuo": "Indivíduo",
@@ -266,7 +266,7 @@
   },
   "reconciliation": {
     "title": "Conciliação de pagamentos",
-    "subtitle": "Confira o comprovante e confirme — sem gateway, a conferência é manual.",
+    "subtitle": "Confira o comprovante e confirme. Sem gateway, a conferência é manual.",
     "empty": "Nenhum pagamento aguardando conciliação.",
     "review": "Conferir",
     "modalDescription": "Confira o comprovante recebido antes de confirmar.",
@@ -279,7 +279,7 @@
   },
   "reactivation": {
     "title": "Base de reativação",
-    "subtitle": "Leads que não fecharam — segmentados por objeção e momento, prontos para uma oferta futura.",
+    "subtitle": "Leads que não fecharam. Segmentados por objeção e momento, prontos para uma oferta futura.",
     "all": "Todos",
     "empty": "Nenhum lead nesta base com os filtros atuais.",
     "count": "{{count}} leads · {{suggested}} com sinal de reabordagem",

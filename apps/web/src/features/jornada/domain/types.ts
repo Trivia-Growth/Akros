@@ -1,7 +1,11 @@
 import type { ResponsavelEtapa } from "@/features/programas/domain/types";
 
 export type FaseStatus = "bloqueada" | "liberada" | "em_andamento" | "concluida";
-export type EtapaStatus = "pendente" | "concluida";
+/**
+ * E09-S05 — o cliente nunca conclui uma etapa sozinho. Ele envia (pendente → em_analise); só a
+ * Akros aprova (em_analise → concluida) ou devolve pra ajuste (em_analise → pendente de novo).
+ */
+export type EtapaStatus = "pendente" | "em_analise" | "concluida";
 
 export interface Etapa {
   id: string;

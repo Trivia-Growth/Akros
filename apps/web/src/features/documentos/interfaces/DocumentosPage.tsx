@@ -36,7 +36,8 @@ export function DocumentosPage() {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [analisandoId, setAnalisandoId] = useState<string | null>(null);
 
-  const faseNome = (faseId?: string) => jornada?.fases.find((f) => f.id === faseId)?.titulo ?? "—";
+  const faseNome = (faseId?: string) =>
+    jornada?.fases.find((f) => f.id === faseId)?.titulo ?? "Sem fase vinculada";
 
   async function handleUpload(documento: Documento) {
     if (uploadingId) return;

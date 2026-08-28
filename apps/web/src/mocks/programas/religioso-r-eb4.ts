@@ -49,7 +49,7 @@ export const programaReligiosoREb4: Programa = {
           id: "rel-f1-2",
           titulo: "Extratos bancários e demonstrativos financeiros",
           descricao:
-            "Comprovação financeira da instituição — dado sensível, tratado pelo canal registrável.",
+            "Comprovação financeira da instituição. Dado sensível, tratado pelo canal registrável.",
           prazoMedioDiasUteis: 10,
           responsavel: "cliente",
           responsavelDetalhe: "Representante da instituição",
