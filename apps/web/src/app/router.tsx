@@ -19,6 +19,8 @@ import { OperacaoPage } from "@/features/jornada/interfaces/OperacaoPage";
 import { ConciliacaoPage } from "@/features/pagamentos/interfaces/ConciliacaoPage";
 import { PagamentosPage } from "@/features/pagamentos/interfaces/PagamentosPage";
 import { ProgramasPage } from "@/features/programas/interfaces/ProgramasPage";
+import { LoginPage } from "@/features/sessao/interfaces/LoginPage";
+import { RequireRole } from "@/features/sessao/interfaces/RequireRole";
 import { BlogPage } from "@/features/site/interfaces/BlogPage";
 import { BlogPostPage } from "@/features/site/interfaces/BlogPostPage";
 import { ContatosPage } from "@/features/site/interfaces/ContatosPage";
@@ -30,8 +32,28 @@ import { VistosPage } from "@/features/site/interfaces/VistosPage";
 import { AdminLayout } from "@/shared/layout/AdminLayout";
 import { PortalLayout } from "@/shared/layout/PortalLayout";
 import { PublicLayout } from "@/shared/layout/PublicLayout";
+import { isDemoMode } from "@/shared/lib/env";
 import { UiShowcase } from "@/shared/ui/UiShowcase";
 import { createBrowserRouter } from "react-router-dom";
+
+/**
+ * E12-S02: fora do modo demo, `/portal` e `/admin` exigem sessão real do papel correspondente.
+ * Em modo demo (padrão — ver `shared/lib/env.ts`), zero guarda: comportamento igual ao de sempre.
+ */
+const portalElement = isDemoMode ? (
+  <PortalLayout />
+) : (
+  <RequireRole papel="cliente">
+    <PortalLayout />
+  </RequireRole>
+);
+const adminElement = isDemoMode ? (
+  <AdminLayout />
+) : (
+  <RequireRole papel="admin">
+    <AdminLayout />
+  </RequireRole>
+);
 
 export const router = createBrowserRouter([
   {
@@ -49,8 +71,12 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
     path: "/portal",
-    element: <PortalLayout />,
+    element: portalElement,
     children: [
       { index: true, element: <DashboardPage /> },
       { path: "jornada", element: <JornadaPage /> },
@@ -63,7 +89,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: adminElement,
     children: [
       { index: true, element: <AdminDashboardPage /> },
       { path: "leads", element: <KanbanPage /> },

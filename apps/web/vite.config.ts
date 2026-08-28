@@ -12,5 +12,15 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    // Espelha o rewrite de proxy do Netlify (ADR-0008) em dev: o browser só fala com
+    // localhost:5173, então o cookie de sessão nasce first-party nos dois ambientes.
+    proxy: {
+      "/api/sessao": {
+        target: "https://mhxopadkizktsenohnbm.supabase.co/functions/v1",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api\/sessao\//, "/sessao-"),
+      },
+    },
   },
 });

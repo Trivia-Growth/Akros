@@ -1,13 +1,16 @@
-import { useDemoSession } from "@/features/demo/application/useDemoSession";
+import { useClienteAtivo } from "@/features/demo/application/hooks";
 import { DemoBar } from "@/features/demo/interfaces/DemoBar";
+import { logout } from "@/features/sessao/application/hooks";
 import { useMockDb } from "@/mocks/store";
 import { LanguageSwitcher } from "@/shared/i18n/LanguageSwitcher";
+import { isDemoMode } from "@/shared/lib/env";
 import { Avatar, NotificationCenter } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
 import {
   CalendarDays,
   FileText,
   LayoutDashboard,
+  LogOut,
   Map as MapIcon,
   Menu,
   MessageSquare,
@@ -17,7 +20,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 const NAV_ITEMS = [
   { to: "/portal", icon: LayoutDashboard, label: "Visão geral", end: true },
@@ -90,14 +93,13 @@ function SidebarContent({
 }
 
 export function PortalLayout() {
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const personaId = useDemoSession((s) => s.personaId);
-  const clientes = useMockDb((s) => s.clientes);
   const documentos = useMockDb((s) => s.documentos);
   const pagamentos = useMockDb((s) => s.pagamentos);
   const reunioes = useMockDb((s) => s.reunioes);
   const eventos = useMockDb((s) => s.eventosComunicacao);
-  const clienteAtivo = clientes.find((c) => c.id === personaId);
+  const clienteAtivo = useClienteAtivo();
   const notificacoes = clienteAtivo
     ? [
         ...documentos
@@ -237,6 +239,16 @@ export function PortalLayout() {
             <div className="ml-auto flex items-center gap-3">
               <LanguageSwitcher />
               <NotificationCenter items={notificacoes} />
+              {!isDemoMode && (
+                <button
+                  type="button"
+                  onClick={() => logout().then(() => navigate("/login"))}
+                  className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-ink-muted hover:bg-cream-200 hover:text-navy"
+                >
+                  <LogOut className="h-3.5 w-3.5" aria-hidden />
+                  Sair
+                </button>
+              )}
               {clienteAtivo && (
                 <Avatar
                   name={clienteAtivo.nome}

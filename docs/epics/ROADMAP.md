@@ -251,8 +251,8 @@ credenciais + Edge Functions) → `E15` (lazy loading + resiliência) → `E16` 
 
 | Story | Título | Descrição | Owner | Status | Spec |
 |-------|--------|-----------|-------|--------|------|
-| E12-S01 | Contrato de portas em uso | P0: `app/di.ts` só é importado por testes; as 16 páginas leem/escrevem direto `useMockDb`. Migrar cada feature pra consumir via `container`/porta, com regra de dependency-cruiser proibindo `interfaces/` de importar `@/mocks/store` direto. Sem decisão nova — só faz o código obedecer o ADR-0002 já aceito. | @claude-code | 🟨 | ✅ |
-| E12-S02 | Autenticação e RBAC | Supabase Auth real: login por e-mail/senha, sessão conforme ADR-0008 (Edge Functions `sessao-login`/`sessao-refresh`/`sessao-logout` + proxy Netlify), papéis `cliente`/`admin` (RBAC) resolvidos do claim do JWT (ADR-0009), guarda de rota no front, seed do usuário admin. **Arquitetural** (novo bounded context `sessao`, decisão de segurança). Depende de E12-S01. | @claude-code | ⬜ | ⏳ |
+| E12-S01 | Contrato de portas em uso | Gap real (menor que o suposto): 18 mutações órfãs em 4 arquivos ainda pegavam ação direto de `useMockDb` em vez do `container` — corrigido. Ver `specs/E12-S01-contrato-portas/spec.md`. | @claude-code | 🟨 | ✅ |
+| E12-S02 | Autenticação e RBAC | Supabase Auth real implementado: 3 Edge Functions de sessão (ADR-0008), proxy Netlify+Vite, guarda de rota (`RequireRole`), RBAC via `app_metadata` (ADR-0009), 2 usuários seed reais. Testado via curl ponta a ponta. Ver `specs/E12-S02-auth-rbac/`. | @claude-code | 🟨 | ✅ |
 | E12-S03 | Playwright + matriz de autorização | Matriz de autorização (quem acessa o quê) escrita **antes** do schema (E13) — vira especificação executável do isolamento por papel/`cliente_id`. Depende de E12-S02. | — | ⬜ | ⏳ |
 
 > **E13 só é considerado pronto quando as linhas de dados da matriz de autorização (E12-S03) ficam

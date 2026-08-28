@@ -272,4 +272,61 @@ Retomar por **E12-S01** (contrato de portas). Auth, banco e Edge Functions vêm 
 já com ADR-0008 e ADR-0009 como contrato.
 
 ---
+
+## Handoff — 2026-08-28 (E12-S01 e E12-S02 implementados)
+
+**Owner:** Lucas Azevedo (execução por Claude nesta sessão).
+
+### E12-S01 — Contrato de portas em uso (🟨, falta peer review visual)
+Premissa do handoff anterior ("container só usado em teste") estava desatualizada — 15 arquivos de
+produção já usavam `container`. O gap real era 18 mutações órfãs (ação pega direto de `useMockDb`
+em vez de ir pelo `container`) em 4 arquivos: `ComunicacaoPage.tsx`, `ProgramasPage.tsx`,
+`ConfiguracoesPage.tsx` (contexto sem porta nenhuma — criada do zero) e `Cliente360.tsx`.
+Corrigido; gates verdes (typecheck, 82/82 testes, build, lint). Ver
+`specs/E12-S01-contrato-portas/{spec,tasks}.md` para a auditoria completa e o gate por nome de
+ação (não por nome de arquivo — assim não escapa de novo).
+**Pendente:** peer review visual das 4 telas tocadas em `pnpm dev` — sem ferramenta de browser
+nesta sessão.
+
+### E12-S02 — Autenticação e RBAC (🟨, falta gate manual com browser)
+Projeto Supabase (`mhxopadkizktsenohnbm`, `sa-east-1`) já existia. Implementado conforme
+ADR-0008/0009:
+- **3 Edge Functions** (`sessao-login`, `sessao-refresh`, `sessao-logout`) — deployadas e
+  testadas via curl ponta a ponta (login, CSRF gate, refresh/rotação, logout revoga e limpa
+  cookie). Deployadas com `--no-verify-jwt` (não há JWT de entrada antes do login existir).
+  Secret `CORS_ALLOWED_ORIGINS=http://localhost:5173` setado no projeto — **falta adicionar o
+  domínio de produção quando o site for linkado ao Netlify**.
+- **Proxy first-party**: `netlify.toml` (produção) e `apps/web/vite.config.ts` (dev, espelha o
+  mesmo comportamento) redirecionam `/api/sessao/*` pras functions.
+- **Novo bounded context** `features/sessao/` (domain/application/infrastructure/interfaces) —
+  ver `specs/E12-S02-auth-rbac/domain.md`. Não entra no `container` de `app/di.ts` (esse é
+  especificamente a substituição mock→Supabase do dado de negócio; sessão é real desde o dia 1).
+- **Guarda de rota**: `RequireRole` em `/admin` e `/portal`, só ativa quando `!isDemoMode` (flag
+  que já existia desde E05-S01, em `shared/lib/env.ts` — não foi inventada agora).
+  `isDemoMode = true` continua o padrão (demo ao vivo da Akros sem dependência de backend).
+- **Ponte pro dado mockado (SPEC_DEVIATION)**: `useClienteAtivo()` usa
+  `sessao.usuario.clienteId` fora do modo demo — os dois usuários seed já têm `app_metadata`
+  setado com esse claim (`cliente-carlos` pro cliente teste). Sem tabela `usuarios` real ainda —
+  isso é E13.
+- **2 usuários reais no Supabase Auth** (não hardcoded): `lm.azeved@gmail.com` (admin),
+  `carlos.mendes@example.com` (cliente, mapeado à persona `cliente-carlos`). Senha combinada
+  com o Lucas.
+- Botão "Sair" adicionado em `AdminLayout`/`PortalLayout`, visível só fora do modo demo.
+
+**Pendente:** gate manual do `spec.md` (login/guarda de rota/F5/logout num browser real) — a
+mecânica de sessão foi validada via curl direto nas Edge Functions, mas o fluxo completo
+front-end (`RequireRole`, `LoginPage`, `useBootstrapSessao`) não passou por navegador nesta
+sessão. Rodar com `pnpm dev` (`.env.local` já tem `VITE_DEMO_MODE=false`).
+
+### Credenciais e segredos desta sessão
+`.env.local` (gitignored) tem: token de Management API do Supabase, `service_role` key,
+`VITE_DEMO_MODE=false`. **Não commitados.** Token de Management API foi colado em texto puro pelo
+usuário no chat desta sessão — usado como está (decisão do usuário), não rotacionado.
+
+### Próximo passo
+`E12-S03` — Playwright + matriz de autorização (depende de E12-S02, que está funcionalmente
+pronto mas sem verificação visual). Antes disso, considerar rodar o gate manual de browser das
+duas stories pendentes.
+
+---
 *Atualizar este arquivo ao pausar a sessão. Use `/handoff` para semiautomatizar.*

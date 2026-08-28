@@ -7,6 +7,13 @@
   NODE_VERSION = "22"
   PNPM_VERSION = "9.0.0"
 
+# Sessão (ADR-0008) — cookie precisa ser first-party. Só estas 3 rotas passam por aqui;
+# dado de negócio continua indo direto ao mock/PostgREST. Ordem importa: antes do catch-all de SPA.
+[[redirects]]
+  from   = "/api/sessao/*"
+  to     = "https://mhxopadkizktsenohnbm.supabase.co/functions/v1/sessao-:splat"
+  status = 200
+
 # SPA: todas as rotas servem index.html
 [[redirects]]
   from   = "/*"
