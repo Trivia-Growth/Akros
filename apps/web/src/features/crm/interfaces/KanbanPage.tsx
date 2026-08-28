@@ -30,7 +30,7 @@ import {
   ShieldCheck,
   UsersRound,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -548,7 +548,10 @@ function ConverterModal({
   onDone: () => void;
 }) {
   const { t } = useTranslation("admin");
-  const programas = useMockDb((state) => state.programas.filter((programa) => programa.ativo));
+  const todosProgramas = useMockDb((state) => state.programas);
+  // Zustand: filtrar dentro do seletor devolve array novo a cada chamada, o que quebra
+  // useSyncExternalStore (loop infinito de re-render). Filtra fora, memoizado pela fonte estável.
+  const programas = useMemo(() => todosProgramas.filter((p) => p.ativo), [todosProgramas]);
   const [programaCodigo, setProgramaCodigo] = useState(programas[0]?.codigo ?? "");
   const [convertendo, setConvertendo] = useState(false);
 

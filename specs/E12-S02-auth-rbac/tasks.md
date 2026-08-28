@@ -49,8 +49,7 @@ pnpm run typecheck
 pnpm test
 pnpm run build
 ```
-Gate manual do `spec.md` (7 passos) — pendente de ambiente com browser; registrar como pendência em
-`docs/STATE.md` se não executado nesta sessão, igual ao peer review do E12-S01.
+Gate manual do `spec.md` (7 passos): **concluído** (28/08, Chrome real). Todos os AC (1–7)
+confirmados na UI, incluindo o caso de borda cross-role (cliente tentando `/admin`).
 
-Ao terminar: `/validar`, atualizar `docs/STATE.md` e `docs/epics/ROADMAP.md` (E12-S02: ⬜ → 🟩,
-condicionado ao gate manual).
+Ao terminar: `/validar`, atualizar `docs/STATE.md` e `docs/epics/ROADMAP.md` (E12-S02: ⬜ → 🟩). ✅

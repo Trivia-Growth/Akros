@@ -57,8 +57,10 @@ biome check --write <arquivos editados>   # ✅ 0 erros após format
 ```
 Gate por nome de ação (ver `spec.md`) rodado e vazio. ✅
 
-**Pendente:** peer review visual das 4 telas tocadas (`pnpm dev` + barra de demo) — não feito nesta
-sessão por falta de ferramenta de browser. Recomendado antes de considerar a story 🟩 fechada.
+**Peer review visual: concluído** (28/08, Chrome real via `pnpm dev`) — as 18 mutações (não mais
+15; achou 3 a mais numa segunda varredura por nome de ação, incluindo `Cliente360.tsx`) exercitadas
+uma a uma na UI. De brinde, achou e corrigiu 2 bugs de crash pré-existentes (loop infinito em
+seletor Zustand com `.filter()` inline em `ComunicacaoPage.tsx` e `KanbanPage.tsx`).
 
 Ao terminar: `/validar`, atualizar `docs/STATE.md` e `docs/epics/ROADMAP.md` (E12-S01: 🟨 → 🟩,
 condicionado ao peer review acima).

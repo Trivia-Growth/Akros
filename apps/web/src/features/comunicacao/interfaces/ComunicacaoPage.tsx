@@ -49,7 +49,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -708,8 +708,12 @@ export function EmailThreadPane({
 
 function AgentConfig() {
   const agentes = useMockDb((state) => state.agentesIA);
-  const contasAgenda = useMockDb((state) =>
-    state.contasAgenda.filter((conta) => conta.escopos.includes("agenda")),
+  const todasContasAgenda = useMockDb((state) => state.contasAgenda);
+  // Zustand: filtrar dentro do seletor devolve array novo a cada chamada, o que quebra
+  // useSyncExternalStore (loop infinito de re-render). Filtra fora, memoizado pela fonte estável.
+  const contasAgenda = useMemo(
+    () => todasContasAgenda.filter((conta) => conta.escopos.includes("agenda")),
+    [todasContasAgenda],
   );
   const contasCanal = useMockDb((state) => state.contasCanal);
   const basesConhecimento = useMockDb((state) => state.basesConhecimento);

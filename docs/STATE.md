@@ -323,10 +323,39 @@ sessão. Rodar com `pnpm dev` (`.env.local` já tem `VITE_DEMO_MODE=false`).
 `VITE_DEMO_MODE=false`. **Não commitados.** Token de Management API foi colado em texto puro pelo
 usuário no chat desta sessão — usado como está (decisão do usuário), não rotacionado.
 
+### Peer review em browser real — concluído nesta sessão (28/08, tarde)
+Extensão Claude in Chrome conectada (problema inicial era instalação/restart pendente do lado do
+usuário). Bateria completa rodada num Chrome de verdade contra `pnpm dev`:
+
+- **E12-S02 (AC-1 a AC-7):** todos confirmados na UI — guarda de rota redireciona pro `/login`
+  sem sessão; login admin/cliente funcionam; F5 rehidrata via `sessao-refresh`; logout revoga no
+  Supabase e limpa cookie (F5 depois não rehidrata mais); credencial errada mostra erro genérico;
+  cliente tentando `/admin` é barrado e devolvido ao `/portal`; `useClienteAtivo()` resolve a
+  persona certa (`cliente-carlos`) a partir do `clienteId` da sessão.
+- **E12-S01 (as 18 mutações):** cada uma exercitada de verdade na UI — enviar/transcrever
+  mensagem, responder e-mail, salvar agente, adicionar base de conhecimento, duplicar/salvar
+  programa, conectar/desconectar conta de agenda e de canal (inclusive o fluxo com
+  compartilhamento que usava o hack `.at(-1)` removido), atualizar integração, salvar pasta do
+  cliente, cadastrar pagamento.
+
+**2 bugs de crash pré-existentes achados e corrigidos** (não causados por E12, mas travavam a
+aba "Agente IA" de `/admin/comunicacao` e potencialmente o modal de conversão de lead em
+`KanbanPage.tsx`): seletor Zustand com `.filter()`/`.map()` inline devolve array novo a cada
+chamada, o que quebra `useSyncExternalStore` (loop infinito → "Maximum update depth exceeded").
+Corrigido com `useMemo` nos dois pontos. Isso é exatamente a classe de bug que a pendência
+"peer review nunca feito" (arrastada desde a rodada 2) existia pra pegar.
+
+**Armadilha descoberta e corrigida:** `apps/web/.env.local` com `VITE_DEMO_MODE=false` (criado
+pra eu testar login real) vazava pro Vitest também (mesma regra de carregamento de env do Vite),
+quebrando os smoke tests de modo demo. Corrigido com `apps/web/.env.test.local` forçando
+`VITE_DEMO_MODE=true` — `.env.test.local` tem precedência sobre `.env.local` no modo `test`, sem
+afetar o `pnpm dev`. Vale para qualquer dev que ligar esse flag localmente depois.
+
+Gates finais: typecheck ✅, 82/82 testes ✅, build ✅.
+
 ### Próximo passo
-`E12-S03` — Playwright + matriz de autorização (depende de E12-S02, que está funcionalmente
-pronto mas sem verificação visual). Antes disso, considerar rodar o gate manual de browser das
-duas stories pendentes.
+`E12-S03` — Playwright + matriz de autorização. E12-S01 e E12-S02 estão 🟩, incluindo peer review
+visual — nenhuma pendência de verificação em aberto pras duas.
 
 ---
 *Atualizar este arquivo ao pausar a sessão. Use `/handoff` para semiautomatizar.*
