@@ -1,3 +1,4 @@
+import { container } from "@/app/di";
 import type {
   ContaConectada,
   EscopoConta,
@@ -192,7 +193,6 @@ export function ConfiguracoesPage() {
 function ContasAgendaSection() {
   const contasAgenda = useMockDb((state) => state.contasAgenda);
   const equipeAkros = useMockDb((state) => state.equipeAkros);
-  const desconectarContaAgenda = useMockDb((state) => state.desconectarContaAgenda);
   const [conectando, setConectando] = useState(false);
 
   return (
@@ -247,7 +247,7 @@ function ContasAgendaSection() {
                   <Button
                     size="sm"
                     variant="secondary"
-                    onClick={() => desconectarContaAgenda(conta.id)}
+                    onClick={() => container.configuracoes.desconectarContaAgenda(conta.id)}
                   >
                     <Unplug className="h-4 w-4" aria-hidden />
                     Desconectar
@@ -282,13 +282,12 @@ function CompartilhamentoConta({
   equipe: { id: string; nome: string; cargo: string; avatarUrl?: string }[];
   dono: { id: string; nome: string; cargo: string; avatarUrl?: string } | undefined;
 }) {
-  const atualizarContaConectada = useMockDb((state) => state.atualizarContaConectada);
   const [gerenciando, setGerenciando] = useState(false);
   const compartilhadoCom = conta.compartilhadoComIds ?? [];
   const outrosMembros = equipe.filter((usuario) => usuario.id !== conta.donoId);
 
   function alternarCompartilhamento(usuarioId: string, marcado: boolean) {
-    atualizarContaConectada(conta.id, {
+    container.configuracoes.atualizarContaConectada(conta.id, {
       compartilhadoComIds: marcado
         ? [...compartilhadoCom, usuarioId]
         : compartilhadoCom.filter((id) => id !== usuarioId),
@@ -396,7 +395,6 @@ function ConectarContaAgendaModal({ onClose }: { onClose: () => void }) {
 }
 
 function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onClose: () => void }) {
-  const conectarContaAgenda = useMockDb((state) => state.conectarContaAgenda);
   const equipeAkros = useMockDb((state) => state.equipeAkros);
   const [nomeExibicao, setNomeExibicao] = useState("");
   const [donoId, setDonoId] = useState(equipeAkros[0]?.id ?? "");
@@ -422,7 +420,7 @@ function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onCl
     setEscopos((atual) => (marcado ? [...atual, escopo] : atual.filter((item) => item !== escopo)));
   }
 
-  function salvar() {
+  async function salvar() {
     if (!nomeExibicao || !donoId) return;
     const escoposFinal = podeEscolherEscopo ? escopos : (["agenda"] as EscopoConta[]);
     const base = {
@@ -432,56 +430,55 @@ function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onCl
       emailEndereco: escoposFinal.includes("email") ? emailEndereco : undefined,
       pastaRaiz: escoposFinal.includes("arquivos") ? pastaRaiz : undefined,
     };
-    if (provedor === "google") {
-      conectarContaAgenda({
-        ...base,
-        provedor: "google",
-        credenciais: {
-          provedor: "google",
-          dados: {
-            clientId,
-            clientSecretConfigurado: !!clientSecret,
-            clientSecretFinal: clientSecret.slice(-4).toUpperCase() || undefined,
-            refreshTokenConfigurado: !!refreshToken,
-            refreshTokenFinal: refreshToken.slice(-4).toUpperCase() || undefined,
-            calendarId,
-          },
-        },
-      });
-    } else if (provedor === "microsoft") {
-      conectarContaAgenda({
-        ...base,
-        provedor: "microsoft",
-        credenciais: {
-          provedor: "microsoft",
-          dados: {
-            clientId,
-            clientSecretConfigurado: !!clientSecret,
-            clientSecretFinal: clientSecret.slice(-4).toUpperCase() || undefined,
-            tenantId,
-            refreshTokenConfigurado: !!refreshToken,
-            refreshTokenFinal: refreshToken.slice(-4).toUpperCase() || undefined,
-          },
-        },
-      });
-    } else {
-      conectarContaAgenda({
-        ...base,
-        provedor: "calendly",
-        credenciais: {
-          provedor: "calendly",
-          dados: {
-            personalAccessTokenConfigurado: !!personalAccessToken,
-            personalAccessTokenFinal: personalAccessToken.slice(-4).toUpperCase() || undefined,
-            organizationUri,
-            eventTypeUri,
-          },
-        },
-      });
-    }
-    const conta = useMockDb.getState().contasAgenda.at(-1);
-    if (conta && escoposFinal.includes("email") && compartilhadoComIds.length > 0) {
-      useMockDb.getState().atualizarContaConectada(conta.id, { compartilhadoComIds });
+    const conta =
+      provedor === "google"
+        ? await container.configuracoes.conectarContaAgenda({
+            ...base,
+            provedor: "google",
+            credenciais: {
+              provedor: "google",
+              dados: {
+                clientId,
+                clientSecretConfigurado: !!clientSecret,
+                clientSecretFinal: clientSecret.slice(-4).toUpperCase() || undefined,
+                refreshTokenConfigurado: !!refreshToken,
+                refreshTokenFinal: refreshToken.slice(-4).toUpperCase() || undefined,
+                calendarId,
+              },
+            },
+          })
+        : provedor === "microsoft"
+          ? await container.configuracoes.conectarContaAgenda({
+              ...base,
+              provedor: "microsoft",
+              credenciais: {
+                provedor: "microsoft",
+                dados: {
+                  clientId,
+                  clientSecretConfigurado: !!clientSecret,
+                  clientSecretFinal: clientSecret.slice(-4).toUpperCase() || undefined,
+                  tenantId,
+                  refreshTokenConfigurado: !!refreshToken,
+                  refreshTokenFinal: refreshToken.slice(-4).toUpperCase() || undefined,
+                },
+              },
+            })
+          : await container.configuracoes.conectarContaAgenda({
+              ...base,
+              provedor: "calendly",
+              credenciais: {
+                provedor: "calendly",
+                dados: {
+                  personalAccessTokenConfigurado: !!personalAccessToken,
+                  personalAccessTokenFinal:
+                    personalAccessToken.slice(-4).toUpperCase() || undefined,
+                  organizationUri,
+                  eventTypeUri,
+                },
+              },
+            });
+    if (escoposFinal.includes("email") && compartilhadoComIds.length > 0) {
+      await container.configuracoes.atualizarContaConectada(conta.id, { compartilhadoComIds });
     }
     toast.success("Conta conectada no ambiente de demonstração.");
     onClose();
@@ -688,12 +685,11 @@ function IntegrationModal({
   integracao,
   onClose,
 }: { integracao: IntegracaoExterna; onClose: () => void }) {
-  const atualizarIntegracao = useMockDb((state) => state.atualizarIntegracao);
   const [ativa, setAtiva] = useState(integracao.ativa);
   const [apiKey, setApiKey] = useState("");
 
   function salvar() {
-    atualizarIntegracao(integracao.id, { ativa, apiKey });
+    container.configuracoes.atualizarIntegracao(integracao.id, { ativa, apiKey });
     toast.success("Configuração salva no ambiente de demonstração.");
     onClose();
   }
@@ -754,7 +750,6 @@ function MetaIntegrationModal({
   integracao,
   onClose,
 }: { integracao: IntegracaoExterna; onClose: () => void }) {
-  const atualizarCredenciaisMeta = useMockDb((state) => state.atualizarCredenciaisMeta);
   const atual = integracao.credenciaisMeta;
   const [ativa, setAtiva] = useState(integracao.ativa);
   const [appId, setAppId] = useState(atual?.appId ?? "");
@@ -764,7 +759,7 @@ function MetaIntegrationModal({
   const [contaInstagramId, setContaInstagramId] = useState(atual?.contaInstagramId ?? "");
 
   function salvar() {
-    atualizarCredenciaisMeta(integracao.id, {
+    container.configuracoes.atualizarCredenciaisMeta(integracao.id, {
       ativa,
       appId,
       appSecret: appSecret || undefined,
@@ -853,7 +848,6 @@ function MetaIntegrationModal({
 
 function ContasCanalSection() {
   const contasCanal = useMockDb((state) => state.contasCanal);
-  const desconectarContaCanal = useMockDb((state) => state.desconectarContaCanal);
   const [conectando, setConectando] = useState(false);
 
   return (
@@ -900,7 +894,7 @@ function ContasCanalSection() {
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => desconectarContaCanal(conta.id)}
+                  onClick={() => container.configuracoes.desconectarContaCanal(conta.id)}
                 >
                   <Unplug className="h-4 w-4" aria-hidden />
                   Desconectar
@@ -916,14 +910,13 @@ function ContasCanalSection() {
 }
 
 function ConectarContaCanalModal({ onClose }: { onClose: () => void }) {
-  const conectarContaCanal = useMockDb((state) => state.conectarContaCanal);
   const [provedor, setProvedor] = useState<ProvedorCanal>("whatsapp_oficial");
   const [nomeExibicao, setNomeExibicao] = useState("");
   const [identificador, setIdentificador] = useState("");
 
   function salvar() {
     if (!nomeExibicao || !identificador) return;
-    conectarContaCanal({ provedor, nomeExibicao, identificador });
+    container.configuracoes.conectarContaCanal({ provedor, nomeExibicao, identificador });
     toast.success("Conta de canal conectada no ambiente de demonstração.");
     onClose();
   }

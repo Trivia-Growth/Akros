@@ -1,3 +1,4 @@
+import { container } from "@/app/di";
 import { useMockDb } from "@/mocks/store";
 import { Badge, Button, Card, Input, Modal, Select, Textarea, toast } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
@@ -34,7 +35,6 @@ const EMISSORES: EmissorDocumento[] = [
 export function ProgramasPage() {
   const programas = useMockDb((state) => state.programas);
   const clientes = useMockDb((state) => state.clientes);
-  const duplicarPrograma = useMockDb((state) => state.duplicarPrograma);
   const [selecionadoId, setSelecionadoId] = useState<string | null>(programas[0]?.id ?? null);
   const [editorOpen, setEditorOpen] = useState(false);
 
@@ -48,9 +48,9 @@ export function ProgramasPage() {
     return contagem;
   }, [clientes]);
 
-  function handleDuplicar() {
+  async function handleDuplicar() {
     if (!selecionado) return;
-    const copia = duplicarPrograma(selecionado.id);
+    const copia = await container.programas.duplicar(selecionado.id);
     if (!copia) return;
     setSelecionadoId(copia.id);
     setEditorOpen(true);
@@ -241,7 +241,6 @@ export function ProgramasPage() {
 }
 
 function ProgramaEditor({ programa, onClose }: { programa: Programa; onClose: () => void }) {
-  const salvarPrograma = useMockDb((state) => state.salvarPrograma);
   const [draft, setDraft] = useState<Programa>(() => structuredClone(programa));
 
   function atualizarFase(indice: number, patch: Partial<FaseTemplate>) {
@@ -383,7 +382,7 @@ function ProgramaEditor({ programa, onClose }: { programa: Programa; onClose: ()
       );
       return;
     }
-    salvarPrograma(limpo);
+    container.programas.salvar(limpo);
     toast.success("Jornada atualizada. Novos casos usarão esta configuração.");
     onClose();
   }

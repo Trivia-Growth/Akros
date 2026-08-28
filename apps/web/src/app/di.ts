@@ -12,9 +12,12 @@ import {
 } from "@/features/agenda/infrastructure/MockAgendaRepository";
 import {
   MockAgenteService,
+  MockBaseConhecimentoRepository,
   MockConversaRepository,
+  MockEmailRepository,
   MockTimelineRepository,
 } from "@/features/comunicacao/infrastructure/MockConversaRepository";
+import { MockConfiguracoesRepository } from "@/features/configuracoes/infrastructure/MockConfiguracoesRepository";
 import { MockClienteRepository } from "@/features/crm/infrastructure/MockClienteRepository";
 import { MockPropostaRepository } from "@/features/crm/infrastructure/MockPropostaRepository";
 import { MockAnalisadorDocumento } from "@/features/documentos/infrastructure/MockAnalisadorDocumento";
@@ -32,6 +35,7 @@ import { MockConteudoRepository } from "@/features/site/infrastructure/MockConte
 import { MockLeadRepository } from "@/shared/contracts/MockLeadRepository";
 
 export const container = {
+  configuracoes: new MockConfiguracoesRepository(),
   leads: new MockLeadRepository(),
   clientes: new MockClienteRepository(),
   propostas: new MockPropostaRepository(),
@@ -43,6 +47,8 @@ export const container = {
   agenda: new MockAgendaRepository(),
   transcricoes: new MockTranscricaoRepository(),
   conversas: new MockConversaRepository(),
+  email: new MockEmailRepository(),
+  baseConhecimento: new MockBaseConhecimentoRepository(),
   agenteIA: new MockAgenteService(),
   conteudo: new MockConteudoRepository(),
   programas: new MockProgramaRepository(),

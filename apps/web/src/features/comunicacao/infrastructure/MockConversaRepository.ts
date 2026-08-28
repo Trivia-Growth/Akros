@@ -1,6 +1,18 @@
 import { comLatencia, useMockDb } from "@/mocks/store";
-import type { AgenteService, ConversaRepository, TimelineRepository } from "../application/ports";
-import type { Conversa, EventoComunicacao, RegraAtendimentoIA } from "../domain/types";
+import type {
+  AgenteService,
+  BaseConhecimentoRepository,
+  ConversaRepository,
+  EmailRepository,
+  TimelineRepository,
+} from "../application/ports";
+import type {
+  Conversa,
+  EventoComunicacao,
+  FonteConhecimento,
+  Mensagem,
+  RegraAtendimentoIA,
+} from "../domain/types";
 
 export class MockConversaRepository implements ConversaRepository {
   async listarTodas(): Promise<Conversa[]> {
@@ -14,6 +26,19 @@ export class MockConversaRepository implements ConversaRepository {
 
   async enviarMensagem(conversaId: string, texto: string): Promise<void> {
     useMockDb.getState().enviarMensagemConversa(conversaId, texto);
+    return comLatencia(undefined);
+  }
+
+  async enviarMensagemRica(
+    conversaId: string,
+    mensagem: Pick<Mensagem, "tipo" | "midiaNome" | "duracaoSegundos"> & { texto?: string },
+  ): Promise<void> {
+    useMockDb.getState().enviarMensagemConversaRica(conversaId, mensagem);
+    return comLatencia(undefined);
+  }
+
+  async transcreverMensagem(conversaId: string, mensagemId: string): Promise<void> {
+    useMockDb.getState().transcreverMensagem(conversaId, mensagemId);
     return comLatencia(undefined);
   }
 }
@@ -37,6 +62,30 @@ export class MockAgenteService implements AgenteService {
       return comLatencia({ resposta: topico.resposta, handoff: false });
     }
     return comLatencia({ resposta: config.mensagemHandoff, handoff: true });
+  }
+
+  async salvarAgente(agente: RegraAtendimentoIA): Promise<void> {
+    useMockDb.getState().salvarAgenteIA(agente);
+    return comLatencia(undefined);
+  }
+}
+
+export class MockEmailRepository implements EmailRepository {
+  async marcarComoLido(threadId: string): Promise<void> {
+    useMockDb.getState().marcarEmailThreadComoLida(threadId);
+    return comLatencia(undefined);
+  }
+
+  async responder(threadId: string, corpo: string): Promise<void> {
+    useMockDb.getState().enviarEmailThread(threadId, corpo);
+    return comLatencia(undefined);
+  }
+}
+
+export class MockBaseConhecimentoRepository implements BaseConhecimentoRepository {
+  async salvar(fonte: Omit<FonteConhecimento, "id"> & { id?: string }): Promise<FonteConhecimento> {
+    const criada = useMockDb.getState().salvarBaseConhecimento(fonte);
+    return comLatencia(criada);
   }
 }
 

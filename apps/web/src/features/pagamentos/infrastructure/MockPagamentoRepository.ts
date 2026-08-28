@@ -9,6 +9,11 @@ export class MockPagamentoRepository implements PagamentoRepository {
     return comLatencia(pagamentos);
   }
 
+  async criar(input: Omit<Pagamento, "id" | "status">): Promise<Pagamento> {
+    const criado = useMockDb.getState().criarPagamento(input);
+    return comLatencia(criado);
+  }
+
   async marcarComoPago(id: string): Promise<void> {
     useMockDb.getState().confirmarPagamento(id, "Sistema (demo)");
     return comLatencia(undefined);

@@ -412,7 +412,6 @@ function PastaDriveCard({
   clienteId,
   pastaDriveNome,
 }: { clienteId: string; pastaDriveNome?: string }) {
-  const atualizarCliente = useMockDb((state) => state.atualizarCliente);
   const contaArquivos = useContaArquivosAtiva();
   const cliente = useMockDb((s) => s.clientes.find((c) => c.id === clienteId));
   const [valor, setValor] = useState(pastaDriveNome ?? "");
@@ -424,7 +423,7 @@ function PastaDriveCard({
     if (salvando) return;
     setSalvando(true);
     try {
-      atualizarCliente(clienteId, { pastaDriveNome: valor.trim() || undefined });
+      await container.clientes.atualizar(clienteId, { pastaDriveNome: valor.trim() || undefined });
       toast.success("Pasta do OneDrive/Drive atualizada.");
     } finally {
       setSalvando(false);
@@ -485,7 +484,6 @@ const TIPO_PAGAMENTO_LABEL: Record<PagamentoTipo, string> = {
 };
 
 function NovoPagamentoForm({ clienteId }: { clienteId: string }) {
-  const criarPagamento = useMockDb((state) => state.criarPagamento);
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [moeda, setMoeda] = useState<Pagamento["moeda"]>("BRL");
@@ -497,7 +495,7 @@ function NovoPagamentoForm({ clienteId }: { clienteId: string }) {
     if (!descricao.trim() || !valor || !vencimento || salvando) return;
     setSalvando(true);
     try {
-      criarPagamento({
+      await container.pagamentos.criar({
         clienteId,
         descricao: descricao.trim(),
         valor: Number(valor),
@@ -717,7 +715,6 @@ function EmailThreadModal({
   thread,
   contaNome,
 }: { thread: EmailThread; contaNome: string | undefined }) {
-  const enviarEmailThread = useMockDb((state) => state.enviarEmailThread);
   const [resposta, setResposta] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -725,7 +722,7 @@ function EmailThreadModal({
     if (!resposta.trim() || enviando) return;
     setEnviando(true);
     try {
-      enviarEmailThread(thread.id, resposta.trim());
+      await container.email.responder(thread.id, resposta.trim());
       setResposta("");
     } finally {
       setEnviando(false);

@@ -233,3 +233,27 @@ operação, conciliação, catálogo de programas) nunca passaram por olho human
 2. Levar as 8 perguntas em aberto (seção acima) para a Bruno/Natalia/Dra. Denise — nenhuma bloqueia a demo, mas todas bloqueiam uso em produção.
 3. Validar conteúdo/copy com a Akros (textos, valores e prazos são estimativas razoáveis, não dados oficiais confirmados).
 4. Quando aprovado para produção: seguir ADR-0002 (portas/adapters) para trocar mocks por Supabase — inclui o `MockAnalisadorDocumento` (ADR-0005) por um adapter de LLM real, com as implicações de PII descritas lá.
+
+---
+
+# Rodada 3 — implantação/produção (E12+)
+
+Origem: revisão adversarial de 28/08/2026 (ver handoff em `docs/STATE.md`), 4 bloqueadores P0
+identificados antes de ir para produção. **ADR-0008** (sessão: access token em memória + refresh
+em cookie HttpOnly via Edge Function) e **ADR-0009** (single-tenant, sem `org_id`) fecham as
+decisões de arquitetura de autenticação. Projeto Supabase já existe (`mhxopadkizktsenohnbm`,
+região `sa-east-1`, Postgres 17).
+
+Ordem acordada: `E12-S01` → `E12-S02` → `E12-S03` → `E13` (schema/RLS/audit/LGPD) → `E14` (cofre de
+credenciais + Edge Functions) → `E15` (lazy loading + resiliência) → `E16` (operação).
+
+## E12 — Fundação de autenticação e autorização
+
+| Story | Título | Descrição | Owner | Status | Spec |
+|-------|--------|-----------|-------|--------|------|
+| E12-S01 | Contrato de portas em uso | P0: `app/di.ts` só é importado por testes; as 16 páginas leem/escrevem direto `useMockDb`. Migrar cada feature pra consumir via `container`/porta, com regra de dependency-cruiser proibindo `interfaces/` de importar `@/mocks/store` direto. Sem decisão nova — só faz o código obedecer o ADR-0002 já aceito. | @claude-code | 🟨 | ✅ |
+| E12-S02 | Autenticação e RBAC | Supabase Auth real: login por e-mail/senha, sessão conforme ADR-0008 (Edge Functions `sessao-login`/`sessao-refresh`/`sessao-logout` + proxy Netlify), papéis `cliente`/`admin` (RBAC) resolvidos do claim do JWT (ADR-0009), guarda de rota no front, seed do usuário admin. **Arquitetural** (novo bounded context `sessao`, decisão de segurança). Depende de E12-S01. | @claude-code | ⬜ | ⏳ |
+| E12-S03 | Playwright + matriz de autorização | Matriz de autorização (quem acessa o quê) escrita **antes** do schema (E13) — vira especificação executável do isolamento por papel/`cliente_id`. Depende de E12-S02. | — | ⬜ | ⏳ |
+
+> **E13 só é considerado pronto quando as linhas de dados da matriz de autorização (E12-S03) ficam
+> verdes** — não quando as tabelas sobem. Ver handoff completo em `docs/STATE.md`.
