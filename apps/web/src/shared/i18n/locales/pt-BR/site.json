@@ -44,7 +44,7 @@
     "niw": {
       "eyebrow": "Nosso carro-chefe",
       "title": "EB-2 National Interest Waiver",
-      "description": "Green Card baseado em emprego para profissionais com habilidades excepcionais — sem necessidade de oferta de emprego, quando demonstrado benefício ao interesse nacional dos Estados Unidos.",
+      "description": "Green Card baseado em emprego para profissionais com habilidades excepcionais. Não exige oferta de emprego quando há benefício demonstrado ao interesse nacional dos Estados Unidos.",
       "cta": "Ver requisitos do EB-2 NIW",
       "points": {
         "noOffer": {
@@ -57,7 +57,7 @@
         },
         "selfPetition": {
           "title": "Petição em nome próprio",
-          "description": "Você é o titular do caso — e continua dono da sua carreira nos EUA."
+          "description": "Você é o titular do caso e continua no comando da sua carreira nos Estados Unidos."
         }
       },
       "note": "Cada caso passa por diagnóstico de elegibilidade antes de qualquer contrato."
@@ -65,7 +65,7 @@
     "method": {
       "eyebrow": "Metodologia Akros",
       "title": "Sete passos, nenhum improviso",
-      "subtitle": "Do diagnóstico de perfil ao pouso nos Estados Unidos — você sempre sabe em que etapa está.",
+      "subtitle": "Do diagnóstico de perfil ao pouso nos Estados Unidos, você sempre sabe em que etapa está.",
       "cta": "Ver a metodologia completa"
     },
     "about": {
@@ -135,7 +135,7 @@
   "aboutPage": {
     "eyebrow": "Quem somos",
     "title": "Transformamos talento, propósito e família em novos começos.",
-    "intro": "A Akros Immigration Solutions transforma o sonho de imigrar de profissionais altamente qualificados em realidade. Unimos estratégia, atendimento próximo e uma rede especializada para apoiar cada decisão — da carreira à integração da sua família nos Estados Unidos.",
+    "intro": "A Akros Immigration Solutions atende profissionais altamente qualificados que querem imigrar. Unimos estratégia, atendimento próximo e rede especializada para apoiar decisões sobre carreira e integração da família nos Estados Unidos.",
     "teamEyebrow": "Nosso time",
     "teamTitle": "Quem conduz o seu processo",
     "teamSubtitle": "Advocacia, estratégia de negócios e preparação de carreira em um mesmo time, para que nenhum detalhe do seu projeto fique sem direção.",
@@ -174,7 +174,7 @@
       },
       "closeness": {
         "title": "Acompanhamento próximo",
-        "description": "Você nunca caminha sozinho — nossa equipe está ao seu lado do início ao fim."
+        "description": "Nossa equipe acompanha você do início ao fim."
       }
     },
     "cta": "Fale com nossa equipe"
@@ -292,7 +292,7 @@
       },
       "businessPlan": {
         "title": "Plano de negócios",
-        "description": "Com parceiros especializados, estruturamos um Business Plan com execução do projeto, análise de mercado, gestão e projeções financeiras — um ativo essencial para diversas estratégias imigratórias."
+        "description": "Com parceiros especializados, estruturamos um Business Plan com execução do projeto, análise de mercado, gestão e projeções financeiras. Ele é essencial para diversas estratégias imigratórias."
       },
       "americanResume": {
         "title": "Currículo em formato americano",

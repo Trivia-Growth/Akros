@@ -3,18 +3,21 @@ import { create } from "zustand";
 import type { Reuniao, Transcricao } from "@/features/agenda/domain/types";
 import type {
   Conversa,
+  EmailThread,
   EventoComunicacao,
   FonteConhecimento,
+  Mensagem,
   RegraAtendimentoIA,
 } from "@/features/comunicacao/domain/types";
 import type {
-  ContaAgendaConectada,
   ContaCanalConectada,
+  ContaConectada,
   CredenciaisContaAgenda,
   CredenciaisMeta,
   IntegracaoExterna,
   ProvedorAgenda,
   ProvedorCanal,
+  UsuarioAkros,
 } from "@/features/configuracoes/domain/types";
 import type { Cliente, Proposta } from "@/features/crm/domain/types";
 import type {
@@ -46,6 +49,8 @@ import {
   documentos as documentosSeed,
   solicitacoesAssinatura as solicitacoesSeed,
 } from "./documentos";
+import { emailThreads as emailThreadsSeed } from "./emails";
+import { equipeAkros } from "./equipe";
 import { integracoes as integracoesSeed } from "./integracoes";
 import { leads as leadsSeed } from "./leads";
 import { pagamentos as pagamentosSeed } from "./pagamentos";
@@ -88,9 +93,12 @@ interface MockDbState {
   agentesIA: RegraAtendimentoIA[];
   programas: Programa[];
   integracoes: IntegracaoExterna[];
-  contasAgenda: ContaAgendaConectada[];
+  /** Contas Google/Microsoft/Calendly conectadas — cobrem agenda, e-mail e/ou arquivos (E04-S12). */
+  contasAgenda: ContaConectada[];
   contasCanal: ContaCanalConectada[];
   basesConhecimento: FonteConhecimento[];
+  equipeAkros: UsuarioAkros[];
+  emailThreads: EmailThread[];
 
   // --- Leads / CRM ---
   criarLead: (input: NovoLead) => Lead;
@@ -105,7 +113,9 @@ interface MockDbState {
 
   // --- Jornada ---
   liberarFase: (clienteId: string, faseId: string) => void;
-  concluirEtapa: (clienteId: string, etapaId: string) => void;
+  enviarEtapaParaAvaliacao: (clienteId: string, etapaId: string) => void;
+  aprovarEtapa: (clienteId: string, etapaId: string) => void;
+  devolverEtapaParaAjuste: (clienteId: string, etapaId: string, motivo: string) => void;
 
   // --- Documentos (E07) ---
   registrarEnvioDocumento: (id: string, urlMock: string) => void;
@@ -120,6 +130,7 @@ interface MockDbState {
   assinarSolicitacao: (id: string, nomeAssinante: string) => void;
 
   // --- Pagamentos (E10) ---
+  criarPagamento: (input: Omit<Pagamento, "id" | "status">) => Pagamento;
   marcarPagamentoComoPago: (id: string) => void;
   anexarComprovantePagamento: (id: string, urlMock: string) => void;
   confirmarPagamento: (id: string, autor: string) => void;
@@ -130,6 +141,11 @@ interface MockDbState {
 
   // --- Comunicação (WhatsApp inbox, E04-S01) ---
   enviarMensagemConversa: (conversaId: string, texto: string) => void;
+  enviarMensagemConversaRica: (
+    conversaId: string,
+    mensagem: Pick<Mensagem, "tipo" | "midiaNome" | "duracaoSegundos"> & { texto?: string },
+  ) => void;
+  transcreverMensagem: (conversaId: string, mensagemId: string) => void;
   atualizarConfigAgente: (patch: Partial<RegraAtendimentoIA>) => void;
   salvarAgenteIA: (agente: RegraAtendimentoIA) => void;
 
@@ -155,8 +171,15 @@ interface MockDbState {
     provedor: ProvedorAgenda;
     nomeExibicao: string;
     credenciais: CredenciaisContaAgenda;
-  }) => ContaAgendaConectada;
+    escopos: ContaConectada["escopos"];
+    donoId: string;
+    emailEndereco?: string;
+    pastaRaiz?: string;
+  }) => ContaConectada;
   desconectarContaAgenda: (contaId: string) => void;
+  atualizarContaConectada: (contaId: string, patch: Partial<ContaConectada>) => void;
+  marcarEmailThreadComoLida: (threadId: string) => void;
+  enviarEmailThread: (threadId: string, corpo: string) => void;
   conectarContaCanal: (input: {
     provedor: ProvedorCanal;
     nomeExibicao: string;
@@ -205,9 +228,10 @@ export interface MockDbSeed {
   eventosComunicacao: EventoComunicacao[];
   programas: Programa[];
   integracoes: IntegracaoExterna[];
-  contasAgenda: ContaAgendaConectada[];
+  contasAgenda: ContaConectada[];
   contasCanal: ContaCanalConectada[];
   basesConhecimento: FonteConhecimento[];
+  emailThreads: EmailThread[];
 }
 
 function seedPadrao(): MockDbSeed {
@@ -228,6 +252,7 @@ function seedPadrao(): MockDbSeed {
     contasAgenda: structuredClone(contasAgendaSeed),
     contasCanal: structuredClone(contasCanalSeed),
     basesConhecimento: structuredClone(basesConhecimentoSeed),
+    emailThreads: structuredClone(emailThreadsSeed),
   };
 }
 
@@ -239,6 +264,7 @@ export const useMockDb = create<MockDbState>((set, get) => ({
   agentesIA: structuredClone(agentesAtendimentoIA),
   programas: structuredClone(catalogoProgramas),
   integracoes: structuredClone(integracoesSeed),
+  equipeAkros: [...equipeAkros],
 
   criarLead: (input) => {
     const lead: Lead = {
@@ -291,10 +317,23 @@ export const useMockDb = create<MockDbState>((set, get) => ({
 
     const jornada = instanciarJornada(programa, clienteId, novoId("jornada"));
 
+    // E08-S01 AC-6 / E04-S13: tudo que aconteceu enquanto era lead (conversas, e-mails,
+    // reuniões, proposta, timeline) migra pro id novo do cliente — nada fica órfão na conversão.
     set((s) => ({
       clientes: [...s.clientes, cliente],
       jornadas: [...s.jornadas, jornada],
       leads: s.leads.map((l) => (l.id === leadId ? { ...l, estagio: "fechado" as const } : l)),
+      eventosComunicacao: s.eventosComunicacao.map((e) =>
+        e.clienteOuLeadId === leadId ? { ...e, clienteOuLeadId: clienteId } : e,
+      ),
+      conversas: s.conversas.map((c) => (c.clienteId === leadId ? { ...c, clienteId } : c)),
+      emailThreads: s.emailThreads.map((t) =>
+        t.clienteOuLeadId === leadId ? { ...t, clienteOuLeadId: clienteId } : t,
+      ),
+      reunioes: s.reunioes.map((r) => (r.clienteId === leadId ? { ...r, clienteId } : r)),
+      propostas: s.propostas.map((p) =>
+        p.leadOuClienteId === leadId ? { ...p, leadOuClienteId: clienteId } : p,
+      ),
     }));
 
     return cliente;
@@ -341,7 +380,40 @@ export const useMockDb = create<MockDbState>((set, get) => ({
     });
   },
 
-  concluirEtapa: (clienteId, etapaId) => {
+  enviarEtapaParaAvaliacao: (clienteId, etapaId) => {
+    const jornadaAntes = get().jornadas.find((jornada) => jornada.clienteId === clienteId);
+    const faseDaEtapa = jornadaAntes?.fases.find((fase) =>
+      fase.etapas.some((etapa) => etapa.id === etapaId),
+    );
+    const etapa = faseDaEtapa?.etapas.find((item) => item.id === etapaId);
+    set((s) => ({
+      jornadas: s.jornadas.map((j) => {
+        if (j.clienteId !== clienteId) return j;
+        const fases = j.fases.map((f) => {
+          if (!f.etapas.some((e) => e.id === etapaId)) return f;
+          return {
+            ...f,
+            etapas: f.etapas.map((e) =>
+              e.id === etapaId ? { ...e, status: "em_analise" as const, desdeEm: agora() } : e,
+            ),
+          };
+        });
+        return { ...j, fases };
+      }),
+    }));
+    if (etapa) {
+      get().registrarEvento({
+        clienteOuLeadId: clienteId,
+        canal: "sistema",
+        direcao: "interno",
+        autor: "Cliente",
+        conteudo: `Enviou a etapa "${etapa.titulo}" para avaliação da Akros.`,
+        ocorridoEm: agora(),
+      });
+    }
+  },
+
+  aprovarEtapa: (clienteId, etapaId) => {
     const jornadaAntes = get().jornadas.find((jornada) => jornada.clienteId === clienteId);
     const faseDaEtapa = jornadaAntes?.fases.find((fase) =>
       fase.etapas.some((etapa) => etapa.id === etapaId),
@@ -349,7 +421,7 @@ export const useMockDb = create<MockDbState>((set, get) => ({
     const etapa = faseDaEtapa?.etapas.find((item) => item.id === etapaId);
     const concluiFase =
       faseDaEtapa !== undefined &&
-      faseDaEtapa.etapas.filter((item) => item.status === "pendente").length === 1;
+      faseDaEtapa.etapas.filter((item) => item.status !== "concluida").length === 1;
     set((s) => ({
       jornadas: s.jornadas.map((j) => {
         if (j.clienteId !== clienteId) return j;
@@ -357,7 +429,7 @@ export const useMockDb = create<MockDbState>((set, get) => ({
           const temEtapa = f.etapas.some((e) => e.id === etapaId);
           if (!temEtapa) return f;
           const etapas = f.etapas.map((e) =>
-            e.id === etapaId ? { ...e, status: "concluida" as const } : e,
+            e.id === etapaId ? { ...e, status: "concluida" as const, concluidaRealEm: agora() } : e,
           );
           const todasConcluidas = etapas.every((e) => e.status === "concluida");
           return {
@@ -374,10 +446,42 @@ export const useMockDb = create<MockDbState>((set, get) => ({
         clienteOuLeadId: clienteId,
         canal: "sistema",
         direcao: "interno",
-        autor: "Cliente",
+        autor: "Akros",
         conteudo: concluiFase
-          ? `Concluiu a fase "${faseDaEtapa.titulo}".`
-          : `Concluiu a etapa "${etapa.titulo}".`,
+          ? `A Akros aprovou a etapa "${etapa.titulo}". A fase "${faseDaEtapa.titulo}" foi concluída.`
+          : `Etapa "${etapa.titulo}" aprovada pela Akros.`,
+        ocorridoEm: agora(),
+      });
+    }
+  },
+
+  devolverEtapaParaAjuste: (clienteId, etapaId, motivo) => {
+    const jornadaAntes = get().jornadas.find((jornada) => jornada.clienteId === clienteId);
+    const etapa = jornadaAntes?.fases
+      .flatMap((fase) => fase.etapas)
+      .find((item) => item.id === etapaId);
+    set((s) => ({
+      jornadas: s.jornadas.map((j) => {
+        if (j.clienteId !== clienteId) return j;
+        const fases = j.fases.map((f) => {
+          if (!f.etapas.some((e) => e.id === etapaId)) return f;
+          return {
+            ...f,
+            etapas: f.etapas.map((e) =>
+              e.id === etapaId ? { ...e, status: "pendente" as const, desdeEm: agora() } : e,
+            ),
+          };
+        });
+        return { ...j, fases };
+      }),
+    }));
+    if (etapa) {
+      get().registrarEvento({
+        clienteOuLeadId: clienteId,
+        canal: "sistema",
+        direcao: "interno",
+        autor: "Akros",
+        conteudo: `Etapa "${etapa.titulo}" devolvida para ajustes: ${motivo}`,
         ocorridoEm: agora(),
       });
     }
@@ -458,6 +562,20 @@ export const useMockDb = create<MockDbState>((set, get) => ({
           : sol,
       ),
     }));
+  },
+
+  criarPagamento: (input) => {
+    const pagamento: Pagamento = { ...input, id: novoId("pagamento"), status: "pendente" };
+    set((s) => ({ pagamentos: [...s.pagamentos, pagamento] }));
+    get().registrarEvento({
+      clienteOuLeadId: input.clienteId,
+      canal: "sistema",
+      direcao: "interno",
+      autor: "Case manager",
+      conteudo: `Item de pagamento "${input.descricao}" cadastrado no fluxo do cliente.`,
+      ocorridoEm: agora(),
+    });
+    return pagamento;
   },
 
   marcarPagamentoComoPago: (id) => {
@@ -554,6 +672,53 @@ export const useMockDb = create<MockDbState>((set, get) => ({
               ],
             }
           : c,
+      ),
+    }));
+  },
+
+  enviarMensagemConversaRica: (conversaId, mensagem) => {
+    set((s) => ({
+      conversas: s.conversas.map((c) =>
+        c.id !== conversaId
+          ? c
+          : {
+              ...c,
+              mensagens: [
+                ...c.mensagens,
+                {
+                  id: novoId("msg"),
+                  autor: "humano" as const,
+                  texto: mensagem.texto ?? "",
+                  tipo: mensagem.tipo,
+                  midiaNome: mensagem.midiaNome,
+                  duracaoSegundos: mensagem.duracaoSegundos,
+                  enviadoEm: agora(),
+                  lida: true,
+                } satisfies Mensagem,
+              ],
+            },
+      ),
+    }));
+  },
+
+  transcreverMensagem: (conversaId, mensagemId) => {
+    set((s) => ({
+      conversas: s.conversas.map((c) =>
+        c.id !== conversaId
+          ? c
+          : {
+              ...c,
+              mensagens: c.mensagens.map((m) =>
+                m.id === mensagemId
+                  ? {
+                      ...m,
+                      transcricao:
+                        m.metadadosFixture?.transcricaoSimulada ??
+                        "Transcrição indisponível para este áudio.",
+                    }
+                  : m,
+              ),
+            },
       ),
     }));
   },
@@ -656,13 +821,17 @@ export const useMockDb = create<MockDbState>((set, get) => ({
   },
 
   conectarContaAgenda: (input) => {
-    const conta: ContaAgendaConectada = {
+    const conta: ContaConectada = {
       id: novoId("agenda"),
       provedor: input.provedor,
       nomeExibicao: input.nomeExibicao,
       ativa: true,
       conectadoEm: agora(),
       credenciais: input.credenciais,
+      escopos: input.escopos,
+      donoId: input.donoId,
+      emailEndereco: input.emailEndereco,
+      pastaRaiz: input.pastaRaiz,
     };
     set((s) => ({ contasAgenda: [...s.contasAgenda, conta] }));
     return conta;
@@ -670,6 +839,51 @@ export const useMockDb = create<MockDbState>((set, get) => ({
 
   desconectarContaAgenda: (contaId) => {
     set((s) => ({ contasAgenda: s.contasAgenda.filter((c) => c.id !== contaId) }));
+  },
+
+  atualizarContaConectada: (contaId, patch) => {
+    set((s) => ({
+      contasAgenda: s.contasAgenda.map((conta) =>
+        conta.id === contaId ? { ...conta, ...patch } : conta,
+      ),
+    }));
+  },
+
+  marcarEmailThreadComoLida: (threadId) => {
+    set((s) => ({
+      emailThreads: s.emailThreads.map((thread) =>
+        thread.id !== threadId
+          ? thread
+          : { ...thread, mensagens: thread.mensagens.map((m) => ({ ...m, lida: true })) },
+      ),
+    }));
+  },
+
+  enviarEmailThread: (threadId, corpo) => {
+    set((s) => {
+      const thread = s.emailThreads.find((item) => item.id === threadId);
+      const conta = s.contasAgenda.find((item) => item.id === thread?.contaEmailId);
+      return {
+        emailThreads: s.emailThreads.map((item) =>
+          item.id !== threadId
+            ? item
+            : {
+                ...item,
+                mensagens: [
+                  ...item.mensagens,
+                  {
+                    id: novoId("email"),
+                    de: conta?.emailEndereco ?? "equipe@akrosimmigration.com",
+                    corpo,
+                    recebidoEm: agora(),
+                    direcao: "saida" as const,
+                    lida: true,
+                  },
+                ],
+              },
+        ),
+      };
+    });
   },
 
   conectarContaCanal: (input) => {

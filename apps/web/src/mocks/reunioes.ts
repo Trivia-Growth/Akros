@@ -4,7 +4,7 @@ export const reunioes: Reuniao[] = [
   {
     id: "reuniao-carlos-kickoff",
     clienteId: "cliente-carlos",
-    titulo: "Kick-off — Fase 1",
+    titulo: "Reunião inicial: Fase 1",
     inicio: "2026-06-05T15:00:00-03:00",
     fim: "2026-06-05T15:45:00-03:00",
     canal: "calendly",
@@ -14,7 +14,7 @@ export const reunioes: Reuniao[] = [
   {
     id: "reuniao-carlos-proxima",
     clienteId: "cliente-carlos",
-    titulo: "Reunião complementar — currículo",
+    titulo: "Reunião complementar: currículo",
     inicio: "2026-08-12T10:00:00-03:00",
     fim: "2026-08-12T10:30:00-03:00",
     canal: "calendly",
@@ -23,7 +23,7 @@ export const reunioes: Reuniao[] = [
   {
     id: "reuniao-renata-checkpoint1",
     clienteId: "cliente-renata",
-    titulo: "Checkpoint I — Fase 2",
+    titulo: "Checkpoint I: Fase 2",
     inicio: "2026-06-20T11:00:00-03:00",
     fim: "2026-06-20T11:40:00-03:00",
     canal: "gmail",
@@ -33,7 +33,7 @@ export const reunioes: Reuniao[] = [
   {
     id: "reuniao-bruno-status",
     clienteId: "cliente-bruno",
-    titulo: "Atualização de status — pós-envio",
+    titulo: "Atualização de status pós-envio",
     inicio: "2026-07-01T09:00:00-03:00",
     fim: "2026-07-01T09:20:00-03:00",
     canal: "outlook",
@@ -42,7 +42,7 @@ export const reunioes: Reuniao[] = [
   {
     id: "reuniao-camila-primeira-conversa",
     clienteId: "lead-agendamento-camila",
-    titulo: "Primeira conversa — EB-1",
+    titulo: "Primeira conversa: EB-1",
     inicio: "2026-08-27T15:30:00-03:00",
     fim: "2026-08-27T16:15:00-03:00",
     canal: "gmail",

@@ -20,9 +20,9 @@
     "alertPhaseUnlocked": "Fase liberada pelo seu case manager!",
     "ballWith": "De quem é a bola",
     "forecastTitle": "Previsão de conclusão",
-    "forecastRange": "{{min}}–{{max}} meses",
+    "forecastRange": "{{min}} a {{max}} meses",
     "forecastPace": "Calculado pelo seu ritmo (fator {{factor}}x).",
-    "forecastDefaultPace": "Baseado no prazo médio padrão — ainda sem dados suficientes do seu ritmo.",
+    "forecastDefaultPace": "Baseado no prazo médio padrão. Ainda não há dados suficientes sobre o seu ritmo.",
     "forecastNote": "Estimativa, não é compromisso da Akros nem prazo oficial da USCIS."
   },
   "journey": {
@@ -31,7 +31,9 @@
     "overallProgress": "Progresso geral",
     "locked": "Disponível após liberação do seu case manager",
     "stepsTitle": "Etapas desta fase",
-    "markComplete": "Marcar como concluída",
+    "sendForReview": "Enviar para avaliação",
+    "underReview": "Aguardando avaliação da Akros",
+    "sentForReview": "Enviado! A Akros vai avaliar e você recebe uma notificação assim que for aprovado.",
     "completed": "Concluída",
     "deadline": "Prazo médio: {{days}} dias úteis",
     "requiredDocs": "Documentos necessários",
@@ -51,7 +53,7 @@
     "rule1": "Documentos em versão final devem ser enviados em PDF.",
     "rule2": "Não aceitamos fotos de documentos nem arquivos em Word como versão definitiva.",
     "rule3": "Documentos que não estejam em inglês precisam de tradução certificada.",
-    "rule4": "Não aceitamos documentos enviados por WhatsApp — use e-mail ou o drive compartilhado.",
+    "rule4": "Não aceitamos documentos enviados por WhatsApp. Use e-mail ou o drive compartilhado.",
     "upload": "Enviar arquivo",
     "uploading": "Enviando...",
     "uploaded": "Documento enviado com sucesso!",
@@ -73,7 +75,7 @@
         "tipo_incorreto": "Tipo incorreto"
       },
       "confidence": "confiança {{value}}%",
-      "disclaimer": "Análise automática — não substitui a revisão da equipe da Akros.",
+      "disclaimer": "A análise automática não substitui a revisão da equipe da Akros.",
       "sendAnyway": "Enviar assim mesmo para revisão",
       "sentAnywayNotice": "Enviado para revisão apesar do alerta da análise automática."
     }
@@ -81,7 +83,7 @@
   "payments": {
     "title": "Pagamentos",
     "subtitle": "Acompanhe o status dos seus pagamentos.",
-    "transferNote": "Pagamento por transferência bancária — sem cartão, sem cobrança automática.",
+    "transferNote": "Pagamento por transferência bancária. Não há cartão nem cobrança automática.",
     "totalPaid": "Total pago",
     "totalPending": "Total pendente",
     "nextDue": "Próximo vencimento",
@@ -95,7 +97,7 @@
     "paymentId": "ID do pagamento",
     "attachReceipt": "Anexar comprovante",
     "receiptAttached": "Comprovante anexado! Nossa equipe vai conferir e confirmar.",
-    "divergenceNotice": "Valor recebido diverge do esperado — esperado {{expected}}, recebido {{received}}.",
+    "divergenceNotice": "O valor recebido diverge do esperado. Esperado: {{expected}}. Recebido: {{received}}.",
     "fields": {
       "holder": "Titular",
       "bank": "Banco",
@@ -110,7 +112,7 @@
   "messages": {
     "title": "Mensagens",
     "subtitle": "Converse com a equipe Akros por um canal registrável do seu processo.",
-    "notDeletableNotice": "Mensagens aqui não podem ser apagadas — fazem parte do registro do seu processo.",
+    "notDeletableNotice": "Mensagens aqui não podem ser apagadas. Elas fazem parte do registro do seu processo.",
     "caseManager": "Seu case manager",
     "empty": "Nenhuma mensagem ainda.",
     "placeholder": "Escreva sua mensagem...",

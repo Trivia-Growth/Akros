@@ -1,12 +1,15 @@
 import { container } from "@/app/di";
+import { useReunioesCliente } from "@/features/agenda/application/hooks";
 import { useTimeline } from "@/features/comunicacao/application/hooks";
 import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
+import type { PropostaStatus } from "@/features/crm/domain/types";
 import { roteiroQualificacaoMock } from "@/mocks/qualificacao";
 import { useMockDb } from "@/mocks/store";
 import type { EstagioLead, Lead } from "@/shared/contracts/lead";
 import {
   Badge,
   Button,
+  Card,
   Modal,
   Select,
   Tabs,
@@ -19,8 +22,10 @@ import {
 import { cn } from "@/shared/ui/utils/cn";
 import {
   ArrowUpRight,
+  CalendarDays,
   CircleDollarSign,
   GripVertical,
+  ScrollText,
   Search,
   ShieldCheck,
   UsersRound,
@@ -245,10 +250,19 @@ function PipelineMetric({
   );
 }
 
+const PROPOSTA_STATUS_VARIANT: Record<PropostaStatus, "neutral" | "gold" | "success" | "danger"> = {
+  rascunho: "neutral",
+  enviada: "gold",
+  aceita: "success",
+  recusada: "danger",
+};
+
 function LeadDetailModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
   const { t } = useTranslation("admin");
   const leadAtual = useMockDb((s) => s.leads.find((l) => l.id === lead.id)) ?? lead;
   const timeline = useTimeline(leadAtual.id);
+  const reunioes = useReunioesCliente(leadAtual.id);
+  const propostas = useMockDb((s) => s.propostas.filter((p) => p.leadOuClienteId === leadAtual.id));
   const [nota, setNota] = useState("");
   const [salvandoNota, setSalvandoNota] = useState(false);
   const [convertModalOpen, setConvertModalOpen] = useState(false);
@@ -281,6 +295,8 @@ function LeadDetailModal({ lead, onClose }: { lead: Lead; onClose: () => void })
           <TabsTrigger value="profile">{t("kanban.tabs.profile")}</TabsTrigger>
           <TabsTrigger value="qualification">{t("kanban.tabs.qualification")}</TabsTrigger>
           <TabsTrigger value="timeline">{t("kanban.tabs.timeline")}</TabsTrigger>
+          <TabsTrigger value="meetings">Reuniões</TabsTrigger>
+          <TabsTrigger value="proposal">Proposta</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -289,7 +305,7 @@ function LeadDetailModal({ lead, onClose }: { lead: Lead; onClose: () => void })
               <Info label="Telefone" value={leadAtual.telefone} />
               <Info label="Origem" value={leadAtual.origem} />
               <Info label="Visto" value={leadAtual.tipoVistoInteresse} />
-              <Info label="Área/Profissão" value={leadAtual.areaProfissao ?? "—"} />
+              <Info label="Área/Profissão" value={leadAtual.areaProfissao ?? "Não informado"} />
             </div>
 
             <Select
@@ -370,6 +386,64 @@ function LeadDetailModal({ lead, onClose }: { lead: Lead; onClose: () => void })
         <TabsContent value="timeline">
           <Timeline eventos={[...timeline].reverse()} emptyLabel={t("kanban.noTimeline")} />
         </TabsContent>
+
+        <TabsContent value="meetings">
+          {reunioes.length === 0 ? (
+            <p className="text-sm text-ink-muted">Nenhuma reunião agendada com este lead ainda.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {reunioes.map((r) => (
+                <Card key={r.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 shrink-0 text-gold-700" aria-hidden />
+                    <p className="text-sm text-navy">{r.titulo}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={r.status === "realizada" ? "success" : "navy"}>
+                      {r.status}
+                    </Badge>
+                    <p className="text-xs text-ink-muted">
+                      {new Date(r.inicio).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="proposal">
+          {propostas.length === 0 ? (
+            <p className="text-sm text-ink-muted">Nenhuma proposta enviada a este lead ainda.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {propostas.map((p) => (
+                <Card key={p.id} className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <ScrollText className="h-4 w-4 shrink-0 text-gold-700" aria-hidden />
+                      <p className="text-sm font-medium text-navy">{p.tipoVisto}</p>
+                    </div>
+                    <Badge variant={PROPOSTA_STATUS_VARIANT[p.status]}>{p.status}</Badge>
+                  </div>
+                  <p className="text-sm text-ink-soft">
+                    {new Intl.NumberFormat(p.moeda === "BRL" ? "pt-BR" : "en-US", {
+                      style: "currency",
+                      currency: p.moeda,
+                    }).format(p.valor)}
+                  </p>
+                  <p className="text-xs text-ink-muted">{p.condicoes}</p>
+                  <Link
+                    to={`/admin/propostas/${p.id}`}
+                    className="w-fit text-xs font-medium text-gold-700 hover:underline"
+                  >
+                    Ver documento da proposta →
+                  </Link>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {convertModalOpen && (
@@ -414,7 +488,7 @@ function PerfilLeadView({ lead }: { lead: Lead }) {
         return (
           <div key={label}>
             <p className="text-xs text-ink-muted">{label}</p>
-            <p className="font-medium text-navy">{valor || "—"}</p>
+            <p className="font-medium text-navy">{valor || "Não informado"}</p>
             {valor && origem && (
               <p className="text-[10px] uppercase tracking-wide text-ink-muted">
                 {t(`profile.origin.${origem}`)}
@@ -446,7 +520,9 @@ function QualificacaoView({ lead }: { lead: Lead }) {
         {roteiroQualificacaoMock.map((pergunta) => (
           <li key={pergunta.id} className="rounded-md border border-border px-3 py-2 text-sm">
             <p className="text-ink-muted">{pergunta.texto}</p>
-            <p className="mt-1 font-medium text-navy">{respostas[pergunta.id] ?? "—"}</p>
+            <p className="mt-1 font-medium text-navy">
+              {respostas[pergunta.id] ?? "Não informado"}
+            </p>
           </li>
         ))}
       </ul>

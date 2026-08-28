@@ -51,7 +51,7 @@ export function AdminDashboardPage() {
     const faseAtual =
       j.fases.find((f) => f.status === "em_andamento") ??
       j.fases.find((f) => f.status === "liberada");
-    return faseAtual?.titulo ?? "—";
+    return faseAtual?.titulo ?? "Sem fase ativa";
   });
   const fasesUnicas = Array.from(new Set(clientesPorFase));
   const maxFase = Math.max(

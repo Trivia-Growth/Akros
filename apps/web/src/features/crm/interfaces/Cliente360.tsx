@@ -1,28 +1,58 @@
 import { container } from "@/app/di";
 import { useReunioesCliente } from "@/features/agenda/application/hooks";
-import { useConversaCliente, useTimeline } from "@/features/comunicacao/application/hooks";
+import {
+  useConversaCliente,
+  useEmailThreads,
+  useTimeline,
+} from "@/features/comunicacao/application/hooks";
+import type { EmailThread } from "@/features/comunicacao/domain/types";
+import { EmailThreadPane, MensagemBubble } from "@/features/comunicacao/interfaces/ComunicacaoPage";
 import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
-import { useDocumentosCliente } from "@/features/documentos/application/hooks";
+import {
+  useCaminhoArquivoDrive,
+  useContaArquivosAtiva,
+  useDocumentosCliente,
+} from "@/features/documentos/application/hooks";
+import type { Documento } from "@/features/documentos/domain/types";
+import { aprovarEtapa, devolverEtapaParaAjuste } from "@/features/jornada/application/hooks";
 import { usePagamentosCliente } from "@/features/pagamentos/application/hooks";
+import type { Pagamento, PagamentoTipo } from "@/features/pagamentos/domain/types";
 import { useMockDb } from "@/mocks/store";
 import {
   Avatar,
   Badge,
   Button,
   Card,
+  Input,
   Modal,
+  Select,
   Stepper,
   type StepperItem,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
   toast,
 } from "@/shared/ui";
-import { ArrowLeft, CalendarDays, FileText, MessageCircle, WalletCards } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  FileText,
+  FolderOpen,
+  Mail,
+  MessageCircle,
+  Plus,
+  Send,
+  Undo2,
+  WalletCards,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import type { EstadoCivil, ParentescoFamiliar, PerfilImigratorio } from "../domain/types";
 
 const SAUDE_VARIANT = {
   em_dia: "success",
@@ -60,7 +90,6 @@ export function Cliente360({ clienteId, onBack }: Props) {
   const documentos = useDocumentosCliente(clienteId);
   const pagamentos = usePagamentosCliente(clienteId);
   const reunioes = useReunioesCliente(clienteId);
-  const conversa = useConversaCliente(clienteId);
 
   if (!cliente || !jornada) return null;
 
@@ -158,17 +187,21 @@ export function Cliente360({ clienteId, onBack }: Props) {
         </TabsList>
 
         <TabsContent value="data">
-          <Card className="grid max-w-2xl grid-cols-1 gap-x-8 gap-y-5 text-sm sm:grid-cols-2">
-            <Info label="Nome" value={cliente.nome} />
-            <Info label="E-mail" value={cliente.email} />
-            <Info label="Telefone" value={cliente.telefone} />
-            <Info label="Visto" value={cliente.tipoVisto} />
-            <Info label="Case manager" value={cliente.caseManager} />
-            <Info
-              label="Cliente desde"
-              value={new Date(cliente.criadoEm).toLocaleDateString("pt-BR")}
-            />
-          </Card>
+          <div className="flex max-w-2xl flex-col gap-5">
+            <Card className="grid grid-cols-1 gap-x-8 gap-y-5 text-sm sm:grid-cols-2">
+              <Info label="Nome" value={cliente.nome} />
+              <Info label="E-mail" value={cliente.email} />
+              <Info label="Telefone" value={cliente.telefone} />
+              <Info label="Visto" value={cliente.tipoVisto} />
+              <Info label="Case manager" value={cliente.caseManager} />
+              <Info
+                label="Cliente desde"
+                value={new Date(cliente.criadoEm).toLocaleDateString("pt-BR")}
+              />
+            </Card>
+            <PerfilImigratorioResumo perfil={cliente.perfilImigratorio} />
+            <PastaDriveCard clienteId={cliente.id} pastaDriveNome={cliente.pastaDriveNome} />
+          </div>
         </TabsContent>
 
         <TabsContent value="journey">
@@ -184,6 +217,7 @@ export function Cliente360({ clienteId, onBack }: Props) {
             <div className="mb-6 overflow-x-auto">
               <Stepper items={stepperItems} />
             </div>
+            <EtapasParaAprovar clienteId={clienteId} />
             <JornadaGestao clienteId={clienteId} />
           </Card>
         </TabsContent>
@@ -200,8 +234,11 @@ export function Cliente360({ clienteId, onBack }: Props) {
               )}
               {documentos.map((d) => (
                 <Card key={d.id} className="flex items-center justify-between">
-                  <p className="text-sm text-navy">{d.nome}</p>
-                  <div className="flex items-center gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm text-navy">{d.nome}</p>
+                    <DocumentoCaminhoDrive documento={d} />
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
                     {d.analise && (
                       <Badge variant={d.analise.aderencia === "atende" ? "success" : "warning"}>
                         {d.analise.aderencia}
@@ -216,26 +253,30 @@ export function Cliente360({ clienteId, onBack }: Props) {
         </TabsContent>
 
         <TabsContent value="payments">
-          {pagamentos.length === 0 ? (
-            <p className="text-sm text-ink-muted">—</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {pagamentos.map((p) => (
-                <Card key={p.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-navy">{p.descricao}</p>
-                    <p className="text-xs text-ink-muted">
-                      {new Intl.NumberFormat(p.moeda === "BRL" ? "pt-BR" : "en-US", {
-                        style: "currency",
-                        currency: p.moeda,
-                      }).format(p.valor)}
-                    </p>
-                  </div>
-                  <Badge variant={PAG_STATUS_VARIANT[p.status]}>{p.status}</Badge>
-                </Card>
-              ))}
-            </div>
-          )}
+          <div className="flex flex-col gap-4">
+            {pagamentos.length === 0 ? (
+              <p className="text-sm text-ink-muted">Nenhum item de pagamento cadastrado ainda.</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {pagamentos.map((p) => (
+                  <Card key={p.id} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-navy">{p.descricao}</p>
+                      <p className="text-xs text-ink-muted">
+                        {new Intl.NumberFormat(p.moeda === "BRL" ? "pt-BR" : "en-US", {
+                          style: "currency",
+                          currency: p.moeda,
+                        }).format(p.valor)}{" "}
+                        · vence {new Date(p.vencimento).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                    <Badge variant={PAG_STATUS_VARIANT[p.status]}>{p.status}</Badge>
+                  </Card>
+                ))}
+              </div>
+            )}
+            <NovoPagamentoForm clienteId={clienteId} />
+          </div>
         </TabsContent>
 
         <TabsContent value="meetings">
@@ -256,30 +297,7 @@ export function Cliente360({ clienteId, onBack }: Props) {
         </TabsContent>
 
         <TabsContent value="conversations">
-          {!conversa ? (
-            <p className="text-sm text-ink-muted">—</p>
-          ) : (
-            <Card>
-              <div className="mb-3 flex items-center gap-2 text-xs text-ink-muted">
-                <MessageCircle className="h-3.5 w-3.5" aria-hidden />
-                {conversa.canal}
-              </div>
-              <div className="flex flex-col gap-2">
-                {conversa.mensagens.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`max-w-[80%] rounded-md px-3 py-2 text-sm ${
-                      m.autor === "cliente"
-                        ? "self-start bg-cream-200 text-ink"
-                        : "self-end bg-navy-50 text-navy"
-                    }`}
-                  >
-                    {m.texto}
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
+          <ConversasTab clienteId={clienteId} />
         </TabsContent>
 
         <TabsContent value="history">
@@ -317,6 +335,510 @@ function Info({ label, value }: { label: string; value: string }) {
     <div>
       <p className="text-xs text-ink-muted">{label}</p>
       <p className="font-medium text-navy">{value}</p>
+    </div>
+  );
+}
+
+function PerfilImigratorioResumo({ perfil }: { perfil?: PerfilImigratorio }) {
+  if (!perfil || (!perfil.nomeCompletoLegal && perfil.familiares.length === 0)) {
+    return (
+      <Card className="text-sm text-ink-muted">
+        Cliente ainda não preencheu os dados do processo em "Meu perfil" no portal.
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <h3 className="font-semibold text-navy">Dados do processo</h3>
+      <div className="grid grid-cols-1 gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
+        <Info label="Nome completo legal" value={perfil.nomeCompletoLegal || "Não informado"} />
+        <Info label="Data de nascimento" value={perfil.dataNascimento || "Não informado"} />
+        <Info label="País de nascimento" value={perfil.paisNascimento || "Não informado"} />
+        <Info label="Nacionalidade" value={perfil.nacionalidade || "Não informado"} />
+        <Info label="Passaporte" value={perfil.numeroPassaporte || "Não informado"} />
+        <Info label="Validade do passaporte" value={perfil.validadePassaporte || "Não informado"} />
+        <Info
+          label="Estado civil"
+          value={
+            perfil.estadoCivil ? ESTADO_CIVIL_LABEL_ADMIN[perfil.estadoCivil] : "Não informado"
+          }
+        />
+        <Info label="Endereço atual" value={perfil.enderecoAtual || "Não informado"} />
+      </div>
+      {perfil.familiares.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-label text-gold-700">
+            Família
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {perfil.familiares.map((familiar) => (
+              <div
+                key={familiar.id}
+                className="flex items-center justify-between rounded-md border border-border bg-cream-50/60 px-3 py-2 text-sm"
+              >
+                <span className="text-navy">
+                  {familiar.nome || "Não informado"}{" "}
+                  <span className="text-ink-muted">
+                    · {PARENTESCO_LABEL_ADMIN[familiar.parentesco]}
+                  </span>
+                </span>
+                {familiar.incluirNoProcesso && <Badge variant="gold">Incluído no processo</Badge>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+const ESTADO_CIVIL_LABEL_ADMIN: Record<EstadoCivil, string> = {
+  solteiro: "Solteiro(a)",
+  casado: "Casado(a)",
+  divorciado: "Divorciado(a)",
+  viuvo: "Viúvo(a)",
+  uniao_estavel: "União estável",
+};
+
+const PARENTESCO_LABEL_ADMIN: Record<ParentescoFamiliar, string> = {
+  conjuge: "Cônjuge",
+  filho: "Filho",
+  filha: "Filha",
+  outro: "Outro",
+};
+
+function PastaDriveCard({
+  clienteId,
+  pastaDriveNome,
+}: { clienteId: string; pastaDriveNome?: string }) {
+  const atualizarCliente = useMockDb((state) => state.atualizarCliente);
+  const contaArquivos = useContaArquivosAtiva();
+  const cliente = useMockDb((s) => s.clientes.find((c) => c.id === clienteId));
+  const [valor, setValor] = useState(pastaDriveNome ?? "");
+  const [salvando, setSalvando] = useState(false);
+
+  const pastaEfetiva = valor.trim() || cliente?.nome || "";
+
+  async function salvar() {
+    if (salvando) return;
+    setSalvando(true);
+    try {
+      atualizarCliente(clienteId, { pastaDriveNome: valor.trim() || undefined });
+      toast.success("Pasta do OneDrive/Drive atualizada.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <FolderOpen className="h-4 w-4 text-gold-700" aria-hidden />
+        <h3 className="font-semibold text-navy">Pasta no OneDrive/Drive</h3>
+      </div>
+      {!contaArquivos ? (
+        <p className="text-sm text-ink-muted">
+          Nenhuma conta com escopo de arquivos conectada.{" "}
+          <Link to="/admin/configuracoes" className="font-medium text-gold-700 underline">
+            Conectar em Configurações →
+          </Link>
+        </p>
+      ) : (
+        <>
+          <p className="text-xs text-ink-muted">
+            Subpastas por fase são criadas automaticamente conforme o cliente avança — ex.:{" "}
+            <span className="font-mono">
+              {contaArquivos.pastaRaiz}/{pastaEfetiva}/Fase 1/...
+            </span>
+          </p>
+          <Input
+            label="Nome da pasta deste cliente"
+            placeholder={cliente?.nome}
+            value={valor}
+            onChange={(event) => setValor(event.target.value)}
+          />
+          <Button size="sm" className="self-start" onClick={salvar} loading={salvando}>
+            Salvar pasta
+          </Button>
+        </>
+      )}
+    </Card>
+  );
+}
+
+function DocumentoCaminhoDrive({ documento }: { documento: Documento }) {
+  const caminho = useCaminhoArquivoDrive(documento);
+  if (!caminho) return null;
+  return (
+    <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-ink-muted">
+      <FolderOpen className="h-3 w-3 shrink-0" aria-hidden />
+      {caminho}
+    </p>
+  );
+}
+
+const TIPO_PAGAMENTO_LABEL: Record<PagamentoTipo, string> = {
+  entrada: "Entrada",
+  taxa_federal: "Taxa federal (USCIS)",
+  parcela: "Parcela",
+};
+
+function NovoPagamentoForm({ clienteId }: { clienteId: string }) {
+  const criarPagamento = useMockDb((state) => state.criarPagamento);
+  const [descricao, setDescricao] = useState("");
+  const [valor, setValor] = useState("");
+  const [moeda, setMoeda] = useState<Pagamento["moeda"]>("BRL");
+  const [tipo, setTipo] = useState<PagamentoTipo>("parcela");
+  const [vencimento, setVencimento] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  async function adicionar() {
+    if (!descricao.trim() || !valor || !vencimento || salvando) return;
+    setSalvando(true);
+    try {
+      criarPagamento({
+        clienteId,
+        descricao: descricao.trim(),
+        valor: Number(valor),
+        moeda,
+        tipo,
+        vencimento: new Date(vencimento).toISOString(),
+      });
+      toast.success("Item de pagamento adicionado ao fluxo do cliente.");
+      setDescricao("");
+      setValor("");
+      setVencimento("");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <Plus className="h-4 w-4 text-gold-700" aria-hidden />
+        <h3 className="font-semibold text-navy">Cadastrar item do fluxo de pagamento</h3>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Input
+          label="Descrição"
+          placeholder="Ex.: Entrada, Parcela 2/4, Taxa USCIS"
+          value={descricao}
+          onChange={(event) => setDescricao(event.target.value)}
+        />
+        <Select
+          label="Tipo"
+          value={tipo}
+          onChange={(event) => setTipo(event.target.value as PagamentoTipo)}
+        >
+          {(Object.entries(TIPO_PAGAMENTO_LABEL) as [PagamentoTipo, string][]).map(
+            ([valorTipo, label]) => (
+              <option key={valorTipo} value={valorTipo}>
+                {label}
+              </option>
+            ),
+          )}
+        </Select>
+        <Input
+          type="number"
+          label="Valor"
+          value={valor}
+          onChange={(event) => setValor(event.target.value)}
+        />
+        <Select
+          label="Moeda"
+          value={moeda}
+          onChange={(event) => setMoeda(event.target.value as Pagamento["moeda"])}
+        >
+          <option value="BRL">BRL</option>
+          <option value="USD">USD</option>
+        </Select>
+        <Input
+          type="date"
+          label="Vencimento"
+          value={vencimento}
+          onChange={(event) => setVencimento(event.target.value)}
+        />
+      </div>
+      <Button
+        size="sm"
+        className="self-start"
+        onClick={adicionar}
+        loading={salvando}
+        disabled={salvando || !descricao.trim() || !valor || !vencimento}
+      >
+        <Plus className="h-4 w-4" aria-hidden />
+        Adicionar ao fluxo
+      </Button>
+    </Card>
+  );
+}
+
+function ConversasTab({ clienteId }: { clienteId: string }) {
+  const conversaWhats = useConversaCliente(clienteId);
+  const threadsEmail = useEmailThreads().filter((t) => t.clienteOuLeadId === clienteId);
+  const contas = useMockDb((state) => state.contasAgenda);
+  const [aberto, setAberto] = useState<{ tipo: "whatsapp" } | { tipo: "email"; id: string } | null>(
+    null,
+  );
+
+  const threadEmailAberta =
+    aberto?.tipo === "email" ? threadsEmail.find((t) => t.id === aberto.id) : undefined;
+
+  if (!conversaWhats && threadsEmail.length === 0) {
+    return <p className="text-sm text-ink-muted">Nenhuma conversa por WhatsApp ou e-mail ainda.</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {conversaWhats && (
+        <button
+          type="button"
+          onClick={() => setAberto({ tipo: "whatsapp" })}
+          className="flex items-center gap-3 rounded-md border border-border bg-white p-3 text-left transition-colors hover:bg-cream-200"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy-50 text-navy">
+            <MessageCircle className="h-4 w-4" aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-navy">WhatsApp</p>
+            <p className="truncate text-xs text-ink-muted">
+              {conversaWhats.mensagens.at(-1)?.texto || "Ver conversa completa"}
+            </p>
+          </div>
+          <span className="shrink-0 text-xs text-ink-muted">
+            {conversaWhats.mensagens.length} mensagens
+          </span>
+        </button>
+      )}
+
+      {threadsEmail.map((thread) => (
+        <button
+          key={thread.id}
+          type="button"
+          onClick={() => setAberto({ tipo: "email", id: thread.id })}
+          className="flex items-center gap-3 rounded-md border border-border bg-white p-3 text-left transition-colors hover:bg-cream-200"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-50 text-gold-700">
+            <Mail className="h-4 w-4" aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-navy">{thread.assunto}</p>
+            <p className="truncate text-xs text-ink-muted">
+              {thread.mensagens.at(-1)?.corpo || "Ver e-mail completo"}
+            </p>
+          </div>
+          <span className="shrink-0 text-xs text-ink-muted">
+            {thread.mensagens.length} mensagens
+          </span>
+        </button>
+      ))}
+
+      {aberto?.tipo === "whatsapp" && conversaWhats && (
+        <Modal
+          open
+          onClose={() => setAberto(null)}
+          title="Conversa por WhatsApp"
+          description={conversaWhats.clienteNome}
+          className="max-w-2xl"
+        >
+          <WhatsappThreadCompleta conversaId={conversaWhats.id} />
+        </Modal>
+      )}
+
+      {threadEmailAberta && (
+        <Modal
+          open
+          onClose={() => setAberto(null)}
+          title={threadEmailAberta.assunto}
+          description="Thread completa"
+          className="max-w-2xl"
+        >
+          <div className="flex max-h-[70vh] flex-col">
+            <EmailThreadModal
+              thread={threadEmailAberta}
+              contaNome={contas.find((c) => c.id === threadEmailAberta.contaEmailId)?.nomeExibicao}
+            />
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function WhatsappThreadCompleta({ conversaId }: { conversaId: string }) {
+  const conversa = useMockDb((state) => state.conversas.find((c) => c.id === conversaId));
+  const [mensagem, setMensagem] = useState("");
+  const [enviando, setEnviando] = useState(false);
+
+  if (!conversa) return null;
+
+  async function handleEnviar() {
+    if (!mensagem.trim() || enviando) return;
+    setEnviando(true);
+    try {
+      await container.conversas.enviarMensagem(conversaId, mensagem.trim());
+      setMensagem("");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto">
+        {conversa.mensagens.map((m) => (
+          <MensagemBubble
+            key={m.id}
+            mensagem={m}
+            conversaId={conversaId}
+            lado={m.autor === "cliente" ? "esquerda" : "direita"}
+          />
+        ))}
+      </div>
+      <div className="flex gap-2 border-t border-border pt-3">
+        <Input
+          placeholder="Escrever mensagem…"
+          value={mensagem}
+          onChange={(event) => setMensagem(event.target.value)}
+          onKeyDown={(event) => event.key === "Enter" && handleEnviar()}
+          className="flex-1"
+        />
+        <Button onClick={handleEnviar} loading={enviando} disabled={enviando || !mensagem.trim()}>
+          <Send className="h-4 w-4" aria-hidden />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function EmailThreadModal({
+  thread,
+  contaNome,
+}: { thread: EmailThread; contaNome: string | undefined }) {
+  const enviarEmailThread = useMockDb((state) => state.enviarEmailThread);
+  const [resposta, setResposta] = useState("");
+  const [enviando, setEnviando] = useState(false);
+
+  async function handleResponder() {
+    if (!resposta.trim() || enviando) return;
+    setEnviando(true);
+    try {
+      enviarEmailThread(thread.id, resposta.trim());
+      setResposta("");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <EmailThreadPane
+      thread={thread}
+      contaNome={contaNome}
+      resposta={resposta}
+      onRespostaChange={setResposta}
+      onResponder={handleResponder}
+      enviando={enviando}
+    />
+  );
+}
+
+function EtapasParaAprovar({ clienteId }: { clienteId: string }) {
+  const jornada = useMockDb((s) => s.jornadas.find((j) => j.clienteId === clienteId));
+  const [processandoId, setProcessandoId] = useState<string | null>(null);
+  const [devolvendoId, setDevolvendoId] = useState<string | null>(null);
+  const [motivo, setMotivo] = useState("");
+
+  const emAnalise = (jornada?.fases ?? []).flatMap((fase) =>
+    fase.etapas.filter((etapa) => etapa.status === "em_analise").map((etapa) => ({ etapa, fase })),
+  );
+
+  if (emAnalise.length === 0) return null;
+
+  async function handleAprovar(etapaId: string) {
+    if (processandoId) return;
+    setProcessandoId(etapaId);
+    try {
+      await aprovarEtapa(clienteId, etapaId);
+      toast.success("Etapa aprovada. O cliente foi notificado.");
+    } finally {
+      setProcessandoId(null);
+    }
+  }
+
+  async function handleDevolver(etapaId: string) {
+    if (!motivo.trim() || processandoId) return;
+    setProcessandoId(etapaId);
+    try {
+      await devolverEtapaParaAjuste(clienteId, etapaId, motivo.trim());
+      toast.success("Etapa devolvida para ajustes.");
+      setDevolvendoId(null);
+      setMotivo("");
+    } finally {
+      setProcessandoId(null);
+    }
+  }
+
+  return (
+    <div className="mb-6 flex flex-col gap-3 rounded-xl border border-gold-200 bg-gold-50/40 p-4">
+      <div className="flex items-center gap-2">
+        <Clock className="h-4 w-4 text-gold-700" aria-hidden />
+        <p className="text-sm font-semibold text-navy">
+          Aguardando sua avaliação ({emAnalise.length})
+        </p>
+      </div>
+      <div className="flex flex-col gap-2">
+        {emAnalise.map(({ etapa, fase }) => (
+          <div key={etapa.id} className="rounded-lg border border-border bg-white p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium text-navy">{etapa.titulo}</p>
+                <p className="text-xs text-ink-muted">{fase.titulo}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setDevolvendoId(devolvendoId === etapa.id ? null : etapa.id)}
+                >
+                  <Undo2 className="h-3.5 w-3.5" aria-hidden />
+                  Devolver p/ ajuste
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleAprovar(etapa.id)}
+                  loading={processandoId === etapa.id && devolvendoId !== etapa.id}
+                  disabled={processandoId === etapa.id}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                  Aprovar
+                </Button>
+              </div>
+            </div>
+            {devolvendoId === etapa.id && (
+              <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+                <Textarea
+                  placeholder="O que o cliente precisa corrigir ou completar?"
+                  rows={2}
+                  value={motivo}
+                  onChange={(event) => setMotivo(event.target.value)}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="self-start"
+                  onClick={() => handleDevolver(etapa.id)}
+                  loading={processandoId === etapa.id}
+                  disabled={processandoId === etapa.id || !motivo.trim()}
+                >
+                  Confirmar devolução
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

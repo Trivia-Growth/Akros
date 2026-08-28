@@ -186,4 +186,90 @@ Testes:     ✅ 78/78 passando
   diretamente. Não afeta `git commit`/`git push` (lefthook invoca de forma diferente e funciona).
 
 ---
+
+## Handoff — 2026-08-28 (sessão de revisão pré-produção)
+
+**Owner:** Lucas Azevedo. **Nada de código foi alterado nesta sessão** — só revisão e decisão.
+
+### O que aconteceu
+Revisão adversarial do monorepo inteiro, com foco em ida para produção: isolamento de dados,
+validação na borda, lazy loading, estratégia de teste e paridade de qualidade no backend.
+4 bloqueadores P0 e 25 pontos catalogados. Três decisões de arquitetura foram fechadas e viraram ADR.
+
+### Decisões tomadas (leia antes de retomar)
+- **ADR-0008 — sessão.** Access token só em memória (TTL 15 min); refresh token em cookie
+  `HttpOnly; Secure; SameSite=Strict`, gravado e lido só por Edge Function
+  (`sessao-login` / `sessao-refresh` / `sessao-logout`). Cookie precisa ser **first-party**:
+  rewrite de proxy no Netlify em `/api/sessao/*`. Dados continuam indo direto ao PostgREST —
+  só a sessão passa por função.
+- **ADR-0009 — single-tenant.** Sem `org_id` em nenhuma tabela. Isolamento por papel
+  (schema `portal` × `admin`) e por `cliente_id` vindo do claim do JWT. Fecha a pergunta
+  aberta nº 7 do ROADMAP.
+- **Ordem de execução:** Playwright **antes** do schema. A matriz de autorização é escrita
+  primeiro e vira a especificação executável do isolamento.
+
+### Bloqueadores P0 identificados
+1. **Portas/adapters não são usadas.** `app/di.ts` só é importado por arquivos de teste; as 20
+   páginas leem/escrevem direto `useMockDb`. Migrar mock→Supabase **não é** "trocar o adapter".
+2. **Zero autenticação e zero guarda de rota.** Não existe spec de auth em `specs/`.
+3. **Store global única** com dados de todos os clientes — induz ao vazamento entre clientes.
+4. **Backend greenfield:** 0 migrations, 0 Edge Functions declaradas.
+
+### Plano acordado (7 stories, nesta ordem)
+`E12-S01` contrato de portas + cliente de dados → `E12-S02` auth/RBAC + funções de sessão →
+`E12-S03` Playwright + matriz de autorização → `E13` schema/RLS/audit/LGPD →
+`E14` cofre de credenciais + Edge Functions → `E15` lazy loading + resiliência → `E16` operação.
+
+**E13 só é considerado pronto quando as linhas de dados da matriz de autorização ficam verdes** —
+não quando as tabelas sobem.
+
+### Estado do repositório ao pausar
+- Trabalho de frontend em andamento **pelo Codex** no mesmo worktree. O push do worktree completo
+  é do Lucas, ao fim daquele trabalho.
+- Não commitado nesta sessão, mas criado: `docs/adr/0008-sessao-token-memoria-refresh-cookie.md`,
+  `docs/adr/0009-single-tenant-sem-org-id.md`, e a marcação da pergunta nº 7 do ROADMAP como decidida.
+
+### Correções de esteira feitas nesta sessão
+
+**1. `audit:esteira` voltou ao verde (132 docs OK).** Tinha ficado vermelho com 40 problemas
+depois que a skill *impeccable* foi instalada — os 35 arquivos de `reference/` e os `scripts/`
+dela não seguem o frontmatter SDD, e o script varria tudo. A skill é **uso deliberado e fica
+commitada**: qualquer pessoa ou agente que clone o repo precisa herdar as mesmas skills e o mesmo
+padrão de desenvolvimento. Quem estava errado era o script. Em `scripts/audit-esteira.mjs`:
+- Regra nova e geral: dentro de `.claude/skills/`, **só o `SKILL.md` é doc da esteira**.
+  `reference/`, `scripts/` e exemplos são material interno da skill. Vale para as skills do
+  projeto (todas têm só `SKILL.md`) e para qualquer skill de terceiro vendorizada depois.
+- `apps/web/PRODUCT.md` entrou na lista de views geradas por ferramenta (marcador
+  `impeccable:product-schema`), junto de `GEMINI.md` e `.github/copilot-instructions.md`.
+- Bug corrigido: `IGNORE_DIRS.has(name)` casa por **nome de pasta**, então a entrada
+  `".claude/skills/_disabled"` nunca casou com nada. Virou `IGNORE_PATHS`, checado por caminho
+  relativo.
+
+**2. Armadilha descoberta — `pnpm run ci:local` pode passar sem rodar nada.** O lefthook v2 filtra
+os comandos de `pre-push` por arquivo empurrado; com a árvore só suja/untracked, os 12 comandos
+saem como `skip: no matching push files` e o resumo fica verde em 0,15s. **Verde do `ci:local` sem
+commit não significa nada.** Rodar os gates direto (`pnpm run typecheck`, `pnpm test`,
+`pnpm run arch:check`, `pnpm run audit:esteira`, `pnpm run build`) ou commitar antes.
+
+### Estado real dos gates em 28/08 (rodados um a um)
+```
+Typecheck:  ✅ zero erros
+Testes:     ✅ 82/82 (vitest)
+Arch check: ✅ zero violações (162 módulos, 488 dependências)
+Esteira:    ✅ 132 docs OK
+Mermaid:    ✅ blocos OK
+Migrations: ✅ 0 migration(s) — nenhuma existe ainda
+Edge fn:    ✅ 0 função(ões) declarada(s) — só template
+Build:      ✅ 842 kB num chunk (aviso de bundle, não-bloqueante — ver E15)
+Lint:       ⚠️ 4 erros de formatação/organizeImports em PerfilPage.tsx, DashboardPage.tsx
+            e ProgramasPage.tsx — arquivos em edição pelo Codex. O hook de `pre-commit`
+            roda `biome check --write` nos staged e corrige sozinho no commit.
+Gitleaks:   ⏭️ não instalado localmente (best-effort local; o gate bloqueante é o da CI)
+```
+
+### Próximo passo
+Retomar por **E12-S01** (contrato de portas). Auth, banco e Edge Functions vêm em seguida —
+já com ADR-0008 e ADR-0009 como contrato.
+
+---
 *Atualizar este arquivo ao pausar a sessão. Use `/handoff` para semiautomatizar.*

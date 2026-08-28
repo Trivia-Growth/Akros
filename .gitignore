@@ -49,6 +49,9 @@ supabase/.branches/
 # graphify (can be regenerated)
 graphify-out/
 
+# impeccable skill — consentimento por máquina, não é estado de projeto
+.impeccable/config.local.json
+
 # Temporary/scratch
 .tmp/
 scratch/

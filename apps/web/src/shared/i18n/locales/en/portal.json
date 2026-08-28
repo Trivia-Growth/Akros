@@ -20,10 +20,10 @@
     "alertPhaseUnlocked": "Phase unlocked by your case manager!",
     "ballWith": "Who's turn it is",
     "forecastTitle": "Completion forecast",
-    "forecastRange": "{{min}}–{{max}} months",
+    "forecastRange": "{{min}} to {{max}} months",
     "forecastPace": "Calculated from your pace (factor {{factor}}x).",
-    "forecastDefaultPace": "Based on the standard average timeline — not enough data on your pace yet.",
-    "forecastNote": "Estimate only — not a commitment from Akros nor an official USCIS timeline."
+    "forecastDefaultPace": "Based on the standard average timeline. There is not enough data on your pace yet.",
+    "forecastNote": "This is an estimate only. It is not a commitment from Akros or an official USCIS timeline."
   },
   "journey": {
     "title": "My Journey",
@@ -31,7 +31,9 @@
     "overallProgress": "Overall progress",
     "locked": "Available once your case manager unlocks it",
     "stepsTitle": "Steps in this phase",
-    "markComplete": "Mark as complete",
+    "sendForReview": "Send for review",
+    "underReview": "Awaiting Akros review",
+    "sentForReview": "Sent! Akros will review it and you'll be notified as soon as it's approved.",
     "completed": "Completed",
     "deadline": "Average time: {{days}} business days",
     "requiredDocs": "Required documents",
@@ -51,7 +53,7 @@
     "rule1": "Final versions of documents must be submitted in PDF.",
     "rule2": "We do not accept photos of documents or Word files as the final version.",
     "rule3": "Documents not originally in English require a certified translation.",
-    "rule4": "We do not accept documents sent via WhatsApp — use email or the shared drive.",
+    "rule4": "We do not accept documents sent via WhatsApp. Use email or the shared drive.",
     "upload": "Upload file",
     "uploading": "Uploading...",
     "uploaded": "Document uploaded successfully!",
@@ -73,7 +75,7 @@
         "tipo_incorreto": "Wrong document type"
       },
       "confidence": "confidence {{value}}%",
-      "disclaimer": "Automated analysis — does not replace the Akros team's review.",
+      "disclaimer": "Automated analysis does not replace the Akros team's review.",
       "sendAnyway": "Send for review anyway",
       "sentAnywayNotice": "Sent for review despite the automated analysis alert."
     }
@@ -81,7 +83,7 @@
   "payments": {
     "title": "Payments",
     "subtitle": "Track the status of your payments.",
-    "transferNote": "Payment by bank transfer — no card, no automatic charge.",
+    "transferNote": "Payment is by bank transfer. There is no card or automatic charge.",
     "totalPaid": "Total paid",
     "totalPending": "Total pending",
     "nextDue": "Next due date",
@@ -95,7 +97,7 @@
     "paymentId": "Payment ID",
     "attachReceipt": "Attach receipt",
     "receiptAttached": "Receipt attached! Our team will review and confirm.",
-    "divergenceNotice": "Received value differs from expected — expected {{expected}}, received {{received}}.",
+    "divergenceNotice": "The received amount differs from the expected amount. Expected: {{expected}}. Received: {{received}}.",
     "fields": {
       "holder": "Account holder",
       "bank": "Bank",
@@ -110,7 +112,7 @@
   "messages": {
     "title": "Messages",
     "subtitle": "Talk to the Akros team through a registrable channel of your case.",
-    "notDeletableNotice": "Messages here can't be deleted — they're part of your case record.",
+    "notDeletableNotice": "Messages here cannot be deleted. They are part of your case record.",
     "caseManager": "Your case manager",
     "empty": "No messages yet.",
     "placeholder": "Write your message...",

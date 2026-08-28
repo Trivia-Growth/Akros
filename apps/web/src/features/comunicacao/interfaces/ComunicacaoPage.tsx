@@ -1,6 +1,10 @@
 import { container } from "@/app/di";
-import { useConversas } from "@/features/comunicacao/application/hooks";
-import type { RegraAtendimentoIA } from "@/features/comunicacao/domain/types";
+import { useConversas, useEmailThreads } from "@/features/comunicacao/application/hooks";
+import type {
+  EmailThread,
+  Mensagem,
+  RegraAtendimentoIA,
+} from "@/features/comunicacao/domain/types";
 import type { CanalComunicacao } from "@/features/comunicacao/domain/types";
 import type { ProvedorCanal } from "@/features/configuracoes/domain/types";
 import { useMockDb } from "@/mocks/store";
@@ -26,15 +30,26 @@ import {
   Brain,
   CalendarClock,
   Clock,
+  Cpu,
+  FileText,
+  Image as ImageIcon,
   Instagram,
+  Mail,
   MessageCircle,
+  Mic,
+  Paperclip,
+  Pause,
+  Play,
   Plus,
   Send,
   ShieldCheck,
+  Smile,
   Sparkles,
+  Square,
   Trash2,
+  UserRound,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -60,6 +75,15 @@ const PROVEDOR_CANAL_ICON: Record<ProvedorCanal, typeof MessageCircle> = {
   instagram: Instagram,
 };
 
+/** Catálogo de modelos disponíveis via OpenRouter — BYOK por agente (não compartilhado). */
+const MODELOS_OPENROUTER = [
+  { slug: "anthropic/claude-sonnet-4.5", label: "Claude Sonnet 4.5 (Anthropic)" },
+  { slug: "openai/gpt-5", label: "GPT-5 (OpenAI)" },
+  { slug: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro (Google)" },
+  { slug: "meta-llama/llama-4-scout", label: "Llama 4 Scout (Meta)" },
+  { slug: "deepseek/deepseek-v3", label: "DeepSeek V3" },
+];
+
 export function ComunicacaoPage() {
   const { t } = useTranslation("admin");
 
@@ -73,11 +97,15 @@ export function ComunicacaoPage() {
       <Tabs defaultValue="inbox">
         <TabsList>
           <TabsTrigger value="inbox">{t("comunicacao.tabInbox")}</TabsTrigger>
+          <TabsTrigger value="email">E-mail</TabsTrigger>
           <TabsTrigger value="agent">{t("comunicacao.tabAgent")}</TabsTrigger>
           <TabsTrigger value="knowledge">Base de conhecimento</TabsTrigger>
         </TabsList>
         <TabsContent value="inbox">
           <Inbox />
+        </TabsContent>
+        <TabsContent value="email">
+          <EmailInbox />
         </TabsContent>
         <TabsContent value="agent">
           <AgentConfig />
@@ -90,12 +118,178 @@ export function ComunicacaoPage() {
   );
 }
 
+const EMOJIS = [
+  "😀",
+  "😂",
+  "😊",
+  "🙂",
+  "😉",
+  "😍",
+  "🤔",
+  "😅",
+  "😢",
+  "😮",
+  "🙏",
+  "👍",
+  "👎",
+  "👏",
+  "🙌",
+  "💪",
+  "❤️",
+  "🎉",
+  "✅",
+  "📌",
+  "📎",
+  "📄",
+  "📅",
+  "⏰",
+  "🔥",
+  "✨",
+  "😴",
+  "🤝",
+  "👋",
+  "😬",
+];
+
+function formatarDuracao(segundos: number): string {
+  const min = Math.floor(segundos / 60);
+  const seg = segundos % 60;
+  return `${min}:${seg.toString().padStart(2, "0")}`;
+}
+
+export function MensagemBubble({
+  mensagem,
+  conversaId,
+  lado,
+}: {
+  mensagem: Mensagem;
+  conversaId: string;
+  lado: "esquerda" | "direita";
+}) {
+  const balaoClass = cn(
+    "max-w-[75%] rounded-md px-3 py-2 text-sm",
+    lado === "esquerda" ? "self-start bg-cream-200 text-ink" : "self-end bg-gold-50 text-navy",
+  );
+
+  if (mensagem.tipo === "imagem") {
+    return (
+      <div className={balaoClass}>
+        <div className="flex h-32 w-48 items-center justify-center rounded-md border border-border bg-white/70">
+          <ImageIcon className="h-8 w-8 text-ink-muted" aria-hidden />
+        </div>
+        <p className="mt-1.5 truncate text-xs text-ink-muted">{mensagem.midiaNome}</p>
+      </div>
+    );
+  }
+
+  if (mensagem.tipo === "audio") {
+    return (
+      <div className={balaoClass}>
+        <AudioBubblePlayer mensagem={mensagem} conversaId={conversaId} />
+      </div>
+    );
+  }
+
+  if (mensagem.tipo === "arquivo") {
+    return (
+      <div className={cn(balaoClass, "flex items-center gap-2")}>
+        <FileText className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="truncate">{mensagem.midiaNome}</span>
+      </div>
+    );
+  }
+
+  return <div className={balaoClass}>{mensagem.texto}</div>;
+}
+
+function AudioBubblePlayer({
+  mensagem,
+  conversaId,
+}: {
+  mensagem: Mensagem;
+  conversaId: string;
+}) {
+  const transcreverMensagem = useMockDb((state) => state.transcreverMensagem);
+  const whisperAtivo = useMockDb(
+    (state) => state.integracoes.find((i) => i.id === "whisper")?.ativa ?? false,
+  );
+  const [tocando, setTocando] = useState(false);
+  const duracao = mensagem.duracaoSegundos ?? 0;
+
+  function alternarPlay() {
+    setTocando((atual) => {
+      const proximo = !atual;
+      if (proximo) {
+        setTimeout(() => setTocando(false), Math.min(duracao, 8) * 1000);
+      }
+      return proximo;
+    });
+  }
+
+  return (
+    <div className="flex min-w-[13rem] flex-col gap-2">
+      <div className="flex items-center gap-2.5">
+        <button
+          type="button"
+          onClick={alternarPlay}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-white"
+          aria-label={tocando ? "Pausar áudio" : "Reproduzir áudio"}
+        >
+          {tocando ? (
+            <Pause className="h-3.5 w-3.5" aria-hidden />
+          ) : (
+            <Play className="ml-0.5 h-3.5 w-3.5" aria-hidden />
+          )}
+        </button>
+        <div className="flex flex-1 items-center gap-[3px]" aria-hidden>
+          {Array.from({ length: 20 }).map((_, i) => (
+            <span
+              key={`${mensagem.id}-bar-${i}`}
+              className={cn(
+                "w-[3px] rounded-full bg-navy-300 transition-all",
+                tocando && "animate-pulse bg-navy",
+              )}
+              style={{ height: `${8 + ((i * 7) % 16)}px` }}
+            />
+          ))}
+        </div>
+        <span className="shrink-0 text-xs text-ink-muted">{formatarDuracao(duracao)}</span>
+      </div>
+      {mensagem.transcricao ? (
+        <p className="rounded-md bg-white/70 px-2.5 py-2 text-xs text-ink-soft">
+          {mensagem.transcricao}
+        </p>
+      ) : whisperAtivo ? (
+        <button
+          type="button"
+          onClick={() => transcreverMensagem(conversaId, mensagem.id)}
+          className="self-start text-xs font-medium text-gold-700 hover:text-gold-800"
+        >
+          Transcrever áudio
+        </button>
+      ) : (
+        <Link
+          to="/admin/configuracoes"
+          className="self-start text-xs font-medium text-ink-muted underline hover:text-gold-700"
+        >
+          Configure o Whisper para transcrever →
+        </Link>
+      )}
+    </div>
+  );
+}
+
 function Inbox() {
   const { t } = useTranslation("admin");
   const conversas = useConversas();
+  const enviarMensagemConversaRica = useMockDb((state) => state.enviarMensagemConversaRica);
   const [selecionadaId, setSelecionadaId] = useState<string | null>(conversas[0]?.id ?? null);
   const [mensagem, setMensagem] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [emojiAberto, setEmojiAberto] = useState(false);
+  const [gravando, setGravando] = useState(false);
+  const [segundosGravando, setSegundosGravando] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selecionada = conversas.find((c) => c.id === selecionadaId);
 
@@ -105,10 +299,43 @@ function Inbox() {
     try {
       await container.conversas.enviarMensagem(selecionadaId, mensagem.trim());
       setMensagem("");
+      setEmojiAberto(false);
     } finally {
       setEnviando(false);
     }
   }
+
+  function handleAnexar(file: File | undefined) {
+    if (!file || !selecionadaId) return;
+    const tipo = file.type.startsWith("image/")
+      ? ("imagem" as const)
+      : file.type.startsWith("audio/")
+        ? ("audio" as const)
+        : ("arquivo" as const);
+    enviarMensagemConversaRica(selecionadaId, { tipo, midiaNome: file.name });
+    toast.success("Anexo enviado no ambiente de demonstração.");
+  }
+
+  function alternarGravacao() {
+    if (!selecionadaId) return;
+    if (!gravando) {
+      setGravando(true);
+      setSegundosGravando(0);
+      return;
+    }
+    setGravando(false);
+    enviarMensagemConversaRica(selecionadaId, {
+      tipo: "audio",
+      midiaNome: `audio-gravado-${Date.now()}.m4a`,
+      duracaoSegundos: Math.max(segundosGravando, 1),
+    });
+  }
+
+  useEffect(() => {
+    if (!gravando) return;
+    const intervalo = setInterval(() => setSegundosGravando((s) => s + 1), 1000);
+    return () => clearInterval(intervalo);
+  }, [gravando]);
 
   if (conversas.length === 0) {
     return <p className="text-sm text-ink-muted">{t("comunicacao.noConversations")}</p>;
@@ -179,23 +406,80 @@ function Inbox() {
             <div className="flex-1 overflow-y-auto">
               <div className="flex flex-col gap-2">
                 {selecionada.mensagens.map((m) => (
-                  <div
+                  <MensagemBubble
                     key={m.id}
-                    className={cn(
-                      "max-w-[75%] rounded-md px-3 py-2 text-sm",
-                      m.autor === "cliente"
-                        ? "self-start bg-cream-200 text-ink"
-                        : m.autor === "agente_ia"
-                          ? "self-end bg-gold-50 text-navy"
-                          : "self-end bg-navy-50 text-navy",
-                    )}
-                  >
-                    {m.texto}
-                  </div>
+                    mensagem={m}
+                    conversaId={selecionada.id}
+                    lado={m.autor === "cliente" ? "esquerda" : "direita"}
+                  />
                 ))}
               </div>
             </div>
-            <div className="mt-4 flex gap-2 border-t border-border pt-4">
+
+            {gravando && (
+              <div className="mt-3 flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" aria-hidden />
+                Gravando áudio… {formatarDuracao(segundosGravando)}
+              </div>
+            )}
+
+            <div className="relative mt-4 flex items-center gap-1.5 border-t border-border pt-4">
+              <button
+                type="button"
+                onClick={() => setEmojiAberto((v) => !v)}
+                className="rounded-md p-2 text-ink-muted transition hover:bg-cream-200 hover:text-navy"
+                aria-label="Emojis"
+              >
+                <Smile className="h-4 w-4" aria-hidden />
+              </button>
+              {emojiAberto && (
+                <div className="absolute bottom-full left-0 mb-2 grid w-64 grid-cols-8 gap-1 rounded-lg border border-border bg-white p-2 shadow-elevated">
+                  {EMOJIS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      className="rounded p-1 text-lg hover:bg-cream-200"
+                      onClick={() => setMensagem((atual) => atual + emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-md p-2 text-ink-muted transition hover:bg-cream-200 hover:text-navy"
+                aria-label="Anexar arquivo"
+              >
+                <Paperclip className="h-4 w-4" aria-hidden />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={(event) => {
+                  handleAnexar(event.target.files?.[0]);
+                  event.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                onClick={alternarGravacao}
+                className={cn(
+                  "rounded-md p-2 transition",
+                  gravando
+                    ? "bg-red-100 text-red-600 hover:bg-red-200"
+                    : "text-ink-muted hover:bg-cream-200 hover:text-navy",
+                )}
+                aria-label={gravando ? "Parar gravação" : "Gravar áudio"}
+              >
+                {gravando ? (
+                  <Square className="h-4 w-4" aria-hidden />
+                ) : (
+                  <Mic className="h-4 w-4" aria-hidden />
+                )}
+              </button>
               <Input
                 placeholder={t("comunicacao.typeMessage")}
                 value={mensagem}
@@ -218,10 +502,220 @@ function Inbox() {
   );
 }
 
+function EmailInbox() {
+  const threads = useEmailThreads();
+  const contas = useMockDb((state) => state.contasAgenda);
+  const marcarComoLida = useMockDb((state) => state.marcarEmailThreadComoLida);
+  const enviarEmailThread = useMockDb((state) => state.enviarEmailThread);
+  const [selecionadaId, setSelecionadaId] = useState<string | null>(threads[0]?.id ?? null);
+  const [resposta, setResposta] = useState("");
+  const [enviando, setEnviando] = useState(false);
+
+  const contasEmail = contas.filter((conta) => conta.escopos.includes("email"));
+  const selecionada = threads.find((thread) => thread.id === selecionadaId);
+
+  function selecionar(threadId: string) {
+    setSelecionadaId(threadId);
+    marcarComoLida(threadId);
+  }
+
+  async function handleResponder() {
+    if (!resposta.trim() || !selecionadaId || enviando) return;
+    setEnviando(true);
+    try {
+      enviarEmailThread(selecionadaId, resposta.trim());
+      setResposta("");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  if (contasEmail.length === 0) {
+    return (
+      <p className="text-sm text-ink-muted">
+        Nenhuma conta com escopo de e-mail conectada ainda.{" "}
+        <Link to="/admin/configuracoes" className="font-medium text-gold-700 underline">
+          Conectar em Configurações →
+        </Link>
+      </p>
+    );
+  }
+
+  if (threads.length === 0) {
+    return <p className="text-sm text-ink-muted">Nenhum e-mail recebido ainda.</p>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_1fr]">
+      <div className="flex flex-col gap-2">
+        {threads.map((thread) => {
+          const conta = contas.find((item) => item.id === thread.contaEmailId);
+          const naoLidas = thread.mensagens.filter(
+            (m) => m.direcao === "entrada" && !m.lida,
+          ).length;
+          const ultima = thread.mensagens[thread.mensagens.length - 1];
+          return (
+            <button
+              key={thread.id}
+              type="button"
+              onClick={() => selecionar(thread.id)}
+              className={cn(
+                "flex items-start gap-2.5 rounded-md border p-3 text-left transition-colors",
+                selecionadaId === thread.id
+                  ? "border-navy bg-navy-50"
+                  : "border-border bg-white hover:bg-cream-200",
+              )}
+            >
+              <Avatar name={thread.clienteNome ?? ultima?.deNome ?? ultima?.de ?? "?"} size="sm" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-sm font-medium text-navy">{thread.assunto}</p>
+                  {naoLidas > 0 && <Badge variant="gold">{naoLidas}</Badge>}
+                </div>
+                <p className="truncate text-xs text-ink-muted">
+                  {ultima?.deNome ?? ultima?.de}: {ultima?.corpo}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 text-[11px] text-ink-muted">
+                    <Mail className="h-3 w-3" aria-hidden />
+                    {conta?.nomeExibicao ?? "Conta desconectada"}
+                  </span>
+                  {thread.clienteNome ? (
+                    <Badge variant="navy">
+                      <UserRound className="h-3 w-3" aria-hidden />
+                      {thread.clienteNome}
+                    </Badge>
+                  ) : (
+                    <Badge variant="warning">Sem cliente vinculado</Badge>
+                  )}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <Card className="flex flex-col p-0">
+        {!selecionada ? (
+          <p className="p-5 text-sm text-ink-muted">Selecione um e-mail para ler.</p>
+        ) : (
+          <EmailThreadPane
+            thread={selecionada}
+            contaNome={contas.find((c) => c.id === selecionada.contaEmailId)?.nomeExibicao}
+            resposta={resposta}
+            onRespostaChange={setResposta}
+            onResponder={handleResponder}
+            enviando={enviando}
+          />
+        )}
+      </Card>
+    </div>
+  );
+}
+
+export function EmailThreadPane({
+  thread,
+  contaNome,
+  resposta,
+  onRespostaChange,
+  onResponder,
+  enviando,
+}: {
+  thread: EmailThread;
+  contaNome: string | undefined;
+  resposta: string;
+  onRespostaChange: (value: string) => void;
+  onResponder: () => void;
+  enviando: boolean;
+}) {
+  const ultimoRemetenteExterno = [...thread.mensagens]
+    .reverse()
+    .find((m) => m.direcao === "entrada");
+
+  return (
+    <>
+      <div className="flex flex-col gap-1.5 border-b border-border px-5 py-4">
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-display text-lg font-semibold text-navy">{thread.assunto}</p>
+          {thread.clienteNome ? (
+            <Link
+              to="/admin/clientes"
+              className="whitespace-nowrap text-xs font-medium text-gold-700 hover:text-gold-800"
+            >
+              Ver cliente →
+            </Link>
+          ) : (
+            <Badge variant="warning">Sem cliente vinculado</Badge>
+          )}
+        </div>
+        <p className="text-xs text-ink-muted">Caixa: {contaNome ?? "conta desconectada"}</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex flex-col gap-3">
+          {thread.mensagens.map((m) => (
+            <article key={m.id} className="overflow-hidden rounded-lg border border-border">
+              <header className="flex items-center justify-between gap-3 bg-cream-100 px-4 py-2.5">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <Avatar name={m.deNome ?? m.de} size="sm" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-navy">{m.deNome ?? m.de}</p>
+                    <p className="truncate text-xs text-ink-muted">{m.de}</p>
+                  </div>
+                </div>
+                <p className="shrink-0 text-xs text-ink-muted">
+                  {new Date(m.recebidoEm).toLocaleString("pt-BR")}
+                </p>
+              </header>
+              <div className="whitespace-pre-wrap px-4 py-3 text-sm text-ink">{m.corpo}</div>
+              {m.anexoNome && (
+                <div className="border-t border-border px-4 py-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-cream-50 px-2 py-1 text-xs text-ink-soft">
+                    <Paperclip className="h-3 w-3" aria-hidden />
+                    {m.anexoNome}
+                  </span>
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-border bg-cream-50/60 px-5 py-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
+          <span>
+            Para: <span className="font-medium text-ink-soft">{ultimoRemetenteExterno?.de}</span>
+          </span>
+          <span>
+            Assunto: <span className="font-medium text-ink-soft">Re: {thread.assunto}</span>
+          </span>
+        </div>
+        <Textarea
+          placeholder="Escrever resposta…"
+          rows={3}
+          value={resposta}
+          onChange={(e) => onRespostaChange(e.target.value)}
+        />
+        <Button
+          className="self-end"
+          onClick={onResponder}
+          loading={enviando}
+          disabled={enviando || !resposta.trim()}
+        >
+          <Send className="h-4 w-4" aria-hidden />
+          Enviar
+        </Button>
+      </div>
+    </>
+  );
+}
+
 function AgentConfig() {
   const agentes = useMockDb((state) => state.agentesIA);
   const salvarAgenteIA = useMockDb((state) => state.salvarAgenteIA);
-  const contasAgenda = useMockDb((state) => state.contasAgenda);
+  const contasAgenda = useMockDb((state) =>
+    state.contasAgenda.filter((conta) => conta.escopos.includes("agenda")),
+  );
   const contasCanal = useMockDb((state) => state.contasCanal);
   const basesConhecimento = useMockDb((state) => state.basesConhecimento);
   const [selecionadoId, setSelecionadoId] = useState(agentes[0]?.id ?? "");
@@ -233,9 +727,11 @@ function AgentConfig() {
   const [resposta, setResposta] = useState<{ resposta: string; handoff: boolean } | null>(null);
   const [novaCorrecao, setNovaCorrecao] = useState("");
   const [saving, setSaving] = useState(false);
+  const [chaveLLM, setChaveLLM] = useState("");
 
   useEffect(() => {
     if (selecionado) setConfig(structuredClone(selecionado));
+    setChaveLLM("");
   }, [selecionado]);
 
   if (!config) return null;
@@ -244,7 +740,19 @@ function AgentConfig() {
     if (saving || !config) return;
     setSaving(true);
     try {
-      salvarAgenteIA(config);
+      const chave = chaveLLM.trim();
+      const configFinal: RegraAtendimentoIA = {
+        ...config,
+        llm: {
+          provedor: "openrouter",
+          modelo: config.llm?.modelo ?? MODELOS_OPENROUTER[0].slug,
+          apiKeyConfigurada: chave ? true : (config.llm?.apiKeyConfigurada ?? false),
+          apiKeyFinal: chave ? chave.slice(-4).toUpperCase() : config.llm?.apiKeyFinal,
+        },
+      };
+      salvarAgenteIA(configFinal);
+      setConfig(configFinal);
+      setChaveLLM("");
       toast.success("Agente atualizado no ambiente de demonstração.");
     } finally {
       setSaving(false);
@@ -347,6 +855,58 @@ function AgentConfig() {
             />
           </div>
         </section>
+
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Cpu className="h-4 w-4 text-gold-700" aria-hidden />
+            <h3 className="font-semibold text-navy">Modelo de IA (LLM)</h3>
+          </div>
+          <p className="text-xs text-ink-muted">
+            Cada agente usa sua própria chave OpenRouter e escolhe o modelo — nada é compartilhado
+            entre agentes (BYOK).
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Select
+              label="Modelo"
+              value={config.llm?.modelo ?? MODELOS_OPENROUTER[0].slug}
+              onChange={(event) =>
+                setConfig({
+                  ...config,
+                  llm: {
+                    provedor: "openrouter",
+                    modelo: event.target.value,
+                    apiKeyConfigurada: config.llm?.apiKeyConfigurada ?? false,
+                    apiKeyFinal: config.llm?.apiKeyFinal,
+                  },
+                })
+              }
+            >
+              {MODELOS_OPENROUTER.map((modelo) => (
+                <option key={modelo.slug} value={modelo.slug}>
+                  {modelo.label}
+                </option>
+              ))}
+            </Select>
+            <Input
+              label="Chave da API (OpenRouter)"
+              type="password"
+              autoComplete="off"
+              placeholder={
+                config.llm?.apiKeyConfigurada
+                  ? `Chave atual •••• ${config.llm.apiKeyFinal}`
+                  : "Cole a chave OpenRouter deste agente"
+              }
+              value={chaveLLM}
+              onChange={(event) => setChaveLLM(event.target.value)}
+            />
+          </div>
+          {!config.llm?.apiKeyConfigurada && !chaveLLM.trim() && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Sem chave configurada, este agente só responde com a simulação mockada (tópicos) — não
+              com o modelo de verdade.
+            </p>
+          )}
+        </Card>
 
         <Card className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
@@ -487,7 +1047,7 @@ function AgentConfig() {
               rows={8}
               value={config.alma}
               onChange={(event) => setConfig({ ...config, alma: event.target.value })}
-              hint="Prompt de instruções: tom de voz, limites, como conduzir a conversa — e quando consultar cada base de conhecimento selecionada abaixo."
+              hint="Prompt de instruções: tom de voz, limites, como conduzir a conversa e quando consultar cada base de conhecimento selecionada abaixo."
             />
             <Textarea
               label="Mensagem de handoff"

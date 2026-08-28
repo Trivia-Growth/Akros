@@ -19,7 +19,7 @@ describe("FilaRevisaoPage (E07-S03) — smoke test de render", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     renderWithRouter(<FilaRevisaoPage />, ["/admin/documentos"]);
     await waitFor(() => screen.getAllByRole("heading", { level: 1 }));
-    expect(screen.getByText(/Carta de experiência — Empresa Delta/)).toBeTruthy();
+    expect(screen.getAllByText(/Carta de experiência: Empresa Delta/).length).toBeGreaterThan(0);
     expect(errorSpy).not.toHaveBeenCalledWith(expect.stringContaining("Maximum update depth"));
     errorSpy.mockRestore();
   });

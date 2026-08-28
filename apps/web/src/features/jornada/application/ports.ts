@@ -3,7 +3,12 @@ import type { Jornada } from "../domain/types";
 export interface JornadaRepository {
   obterPorCliente(clienteId: string): Promise<Jornada | null>;
   liberarFase(clienteId: string, faseId: string): Promise<void>;
-  concluirEtapa(clienteId: string, etapaId: string): Promise<void>;
+  /** Cliente enviou (pendente → em_analise) — não conclui nada sozinho. */
+  enviarEtapaParaAvaliacao(clienteId: string, etapaId: string): Promise<void>;
+  /** Akros aprova (em_analise → concluida) — dispara notificação pro cliente. */
+  aprovarEtapa(clienteId: string, etapaId: string): Promise<void>;
+  /** Akros devolve (em_analise → pendente) — cliente reenvia. */
+  devolverEtapaParaAjuste(clienteId: string, etapaId: string, motivo: string): Promise<void>;
 }
 
 /**

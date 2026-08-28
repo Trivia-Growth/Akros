@@ -49,6 +49,7 @@ concluídas e implementadas — nasceu da mensagem do Bruno Luz de 06/08/2026. V
 | E02-S05 | Pagamentos | Status, resumo, formatação Intl por moeda | @claude-code | 🟩 | ✅ |
 | E02-S06 | Agendamento de reuniões | Slots mock, próximas/passadas, transcrição | @claude-code | 🟩 | ✅ |
 | E02-S07 | Perfil do cliente | Editar dados, idioma preferido | @claude-code | 🟩 | ✅ |
+| E02-S08 | Perfil evolui: dados do processo + família | Aba "Dados do processo" (nome legal, nascimento, passaporte, estado civil, endereço) e aba "Família" (dependentes, incluir no processo) — oculta pra programas com sujeito organização. Cliente 360 (admin) ganha resumo somente-leitura. | @claude-code | 🟩 | ✅ |
 
 ## E03 — Painel Admin
 
@@ -76,6 +77,11 @@ concluídas e implementadas — nasceu da mensagem do Bruno Luz de 06/08/2026. V
 | E04-S09 | Agente simplificado | Remove Skills/MCPs, adiciona correções e UI de horários de atendimento | @claude-code | 🟩 | ✅ |
 | E04-S10 | Base de conhecimento compartilhada | Catálogo único entre agentes, aba geral em /admin/comunicacao | @claude-code | 🟩 | ✅ |
 | E04-S11 | Múltiplas contas por canal | WhatsApp/Instagram com várias contas, agente escolhe conta específica | @claude-code | 🟩 | ✅ |
+| E04-S12 | E-mail unificado + armazenamento em nuvem | Conta Google/Microsoft ganha escopos (agenda/e-mail/arquivos); inbox de e-mail na timeline do cliente; caixa compartilhável entre usuários; documentos do cliente com selo de pasta OneDrive/Drive. Mockado — sem OAuth real, sem upload de binário. | @claude-code | 🟩 | ✅ |
+| E04-S13 | Cliente 360: pasta por fase, fluxo de pagamento, conversas e leads com histórico | Pasta do Drive configurável por cliente com subpasta por fase; cadastro de itens do fluxo de pagamento; aba conversas mostra WhatsApp+e-mail; aba documentos mostra caminho salvo; detalhe do lead ganha Reuniões/Proposta; conversão lead→cliente reparenta timeline/conversas/e-mails/reuniões/proposta (fix de bug — ficavam órfãos). | @claude-code | 🟩 | ✅ |
+| E04-S14 | Inbox WhatsApp com mídia rica | Imagem, áudio (gravar/ouvir/transcrever), anexo de arquivo e emoji no inbox admin — estrutura de mensageria. Aba E-mail virou estrutura de e-mail (De/Para/Assunto), não bolha de chat. | @claude-code | 🟩 | ✅ |
+| E04-S15 | BYOK por agente (OpenRouter) + Whisper | Cada agente configura sua própria chave OpenRouter e escolhe o modelo (nunca compartilhado). Transcrição de áudio do inbox passa a exigir a integração Whisper ativa em Configurações. Fix: IDs de conta de agenda desatualizados após o rename do E04-S12 (agente Ana não achava mais suas contas). | @claude-code | 🟩 | ✅ |
+| E04-S16 | Conversas: abrir thread completa + portal sem mensageria externa | Cliente 360 → Conversas vira lista (WhatsApp + cada e-mail) que abre em modal com a thread inteira e resposta inline. Portal do cliente (Mensagens) para de reexibir WhatsApp/e-mail — só chat do portal e eventos de sistema (fase liberada, documento analisado). | @claude-code | 🟩 | ✅ |
 
 ## E05 — Demo & Impersonação
 
@@ -105,6 +111,7 @@ Decisões tomadas com o cliente nesta rodada:
 | E06-S02 | Programa Visto Religioso | R/EB-4 com documentos institucionais da igreja — prova de que o 2º fluxo entra sem código | @claude-code | 🟩 | ✅ |
 | E06-S03 | Abertura de caso com programa | Escolha do programa na conversão do lead; jornada instanciada do template | @claude-code | 🟩 | ✅ |
 | E06-S04 | Catálogo de programas | Visão somente-leitura no admin, com comparação lado a lado | @claude-code | 🟩 | ✅ |
+| E06-S05 | Editor de etapas + análise IA por skill/referência | Admin cadastra requisitos de documento pela UI; cada um pode habilitar análise por IA com skill e arquivo de referência. **Arquitetural — requer ADR novo restringindo o ADR-0004 antes de codar.** | — | ⬜ | ✅ |
 
 ## E07 — IA de análise de documentos · ADR-0005
 
@@ -131,6 +138,7 @@ Decisões tomadas com o cliente nesta rodada:
 | E09-S02 | Previsão pelo ritmo | Faixa de conclusão com fórmula aberta; impacto da inércia visível | @claude-code | 🟩 | ✅ |
 | E09-S03 | Painel de gargalos | Onde os casos param, por quanto tempo, de que lado (dataviz) | @claude-code | 🟩 | ✅ |
 | E09-S04 | Alertas | Cliente inativo, material vencido, etapa travada | @claude-code | 🟩 | ✅ |
+| E09-S05 | Cliente não conclui etapa sozinho | Cliente envia (pendente → em_analise); só a Akros aprova (→ concluida, com notificação) ou devolve pra ajuste (→ pendente de novo). Cliente 360 ganha painel "Aguardando sua avaliação" com Aprovar/Devolver. | @claude-code | 🟩 | ✅ |
 
 ## E10 — Pagamentos na plataforma
 
@@ -183,7 +191,7 @@ Nenhuma delas bloqueia o uso do protótipo em demo — bloqueiam apenas o conte�
 4. **Fórmula de previsão** (E09-S02) — os limites [0,7 – 3,0] do fator de ritmo são um chute razoável, documentado como tal no código.
 5. **Migração entre programas preservando progresso** (E06-S03) — hoje trocar o programa de um cliente reinstancia a jornada e perde o avanço; a UI avisa antes de confirmar.
 6. **Retenção de dado de lead perdido** (E11-S02/S05) — base legal e prazo de guarda. Registrar em `docs/SECURITY_DEBT.md` antes de produção.
-7. **Multi-tenant / white-label** — o Bruno levantou a hipótese de outras consultorias usarem a plataforma. Não foi decidido nem especificado.
+7. ~~**Multi-tenant / white-label**~~ — **decidido em 28/08/2026: não.** A plataforma é single-tenant da Akros; nenhuma tabela recebe `org_id`. Ver `docs/adr/0009-single-tenant-sem-org-id.md`.
 8. **Dados bancários reais** (E10-S01) — `mocks/dados-recebimento.ts` usa titular/banco/conta **fictícios** de propósito. Substituir pelos dados reais da Akros é decisão consciente antes de qualquer uso fora de demo.
 
 ---

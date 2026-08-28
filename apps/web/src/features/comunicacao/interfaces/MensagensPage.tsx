@@ -3,17 +3,24 @@ import { useTimeline } from "@/features/comunicacao/application/hooks";
 import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
 import { useClienteAtivo } from "@/features/demo/application/hooks";
 import { Button, Card, Textarea } from "@/shared/ui";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 /**
- * E08-S02 — chat do portal: canal registrável, nunca apagável. O WhatsApp continua existindo
- * (E04-S01) — este canal existe para documento, decisão e aprovação formal.
+ * E08-S02 — chat do portal: canal registrável, nunca apagável. O WhatsApp/e-mail continuam
+ * existindo (E04-S01/E04-S12) mas não aparecem aqui — o cliente já sabe o que escreveu por lá;
+ * este histórico é só o chat do portal (E08-S02) e os eventos de sistema (fase liberada,
+ * documento analisado, pagamento confirmado…), nunca a mensageria externa (E04-S16).
  */
 export function MensagensPage() {
   const { t } = useTranslation("portal");
   const cliente = useClienteAtivo();
-  const timeline = useTimeline(cliente?.id);
+  const timelineCompleta = useTimeline(cliente?.id);
+  const timeline = useMemo(
+    () =>
+      timelineCompleta.filter((evento) => evento.canal !== "whatsapp" && evento.canal !== "email"),
+    [timelineCompleta],
+  );
   const [mensagem, setMensagem] = useState("");
   const [enviando, setEnviando] = useState(false);
 

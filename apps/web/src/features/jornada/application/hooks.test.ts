@@ -1,6 +1,6 @@
 import { useMockDb } from "@/mocks/store";
 import { beforeEach, describe, expect, it } from "vitest";
-import { calcularProgresso, concluirEtapa, obterFaseAtual } from "./hooks";
+import { aprovarEtapa, calcularProgresso, enviarEtapaParaAvaliacao, obterFaseAtual } from "./hooks";
 
 describe("jornada hooks (E02-S02)", () => {
   beforeEach(() => {
@@ -28,12 +28,32 @@ describe("jornada hooks (E02-S02)", () => {
     expect(calcularProgresso(jornadaFernanda)).toBe(100);
   });
 
-  it("concluirEtapa marca a etapa como concluída e reflete no progresso", async () => {
+  it("cliente enviar pra avaliação não conclui nada sozinho (E09-S05)", async () => {
     const antes = calcularProgresso(
       useMockDb.getState().jornadas.find((j) => j.clienteId === "cliente-carlos"),
     );
 
-    await concluirEtapa("cliente-carlos", "f1-2");
+    await enviarEtapaParaAvaliacao("cliente-carlos", "f1-2");
+
+    const depois = calcularProgresso(
+      useMockDb.getState().jornadas.find((j) => j.clienteId === "cliente-carlos"),
+    );
+    expect(depois).toBe(antes);
+    const etapa = useMockDb
+      .getState()
+      .jornadas.find((j) => j.clienteId === "cliente-carlos")
+      ?.fases.flatMap((f) => f.etapas)
+      .find((e) => e.id === "f1-2");
+    expect(etapa?.status).toBe("em_analise");
+  });
+
+  it("só a aprovação da Akros conclui a etapa e reflete no progresso", async () => {
+    const antes = calcularProgresso(
+      useMockDb.getState().jornadas.find((j) => j.clienteId === "cliente-carlos"),
+    );
+
+    await enviarEtapaParaAvaliacao("cliente-carlos", "f1-2");
+    await aprovarEtapa("cliente-carlos", "f1-2");
 
     const depois = calcularProgresso(
       useMockDb.getState().jornadas.find((j) => j.clienteId === "cliente-carlos"),
@@ -41,13 +61,14 @@ describe("jornada hooks (E02-S02)", () => {
     expect(depois).toBeGreaterThan(antes);
   });
 
-  it("fase vira 'concluida' quando todas as etapas concluem", async () => {
+  it("fase vira 'concluida' quando a Akros aprova todas as etapas", async () => {
     const jornada = useMockDb.getState().jornadas.find((j) => j.clienteId === "cliente-carlos");
     const fase1 = jornada?.fases.find((f) => f.id === "fase-1");
     expect(fase1).toBeDefined();
 
     for (const etapa of fase1?.etapas ?? []) {
-      await concluirEtapa("cliente-carlos", etapa.id);
+      await enviarEtapaParaAvaliacao("cliente-carlos", etapa.id);
+      await aprovarEtapa("cliente-carlos", etapa.id);
     }
 
     const jornadaDepois = useMockDb

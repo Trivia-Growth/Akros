@@ -90,6 +90,27 @@ export const personaCarlos: Persona = {
     saude: "em_dia",
     programaId: "eb2-niw",
     programaVersao: "1.0",
+    perfilImigratorio: {
+      nomeCompletoLegal: "Carlos Eduardo Mendes",
+      dataNascimento: "1988-04-12",
+      paisNascimento: "Brasil",
+      nacionalidade: "Brasileira",
+      numeroPassaporte: "FZ123456",
+      validadePassaporte: "2029-03-15",
+      estadoCivil: "casado",
+      enderecoAtual: "Rua das Acácias, 210, São Paulo, SP, Brasil",
+      telefoneAlternativo: "+55 11 97777-2002",
+      familiares: [
+        {
+          id: "familiar-carlos-esposa",
+          nome: "Juliana Mendes",
+          parentesco: "conjuge",
+          dataNascimento: "1990-09-22",
+          nacionalidade: "Brasileira",
+          incluirNoProcesso: true,
+        },
+      ],
+    },
   },
   jornada: {
     id: "jornada-carlos",

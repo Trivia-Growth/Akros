@@ -1,21 +1,12 @@
 import { useClienteAtivo } from "@/features/demo/application/hooks";
 import {
   calcularProgresso,
-  concluirEtapa,
+  enviarEtapaParaAvaliacao,
   obterFaseAtual,
   useJornadaAtiva,
 } from "@/features/jornada/application/hooks";
-import {
-  Badge,
-  Button,
-  Card,
-  PhaseCelebration,
-  Progress,
-  Stepper,
-  type StepperItem,
-  toast,
-} from "@/shared/ui";
-import { CheckCircle2, Lock } from "lucide-react";
+import { Badge, Button, Card, Progress, Stepper, type StepperItem, toast } from "@/shared/ui";
+import { CheckCircle2, Clock, Lock } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Etapa } from "../domain/types";
@@ -26,7 +17,7 @@ export function JornadaPage() {
   const jornada = useJornadaAtiva();
   const faseAtual = obterFaseAtual(jornada);
   const [faseSelecionadaId, setFaseSelecionadaId] = useState<string | undefined>(faseAtual?.id);
-  const [faseCelebrada, setFaseCelebrada] = useState<string | null>(null);
+  const [enviandoId, setEnviandoId] = useState<string | null>(null);
 
   if (!jornada || !cliente) {
     return <p className="text-ink-muted">Nenhuma jornada encontrada para esta persona.</p>;
@@ -42,19 +33,14 @@ export function JornadaPage() {
   const faseSelecionada =
     jornada.fases.find((f) => f.id === faseSelecionadaId) ?? faseAtual ?? jornada.fases[0];
 
-  const handleConcluirEtapa = async (etapaId: string) => {
-    const faseDaEtapa = jornada.fases.find((fase) =>
-      fase.etapas.some((etapa) => etapa.id === etapaId),
-    );
-    const concluiFase =
-      faseDaEtapa !== undefined &&
-      faseDaEtapa.etapas.filter((etapa) => etapa.status === "pendente").length === 1;
-    await concluirEtapa(cliente.id, etapaId);
-    if (concluiFase && faseDaEtapa) {
-      setFaseCelebrada(faseDaEtapa.titulo);
-      toast.success(`${faseDaEtapa.titulo}: ${t("journey.phaseCompleted")}`);
-    } else {
-      toast.success(t("journey.completed"));
+  const handleEnviarEtapa = async (etapaId: string) => {
+    if (enviandoId) return;
+    setEnviandoId(etapaId);
+    try {
+      await enviarEtapaParaAvaliacao(cliente.id, etapaId);
+      toast.success(t("journey.sentForReview"));
+    } finally {
+      setEnviandoId(null);
     }
   };
 
@@ -127,11 +113,15 @@ export function JornadaPage() {
                       className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
                         etapa.status === "concluida"
                           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-gold-300 bg-gold-50 text-gold-700"
+                          : etapa.status === "em_analise"
+                            ? "border-navy-200 bg-navy-50 text-navy-700"
+                            : "border-gold-300 bg-gold-50 text-gold-700"
                       }`}
                     >
                       {etapa.status === "concluida" ? (
                         <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />
+                      ) : etapa.status === "em_analise" ? (
+                        <Clock className="h-3.5 w-3.5" aria-hidden />
                       ) : (
                         <span className="h-1.5 w-1.5 rounded-full bg-current" />
                       )}
@@ -139,7 +129,7 @@ export function JornadaPage() {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium text-navy">{etapa.titulo}</p>
-                        {etapa.status !== "concluida" && <ResponsavelBadge etapa={etapa} />}
+                        {etapa.status === "pendente" && <ResponsavelBadge etapa={etapa} />}
                       </div>
                       <p className="mt-1 text-sm text-ink-soft">{etapa.descricao}</p>
                       {etapa.prazoMedioDiasUteis && (
@@ -164,13 +154,17 @@ export function JornadaPage() {
                   <div className="shrink-0">
                     {etapa.status === "concluida" ? (
                       <Badge variant="success">{t("journey.completed")}</Badge>
+                    ) : etapa.status === "em_analise" ? (
+                      <Badge variant="navy">{t("journey.underReview")}</Badge>
                     ) : (
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() => handleConcluirEtapa(etapa.id)}
+                        onClick={() => handleEnviarEtapa(etapa.id)}
+                        loading={enviandoId === etapa.id}
+                        disabled={enviandoId === etapa.id}
                       >
-                        {t("journey.markComplete")}
+                        {t("journey.sendForReview")}
                       </Button>
                     )}
                   </div>
@@ -182,9 +176,6 @@ export function JornadaPage() {
             </div>
           )}
         </Card>
-      )}
-      {faseCelebrada && (
-        <PhaseCelebration phaseTitle={faseCelebrada} onClose={() => setFaseCelebrada(null)} />
       )}
     </div>
   );

@@ -40,8 +40,8 @@ export function AprovacoesPage() {
               <div>
                 <p className="text-sm font-medium text-navy">{lead.nome}</p>
                 <p className="text-xs text-ink-muted">
-                  {lead.tipoVistoInteresse} · {lead.perfil?.faixaBudget ?? "—"} ·{" "}
-                  {lead.perfil?.momentoVida ?? "—"}
+                  {lead.tipoVistoInteresse} · {lead.perfil?.faixaBudget ?? "Não informado"} ·{" "}
+                  {lead.perfil?.momentoVida ?? "Não informado"}
                 </p>
               </div>
               <Button size="sm" onClick={() => setSelecionado(lead)}>
@@ -132,7 +132,7 @@ function Field({ label, value }: { label: string; value?: string }) {
   return (
     <div>
       <p className="text-xs text-ink-muted">{label}</p>
-      <p className="font-medium text-navy">{value ?? "—"}</p>
+      <p className="font-medium text-navy">{value ?? "Não informado"}</p>
     </div>
   );
 }

@@ -10,7 +10,7 @@ import { join, dirname, relative, resolve, extname } from "node:path";
 const ROOT = resolve(process.argv[2] || ".");
 const IGNORE_DIRS = new Set([
   "node_modules", ".git", "dist", "coverage",
-  ".triviaiox-core", ".triviaiox", ".claude/skills/_disabled",
+  ".triviaiox-core", ".triviaiox",
   ".cursor", ".gemini", ".windsurf",
   "graphify-out",
   // Triviaiox agent files use their own format (not SDD frontmatter)
@@ -24,11 +24,34 @@ const NO_FRONTMATTER_OK = new Set([
   // Índice do sistema de memória — deliberadamente sem frontmatter (ver .claude/memory/MEMORY.md).
   "MEMORY.md",
 ]);
+const rel = (f) => relative(ROOT, f).replace(/\\/g, "/");
+
+// Ignorados por CAMINHO relativo. `IGNORE_DIRS` casa por nome de pasta (`readdirSync` devolve o
+// basename), então entrada com barra nunca casa lá — tem que ser checada aqui.
+const IGNORE_PATHS = [".claude/skills/_disabled/"];
+
 // Views derivadas geradas por outras ferramentas (não a fonte canônica).
 const isGenerated = (f) => {
-  const r = relative(ROOT, f).replace(/\\/g, "/");
-  return r === "GEMINI.md" || r === ".github/copilot-instructions.md" || r.startsWith(".github/prompts/");
+  const r = rel(f);
+  return r === "GEMINI.md" || r === ".github/copilot-instructions.md" ||
+    r.startsWith(".github/prompts/") ||
+    r === "apps/web/PRODUCT.md" || r === "apps/web/DESIGN.md"; // gerados pela skill impeccable
 };
+
+/**
+ * Dentro de `.claude/skills/`, só o `SKILL.md` é doc da esteira. O resto (`reference/`,
+ * `scripts/`, exemplos) é material interno da skill e segue o formato de quem a escreveu.
+ * Vale para as skills do projeto — todas têm só `SKILL.md` — e para skills de terceiro
+ * vendorizadas no repo (ex.: `impeccable`), que precisam ser commitadas para que qualquer
+ * pessoa ou agente que clone o projeto herde o mesmo padrão de desenvolvimento.
+ */
+const isSkillInterno = (f) => {
+  const r = rel(f);
+  return r.startsWith(".claude/skills/") && !r.endsWith("/SKILL.md");
+};
+
+const isForaDaEsteira = (f) =>
+  isGenerated(f) || isSkillInterno(f) || IGNORE_PATHS.some((p) => rel(f).startsWith(p));
 const errors = [];
 const err = (file, msg) => errors.push(`${relative(ROOT, file) || file}: ${msg}`);
 
@@ -64,7 +87,7 @@ const isSkillDialect = (f) =>
 // Sistema de memória (auto memory) usa `metadata: { type: ... }` em vez de `alwaysApply`.
 const isMemoryDialect = (f) => f.replace(/\\/g, "/").includes("/.claude/memory/");
 
-const files = walk(ROOT).filter((f) => !isGenerated(f));
+const files = walk(ROOT).filter((f) => !isForaDaEsteira(f));
 
 // 1) Frontmatter + dialeto
 for (const f of files) {

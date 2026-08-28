@@ -1,10 +1,13 @@
 import type {
+  ContaConectada,
+  EscopoConta,
   IntegracaoExterna,
   ProvedorAgenda,
   ProvedorCanal,
 } from "@/features/configuracoes/domain/types";
 import { useMockDb } from "@/mocks/store";
-import { Badge, Button, Card, Input, Modal, Select, toast } from "@/shared/ui";
+import { Avatar, Badge, Button, Card, Input, Modal, Select, toast } from "@/shared/ui";
+import { cn } from "@/shared/ui/utils/cn";
 import {
   ArrowUpRight,
   Bot,
@@ -13,20 +16,36 @@ import {
   CreditCard,
   Database,
   FileAudio,
+  FolderOpen,
   Instagram,
   KeyRound,
+  Lock,
+  Mail,
   MessageCircle,
   PlugZap,
   Settings2,
   Unplug,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
 const PROVEDOR_LABEL: Record<ProvedorAgenda, string> = {
-  google: "Google Calendar",
-  microsoft: "Microsoft (Outlook)",
+  google: "Google Workspace",
+  microsoft: "Microsoft 365",
   calendly: "Calendly",
+};
+
+const ESCOPO_LABEL: Record<EscopoConta, string> = {
+  agenda: "Agenda",
+  email: "E-mail",
+  arquivos: "Arquivos",
+};
+
+const ESCOPO_ICON: Record<EscopoConta, typeof CalendarClock> = {
+  agenda: CalendarClock,
+  email: Mail,
+  arquivos: FolderOpen,
 };
 
 const PROVEDOR_CANAL_LABEL: Record<ProvedorCanal, string> = {
@@ -172,6 +191,7 @@ export function ConfiguracoesPage() {
 
 function ContasAgendaSection() {
   const contasAgenda = useMockDb((state) => state.contasAgenda);
+  const equipeAkros = useMockDb((state) => state.equipeAkros);
   const desconectarContaAgenda = useMockDb((state) => state.desconectarContaAgenda);
   const [conectando, setConectando] = useState(false);
 
@@ -179,10 +199,10 @@ function ContasAgendaSection() {
     <section className="overflow-hidden rounded-xl border border-border bg-white shadow-subtle">
       <div className="flex flex-col gap-2 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-navy">Contas de agenda conectadas</h2>
+          <h2 className="text-base font-semibold text-navy">Contas conectadas</h2>
           <p className="text-xs text-ink-muted">
-            Google, Microsoft ou Calendly — o agente de IA usa essas contas pra marcar reunião
-            direto na conversa (configure quais em Agente IA → Ferramenta de agendamento).
+            Google, Microsoft ou Calendly. Um único login autoriza um ou mais escopos — agenda,
+            e-mail e arquivos — igual ao consentimento real desses provedores.
           </p>
         </div>
         <Button size="sm" onClick={() => setConectando(true)}>
@@ -194,38 +214,153 @@ function ContasAgendaSection() {
         {contasAgenda.length === 0 && (
           <p className="px-5 py-6 text-sm text-ink-muted">Nenhuma conta conectada ainda.</p>
         )}
-        {contasAgenda.map((conta) => (
-          <div
-            key={conta.id}
-            className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cream-100 text-navy">
-                <CalendarClock className="h-5 w-5" aria-hidden />
+        {contasAgenda.map((conta) => {
+          const dono = equipeAkros.find((usuario) => usuario.id === conta.donoId);
+          return (
+            <div key={conta.id} className="flex flex-col gap-3 px-5 py-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cream-100 text-navy">
+                    <CalendarClock className="h-5 w-5" aria-hidden />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-navy">{conta.nomeExibicao}</p>
+                    <p className="text-xs text-ink-muted">
+                      {PROVEDOR_LABEL[conta.provedor]}
+                      {dono && <> · dona: {dono.nome}</>}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {conta.escopos.map((escopo) => {
+                    const EscopoIcon = ESCOPO_ICON[escopo];
+                    return (
+                      <Badge key={escopo} variant="navy">
+                        <EscopoIcon className="h-3 w-3" aria-hidden />
+                        {ESCOPO_LABEL[escopo]}
+                      </Badge>
+                    );
+                  })}
+                  <Badge variant={conta.ativa ? "success" : "neutral"}>
+                    {conta.ativa ? "Ativa" : "Inativa"}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => desconectarContaAgenda(conta.id)}
+                  >
+                    <Unplug className="h-4 w-4" aria-hidden />
+                    Desconectar
+                  </Button>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="truncate font-medium text-navy">{conta.nomeExibicao}</p>
-                <p className="text-xs text-ink-muted">{PROVEDOR_LABEL[conta.provedor]}</p>
-              </div>
+              {conta.escopos.includes("email") && (
+                <CompartilhamentoConta conta={conta} equipe={equipeAkros} dono={dono} />
+              )}
+              {conta.escopos.includes("arquivos") && (
+                <div className="flex items-center gap-2 rounded-lg bg-cream-100 px-3.5 py-2.5 text-sm text-ink-soft">
+                  <FolderOpen className="h-4 w-4 shrink-0 text-gold-700" aria-hidden />
+                  Documentos dos clientes salvos em{" "}
+                  <span className="font-medium text-navy">{conta.pastaRaiz}</span>
+                </div>
+              )}
             </div>
-            <div className="flex shrink-0 items-center gap-3">
-              <Badge variant={conta.ativa ? "success" : "neutral"}>
-                {conta.ativa ? "Ativa" : "Inativa"}
-              </Badge>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => desconectarContaAgenda(conta.id)}
-              >
-                <Unplug className="h-4 w-4" aria-hidden />
-                Desconectar
-              </Button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       {conectando && <ConectarContaAgendaModal onClose={() => setConectando(false)} />}
     </section>
+  );
+}
+
+function CompartilhamentoConta({
+  conta,
+  equipe,
+  dono,
+}: {
+  conta: ContaConectada;
+  equipe: { id: string; nome: string; cargo: string; avatarUrl?: string }[];
+  dono: { id: string; nome: string; cargo: string; avatarUrl?: string } | undefined;
+}) {
+  const atualizarContaConectada = useMockDb((state) => state.atualizarContaConectada);
+  const [gerenciando, setGerenciando] = useState(false);
+  const compartilhadoCom = conta.compartilhadoComIds ?? [];
+  const outrosMembros = equipe.filter((usuario) => usuario.id !== conta.donoId);
+
+  function alternarCompartilhamento(usuarioId: string, marcado: boolean) {
+    atualizarContaConectada(conta.id, {
+      compartilhadoComIds: marcado
+        ? [...compartilhadoCom, usuarioId]
+        : compartilhadoCom.filter((id) => id !== usuarioId),
+    });
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-cream-50/60 px-3.5 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm text-ink-soft">
+          <Mail className="h-4 w-4 shrink-0 text-gold-700" aria-hidden />
+          <span className="font-medium text-navy">{conta.emailEndereco}</span>
+          {compartilhadoCom.length === 0 ? (
+            <span className="inline-flex items-center gap-1 text-xs text-ink-muted">
+              <Lock className="h-3 w-3" aria-hidden />
+              Privada — só {dono?.nome ?? "o dono"} vê
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5">
+              <div className="flex -space-x-1.5">
+                {compartilhadoCom.map((id) => {
+                  const usuario = equipe.find((u) => u.id === id);
+                  if (!usuario) return null;
+                  return (
+                    <Avatar
+                      key={id}
+                      name={usuario.nome}
+                      src={usuario.avatarUrl}
+                      size="sm"
+                      className="h-6 w-6 border-2 border-cream-50 text-[10px]"
+                    />
+                  );
+                })}
+              </div>
+              <span className="text-xs text-ink-muted">
+                Compartilhada com {compartilhadoCom.length}{" "}
+                {compartilhadoCom.length === 1 ? "pessoa" : "pessoas"}
+              </span>
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setGerenciando((atual) => !atual)}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-gold-700 hover:text-gold-800"
+        >
+          <Users className="h-3.5 w-3.5" aria-hidden />
+          Gerenciar compartilhamento
+        </button>
+      </div>
+      {gerenciando && (
+        <div className="mt-3 flex flex-col gap-1.5 border-t border-border pt-3">
+          {outrosMembros.map((usuario) => (
+            <label
+              key={usuario.id}
+              className="flex cursor-pointer items-center gap-2.5 rounded-md p-1.5 hover:bg-white"
+            >
+              <input
+                type="checkbox"
+                checked={compartilhadoCom.includes(usuario.id)}
+                onChange={(event) => alternarCompartilhamento(usuario.id, event.target.checked)}
+                className="h-4 w-4 accent-gold-600"
+              />
+              <Avatar name={usuario.nome} src={usuario.avatarUrl} size="sm" />
+              <span className="text-sm text-navy">
+                {usuario.nome} <span className="text-ink-muted">· {usuario.cargo}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -236,7 +371,7 @@ function ConectarContaAgendaModal({ onClose }: { onClose: () => void }) {
     <Modal
       open
       onClose={onClose}
-      title="Conectar conta de agenda"
+      title="Conectar conta"
       description="Simulação de credencial: os segredos são descartados e só os quatro últimos caracteres ficam salvos."
     >
       {!provedor ? (
@@ -262,7 +397,14 @@ function ConectarContaAgendaModal({ onClose }: { onClose: () => void }) {
 
 function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onClose: () => void }) {
   const conectarContaAgenda = useMockDb((state) => state.conectarContaAgenda);
+  const equipeAkros = useMockDb((state) => state.equipeAkros);
   const [nomeExibicao, setNomeExibicao] = useState("");
+  const [donoId, setDonoId] = useState(equipeAkros[0]?.id ?? "");
+  const podeEscolherEscopo = provedor !== "calendly";
+  const [escopos, setEscopos] = useState<EscopoConta[]>(["agenda"]);
+  const [emailEndereco, setEmailEndereco] = useState("");
+  const [pastaRaiz, setPastaRaiz] = useState("/Clientes Akros");
+  const [compartilhadoComIds, setCompartilhadoComIds] = useState<string[]>([]);
 
   // Google / Microsoft
   const [clientId, setClientId] = useState("");
@@ -276,12 +418,24 @@ function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onCl
   const [organizationUri, setOrganizationUri] = useState("");
   const [eventTypeUri, setEventTypeUri] = useState("");
 
+  function alternarEscopo(escopo: EscopoConta, marcado: boolean) {
+    setEscopos((atual) => (marcado ? [...atual, escopo] : atual.filter((item) => item !== escopo)));
+  }
+
   function salvar() {
-    if (!nomeExibicao) return;
+    if (!nomeExibicao || !donoId) return;
+    const escoposFinal = podeEscolherEscopo ? escopos : (["agenda"] as EscopoConta[]);
+    const base = {
+      nomeExibicao,
+      escopos: escoposFinal,
+      donoId,
+      emailEndereco: escoposFinal.includes("email") ? emailEndereco : undefined,
+      pastaRaiz: escoposFinal.includes("arquivos") ? pastaRaiz : undefined,
+    };
     if (provedor === "google") {
       conectarContaAgenda({
+        ...base,
         provedor: "google",
-        nomeExibicao,
         credenciais: {
           provedor: "google",
           dados: {
@@ -296,8 +450,8 @@ function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onCl
       });
     } else if (provedor === "microsoft") {
       conectarContaAgenda({
+        ...base,
         provedor: "microsoft",
-        nomeExibicao,
         credenciais: {
           provedor: "microsoft",
           dados: {
@@ -312,8 +466,8 @@ function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onCl
       });
     } else {
       conectarContaAgenda({
+        ...base,
         provedor: "calendly",
-        nomeExibicao,
         credenciais: {
           provedor: "calendly",
           dados: {
@@ -325,7 +479,11 @@ function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onCl
         },
       });
     }
-    toast.success("Conta de agenda conectada no ambiente de demonstração.");
+    const conta = useMockDb.getState().contasAgenda.at(-1);
+    if (conta && escoposFinal.includes("email") && compartilhadoComIds.length > 0) {
+      useMockDb.getState().atualizarContaConectada(conta.id, { compartilhadoComIds });
+    }
+    toast.success("Conta conectada no ambiente de demonstração.");
     onClose();
   }
 
@@ -333,10 +491,51 @@ function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onCl
     <div className="flex flex-col gap-4">
       <Input
         label="Nome de exibição"
-        placeholder="Ex.: Natalia — Google Calendar"
+        placeholder="Ex.: Natalia, Google Workspace"
         value={nomeExibicao}
         onChange={(event) => setNomeExibicao(event.target.value)}
       />
+      <Select
+        label="Dono da conta"
+        value={donoId}
+        onChange={(event) => setDonoId(event.target.value)}
+      >
+        {equipeAkros.map((usuario) => (
+          <option key={usuario.id} value={usuario.id}>
+            {usuario.nome} · {usuario.cargo}
+          </option>
+        ))}
+      </Select>
+
+      {podeEscolherEscopo && (
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-ink">O que esta conta autoriza</p>
+          <div className="flex flex-wrap gap-3">
+            {(["agenda", "email", "arquivos"] as EscopoConta[]).map((escopo) => {
+              const EscopoIcon = ESCOPO_ICON[escopo];
+              return (
+                <label
+                  key={escopo}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-lg border p-3",
+                    escopos.includes(escopo) ? "border-gold-300 bg-gold-50/40" : "border-border",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={escopos.includes(escopo)}
+                    onChange={(event) => alternarEscopo(escopo, event.target.checked)}
+                    className="h-4 w-4 accent-gold-600"
+                  />
+                  <EscopoIcon className="h-4 w-4 text-navy" aria-hidden />
+                  <span className="text-sm text-navy">{ESCOPO_LABEL[escopo]}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {(provedor === "google" || provedor === "microsoft") && (
         <>
           <Input
@@ -365,13 +564,60 @@ function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onCl
             value={refreshToken}
             onChange={(event) => setRefreshToken(event.target.value)}
           />
-          {provedor === "google" && (
+          {escopos.includes("agenda") && provedor === "google" && (
             <Input
               label="Calendar ID"
               placeholder="pessoa@akrosimmigration.com"
               value={calendarId}
               onChange={(event) => setCalendarId(event.target.value)}
             />
+          )}
+          {escopos.includes("email") && (
+            <Input
+              label="Endereço de e-mail"
+              placeholder="pessoa@akrosimmigration.com"
+              value={emailEndereco}
+              onChange={(event) => setEmailEndereco(event.target.value)}
+            />
+          )}
+          {escopos.includes("arquivos") && (
+            <Input
+              label="Pasta raiz (OneDrive/Drive)"
+              placeholder="/Clientes Akros"
+              value={pastaRaiz}
+              onChange={(event) => setPastaRaiz(event.target.value)}
+            />
+          )}
+          {escopos.includes("email") && (
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-ink">
+                Compartilhar esta caixa com (opcional)
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {equipeAkros
+                  .filter((usuario) => usuario.id !== donoId)
+                  .map((usuario) => (
+                    <label
+                      key={usuario.id}
+                      className="flex cursor-pointer items-center gap-2.5 rounded-md border border-border p-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={compartilhadoComIds.includes(usuario.id)}
+                        onChange={(event) =>
+                          setCompartilhadoComIds((atual) =>
+                            event.target.checked
+                              ? [...atual, usuario.id]
+                              : atual.filter((id) => id !== usuario.id),
+                          )
+                        }
+                        className="h-4 w-4 accent-gold-600"
+                      />
+                      <span className="text-sm text-navy">{usuario.nome}</span>
+                    </label>
+                  ))}
+              </div>
+            </div>
           )}
         </>
       )}
@@ -402,7 +648,7 @@ function ContaAgendaForm({ provedor, onClose }: { provedor: ProvedorAgenda; onCl
         <Button variant="secondary" onClick={onClose}>
           Cancelar
         </Button>
-        <Button onClick={salvar} disabled={!nomeExibicao}>
+        <Button onClick={salvar} disabled={!nomeExibicao || !donoId}>
           Conectar conta
         </Button>
       </div>
@@ -700,7 +946,7 @@ function ConectarContaCanalModal({ onClose }: { onClose: () => void }) {
         </Select>
         <Input
           label="Nome de exibição"
-          placeholder="Ex.: WhatsApp — Atendimento"
+          placeholder="Ex.: WhatsApp, Atendimento"
           value={nomeExibicao}
           onChange={(event) => setNomeExibicao(event.target.value)}
         />
