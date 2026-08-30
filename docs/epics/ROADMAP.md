@@ -268,7 +268,7 @@ context**, um de cada vez — mesmo padrão do E06 (S01 fixa o modelo, S02+ repl
 |-------|--------|-----------|-------|--------|------|
 | E13-S01 | Schema `crm.clientes` + RLS + segundo cliente seed | RLS provado de verdade via PostgREST no projeto real: cliente só vê a própria linha, admin vê todas, sem INSERT/DELETE pra `authenticated`. Fecha o `test.fixme` do E12-S03 (AC-6) com teste real. | @claude-code | 🟩 | ✅ |
 | E13-S02 | Schema `jornada` (fases/etapas) | 3 tabelas normalizadas (fases/etapas são consultadas entre clientes — painel de gargalos — logo não viram JSONB). Helper `crm.meu_cliente_id()` criado, reaproveitado dali pra frente. RLS provado via PostgREST. | @claude-code | 🟩 | ✅ |
-| E13-S03 | Schema `documentos` + `pagamentos` | Réplica do padrão. Depende de E13-S01. | — | ⬜ | ⏳ |
+| E13-S03 | Schema `documentos` + `pagamentos` | Réplica do padrão. `dados_recebimento` é o primeiro caso "não é dado de cliente" (qualquer autenticado lê, só admin escreve) — RLS provado nas duas direções, inclusive releitura confirmando que UPDATE bloqueado não mudou a linha (204 sozinho não prova isso). | @claude-code | 🟩 | ✅ |
 | E13-S04 | Schema `comunicacao` + `agenda` + `programas` | Réplica do padrão (contextos restantes). Depende de E13-S01. | — | ⬜ | ⏳ |
 | E13-S05 | `audit.*` append-only em todas as tabelas de E13-S01..S04 | Trilha de auditoria (baseline mínimo + os-grade). | — | ⬜ | ⏳ |
 | E13-S06 | Schema `lgpd.*` (consentimento, export, delete) | Base legal, direito de exclusão/portabilidade. | — | ⬜ | ⏳ |
