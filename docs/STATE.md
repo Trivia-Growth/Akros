@@ -470,9 +470,33 @@ agente IA, LLM, base de conhecimento, e-mail), grande demais pra empilhar com ag
 sem perder qualidade de revisão. ROADMAP renumerado: S05 comunicacao, S06 audit, S07 lgpd,
 S08 troca de adapter no frontend.
 
+### E13-S05 implementado (🟩) — schema `comunicacao`
+5 tabelas. `conversas`/`email_threads` guardam mensagens como JSONB (lidas/escritas como bloco,
+sem consulta cruzada entre threads — diferente de `jornada.etapas`). `eventos.cliente_id`
+nullable cobre evento de lead ainda não convertido (fica invisível pra qualquer cliente, sem
+`crm.leads` existir ainda — registrado em `docs/SECURITY_DEBT.md`). **Caso novo:**
+`regras_atendimento_ia`/`fontes_conhecimento` são as primeiras tabelas **admin-only de
+verdade** — zero policy de cliente (não "todo autenticado lê" como `programas`/
+`dados_recebimento`); cliente autenticado recebe `[]`, confirmado via PostgREST real.
+
+### Descoberta importante: outra sessão (Codex) editando o mesmo worktree, ao vivo
+Durante os gates desta story, `scripts/audit-esteira.mjs`/`eval-spec-fidelity.mjs`,
+`package.json` (raiz e `apps/web`), `turbo.json`, `Definition-of-Done.md`, `vite.config.ts` e
+`pnpm-lock.yaml` mudaram **enquanto os comandos rodavam** — não fui eu. Also surgiram
+`.github/` (pipeline de CI, inexistente até agora) e `.claude/skills/revisao-adversarial/`
+(nova skill) como diretórios novos não rastreados. **Não toquei em nenhum desses arquivos** —
+só criei `docs/SECURITY_DEBT.md` (arquivo novo, sem conflito) porque um gate meu
+(`audit:esteira`) parou de passar por causa de uma checagem nova que a outra sessão adicionou
+(13 docs do projeto citavam `docs/SECURITY_DEBT.md` e ele nunca tinha sido criado — dívida real,
+não bug do gate). Deixe o resto do trabalho deles pra eles: não fiz `git add`/commit de nada
+fora do que é meu desta story.
+
+**Se retomar depois:** cheque o que a outra sessão comitou antes de continuar E13 — pode ter
+mudado convenção de nome de pasta de spec (`isSpecDir` em `scripts/lib/spec-dirs.mjs` sugere
+suporte a mais de um formato) ou adicionado CI real que os próximos `db push` deveriam respeitar.
+
 ### Próximo passo
-`E13-S05` (schema `comunicacao`) — contexto maior, story própria. Depois `E13-S06`/`S07`
-(audit/lgpd) e `E13-S08` (troca de adapter). Mecanismo já provado 5x — ver
+`E13-S06`/`S07` (audit/lgpd) e `E13-S08` (troca de adapter). Mecanismo já provado 6x — ver
 `specs/E13-S01-schema-clientes-rls/design.md` pro mecanismo de RLS (papel via claim do JWT,
 `cliente_id`/`auth_user_id` pra linha) e `docs/adr/0010-*.md` pra forma de tabela
 (núcleo relacional + JSONB) e convenção de migration. Cada schema novo de bounded context precisa
