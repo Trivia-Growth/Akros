@@ -426,8 +426,24 @@ sob autonomia. Cada vez que isso não aconteceu, dívida real ficou pra trás se
 
 Gates finais: os 10 acima + Playwright (6/6, zero fixme).
 
+### E13-S02 implementado (🟩) — schema `jornada` normalizado
+3 tabelas (`jornadas`/`fases`/`etapas`, FK em cascata) — diferente de `crm.clientes`,
+`fases`/`etapas` viraram tabela própria (não JSONB) porque E09-S03/S04 (painel de gargalos,
+alertas) consultam etapa **através de clientes diferentes**, exatamente o critério do ADR-0010
+pra "vira coluna/tabela". Helper `crm.meu_cliente_id()` criado (sem `SECURITY DEFINER` — roda com
+o privilégio de quem chama, a RLS de `crm.clientes` já decide o que ele enxerga) — reaproveitado
+daqui pra frente em vez de repetir a sub-query em cada policy nova.
+
+Gaps do E13-S01 já conhecidos, aplicados de forma preventiva desta vez (sem redescobrir): schema
+`jornada` adicionado ao `db_schema` da Data API antes de tentar seed; `GRANT ... TO service_role`
+numa migration própria (`0004`) desde o início, sem precisar de tentativa-e-erro.
+
+RLS provado via PostgREST nas 3 tabelas com dados reais (jornada+fase+etapa seed pra Carlos e
+Renata): cliente só vê a própria jornada/fases/etapas; admin vê as duas. Gates: os 10 de sempre,
+todos verdes.
+
 ### Próximo passo
-`E13-S02` (schema `jornada`) replica o padrão já provado em `E13-S01` — ver
+`E13-S03` (schema `documentos` + `pagamentos`) replica o padrão já provado em `E13-S01`/`E13-S02` — ver
 `specs/E13-S01-schema-clientes-rls/design.md` pro mecanismo de RLS (papel via claim do JWT,
 `cliente_id`/`auth_user_id` pra linha) e `docs/adr/0010-*.md` pra forma de tabela
 (núcleo relacional + JSONB) e convenção de migration. Cada schema novo de bounded context precisa
