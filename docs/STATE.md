@@ -458,8 +458,21 @@ bloqueado de verdade. Vale pra qualquer teste de RLS negativo daqui pra frente (
 RLS provado via PostgREST: documentos/pagamentos isolados por cliente; `dados_recebimento` lido
 pelos dois papéis, escrito só pelo admin (confirmado nas duas direções). Gates completos verdes.
 
+### E13-S04 implementado (🟩) — schema `agenda` + `programas`
+Réplica do padrão. `programas.programas` é o segundo caso "sem `cliente_id`" (catálogo global,
+ADR-0004/ADR-0009) — mesma forma de `dados_recebimento`: todo autenticado lê, só admin escreve.
+`fases_template`/`documentos_exigidos` em JSONB (template versionado congelado como bloco).
+RLS provado nas duas direções via PostgREST, incluindo releitura via `service_role` confirmando
+que o `UPDATE` de Carlos em `programas` não mudou a linha (mesma checagem do E13-S03).
+
+`comunicacao` virou story própria (E13-S05) em vez de entrar aqui — 12 interfaces (conversas,
+agente IA, LLM, base de conhecimento, e-mail), grande demais pra empilhar com agenda/programas
+sem perder qualidade de revisão. ROADMAP renumerado: S05 comunicacao, S06 audit, S07 lgpd,
+S08 troca de adapter no frontend.
+
 ### Próximo passo
-`E13-S04` (schema `comunicacao` + `agenda` + `programas`) replica o padrão já provado — ver
+`E13-S05` (schema `comunicacao`) — contexto maior, story própria. Depois `E13-S06`/`S07`
+(audit/lgpd) e `E13-S08` (troca de adapter). Mecanismo já provado 5x — ver
 `specs/E13-S01-schema-clientes-rls/design.md` pro mecanismo de RLS (papel via claim do JWT,
 `cliente_id`/`auth_user_id` pra linha) e `docs/adr/0010-*.md` pra forma de tabela
 (núcleo relacional + JSONB) e convenção de migration. Cada schema novo de bounded context precisa
