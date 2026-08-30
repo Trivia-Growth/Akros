@@ -253,7 +253,7 @@ credenciais + Edge Functions) → `E15` (lazy loading + resiliência) → `E16` 
 |-------|--------|-----------|-------|--------|------|
 | E12-S01 | Contrato de portas em uso | Gap real (menor que o suposto): 18 mutações órfãs em 4 arquivos ainda pegavam ação direto de `useMockDb` em vez do `container` — corrigido e validado em browser real (peer review 28/08). 2 bugs de crash pré-existentes achados e corrigidos de brinde (loop infinito em seletor Zustand com `.filter()` inline). Ver `specs/E12-S01-contrato-portas/spec.md`. | @claude-code | 🟩 | ✅ |
 | E12-S02 | Autenticação e RBAC | Supabase Auth real implementado: 3 Edge Functions de sessão (ADR-0008), proxy Netlify+Vite, guarda de rota (`RequireRole`), RBAC via `app_metadata` (ADR-0009), 2 usuários seed reais. Testado via curl E TAMBÉM em browser real (login, F5, logout, cross-role, AC-2 a AC-7 todos confirmados). Ver `specs/E12-S02-auth-rbac/`. | @claude-code | 🟩 | ✅ |
-| E12-S03 | Playwright + matriz de autorização | Matriz de autorização (quem acessa o quê) escrita **antes** do schema (E13) — vira especificação executável do isolamento por papel/`cliente_id`. Depende de E12-S02. | — | ⬜ | ⏳ |
+| E12-S03 | Playwright + matriz de autorização | Matriz executável (`apps/web/e2e/auth-matrix.spec.ts`): 5 specs verdes (guarda de rota, papel, login/logout real) + 1 `test.fixme` documentando o que só fecha com E13 (isolamento por `cliente_id`, RLS). | @claude-code | 🟩 | ✅ |
 
 > **E13 só é considerado pronto quando as linhas de dados da matriz de autorização (E12-S03) ficam
 > verdes** — não quando as tabelas sobem. Ver handoff completo em `docs/STATE.md`.

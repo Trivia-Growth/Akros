@@ -358,4 +358,54 @@ Gates finais: typecheck ✅, 82/82 testes ✅, build ✅.
 visual — nenhuma pendência de verificação em aberto pras duas.
 
 ---
+
+## Handoff — 2026-08-30 (E12-S03 implementado, épico E12 fecha 🟩)
+
+**Owner:** Lucas Azevedo (execução autônoma solicitada — "bateria de implementação").
+
+### E12-S03 — Playwright + matriz de autorização (🟩)
+`apps/web/e2e/auth-matrix.spec.ts` — 5 specs verdes (AC-1 a AC-5 do `spec.md`): guarda de rota sem
+sessão, admin não acessa `/portal`, cliente não acessa `/admin` e vê a persona certa, senha errada
+não autentica, logout revoga no servidor (F5 depois não rehidrata). 1 `test.fixme` documentado
+(AC-6, isolamento por `cliente_id` — só fecha com E13: precisa de RLS real + um segundo usuário
+`cliente` seed, que é decisão de produto fora de escopo até agora).
+
+Credenciais de teste em `apps/web/.env.test.local` (gitignored, nunca em código) — lidas por um
+parser mínimo em `playwright.config.ts` (sem depender de `dotenv`). `webServer` reaproveita
+`pnpm dev` já rodando (`reuseExistingServer: true`); fora do `pre-push`/CI — mesma categoria de
+`db-tests` com Docker, depende de rede externa ao commit.
+
+**2 gates pegaram problemas reais introduzidos nas stories anteriores, corrigidos nesta sessão:**
+1. `pnpm run arch:check` — `features/sessao/application/hooks.ts` importava
+   `infrastructure/EdgeFunctionSessaoService.ts` direto, violando
+   `interfaces → application → domain ← infrastructure`. Corrigido registrando `sessao` no
+   `container` de `app/di.ts` (não por causa do ADR-0002 — sessão não tem variante mock — mas
+   porque a regra de dependência vale igual pra qualquer contexto).
+2. `pnpm run audit:esteira` — os 9 docs de E12-S01/S02/S03 foram commitados **sem rodar
+   `audit:esteira`** antes, faltando `alwaysApply: false` no frontmatter. Corrigido em todos.
+   **Lição:** rodar a esteira completa (`pnpm run ci:local` ou os scripts um a um) antes de
+   commitar specs novas, não só typecheck/test/build.
+
+Gates finais: typecheck ✅, 82/82 testes ✅, build ✅, arch:check ✅, esteira ✅ (141 docs),
+eval:spec ✅, mermaid ✅, Playwright 5/5 ✅ (+1 fixme).
+
+### Épico E12 (fundação de auth) — fechado
+`E12-S01` (contrato de portas) → `E12-S02` (auth real) → `E12-S03` (matriz executável). Todos 🟩.
+Auth real funcionando ponta a ponta, validado em browser real e via Playwright.
+
+### Próximo passo
+`E13` — schema real + RLS + audit + LGPD. Pontos que já têm decisão tomada (não re-abrir):
+- **ADR-0009**: papel decide schema (`portal` × `admin`, GRANT/REVOKE); `cliente_id` do claim do
+  JWT decide linha dentro do `portal`. Sem `org_id`.
+- **Migrations vão em `supabase/migrations/`** (convenção real do Supabase CLI — `db/migrations/`
+  do `db/README.md` é aspiracional/genérico de template, nunca existiu de fato; projeto já está
+  `supabase link`ado ao `mhxopadkizktsenohnbm`). Marcar como `SPEC_DEVIATION` do `db/README.md`
+  quando a primeira migration for criada, ou atualizar o README — decisão a tomar no design.md
+  do E13.
+- **"E13 só é pronto quando as linhas de dados da matriz de autorização (E12-S03, AC-6) ficam
+  verdes"** — critério de conclusão já registrado, não é novo.
+- Tier arquitetural: precisa de `design.md` traduzindo ADR-0009 em DDL concreto (schema por
+  tabela, GRANT por papel, policy por `cliente_id`) antes de escrever a primeira migration.
+
+---
 *Atualizar este arquivo ao pausar a sessão. Use `/handoff` para semiautomatizar.*

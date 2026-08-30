@@ -2,6 +2,7 @@
 name: SPEC
 description: Login real via Supabase Auth, sessão conforme ADR-0008, guarda de rota por papel.
 story: E12-S02
+alwaysApply: false
 ---
 
 # spec.md — E12-S02 Autenticação e RBAC

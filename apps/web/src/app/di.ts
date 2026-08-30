@@ -31,6 +31,7 @@ import {
 } from "@/features/jornada/infrastructure/MockJornadaRepository";
 import { MockPagamentoRepository } from "@/features/pagamentos/infrastructure/MockPagamentoRepository";
 import { MockProgramaRepository } from "@/features/programas/infrastructure/MockProgramaRepository";
+import { sessaoService } from "@/features/sessao/infrastructure/EdgeFunctionSessaoService";
 import { MockConteudoRepository } from "@/features/site/infrastructure/MockConteudoRepository";
 import { MockLeadRepository } from "@/shared/contracts/MockLeadRepository";
 
@@ -54,6 +55,10 @@ export const container = {
   programas: new MockProgramaRepository(),
   timeline: new MockTimelineRepository(),
   analiseDocumento: new MockAnalisadorDocumento(),
+  /** E12-S02: sem variante Mock (autenticação é real desde o dia 1) — mas ainda passa pelo
+   * container, porque a regra de dependência (interfaces → application → domain ← infrastructure)
+   * vale igual: `application/` nunca importa `infrastructure/` direto. */
+  sessao: sessaoService,
 } as const;
 
 export type Container = typeof container;

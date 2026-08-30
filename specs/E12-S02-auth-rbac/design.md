@@ -2,6 +2,7 @@
 name: DESIGN
 description: Mecânica de autenticação real (Supabase Auth + sessão ADR-0008) por cima do dado ainda mockado.
 story: E12-S02
+alwaysApply: false
 ---
 
 # design.md — E12-S02 Autenticação e RBAC
@@ -43,8 +44,11 @@ projeto por consistência:
   é real desde o dia 1, diferente do dado de negócio).
 - `interfaces/LoginPage.tsx`, `interfaces/RequireRole.tsx`.
 
-Não entra no `container` de `app/di.ts` — aquele container é especificamente a substituição
-mock→Supabase do **dado de negócio** (ADR-0002); sessão não tem variante mock.
+Registrado no `container` de `app/di.ts` (`container.sessao`) mesmo sem variante Mock — não pela
+razão do ADR-0002 (trocar mock↔Supabase), mas porque a regra de dependência
+(`interfaces → application → domain ← infrastructure`) é a mesma pra qualquer contexto:
+`application/hooks.ts` não pode importar `infrastructure/EdgeFunctionSessaoService.ts` direto
+(pego pelo `dependency-cruiser`, `pnpm run arch:check`).
 
 ### Três Edge Functions (`supabase/functions/sessao-*`)
 

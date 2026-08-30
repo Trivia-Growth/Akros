@@ -2,6 +2,7 @@
 name: TASKS
 description: Decomposição AC→task→gate de E12-S02.
 story: E12-S02
+alwaysApply: false
 ---
 
 # tasks.md — E12-S02 Autenticação e RBAC

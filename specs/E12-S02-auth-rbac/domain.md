@@ -2,6 +2,7 @@
 name: DOMAIN
 description: Linguagem ubíqua e tipos do bounded context sessao (identidade/autenticação).
 story: E12-S02
+alwaysApply: false
 ---
 
 # domain.md — `sessao` (identidade e autenticação)

@@ -1,7 +1,7 @@
+import { container } from "@/app/di";
 import { isDemoMode } from "@/shared/lib/env";
 import { useEffect } from "react";
 import type { Papel, Sessao } from "../domain/types";
-import { sessaoService } from "../infrastructure/EdgeFunctionSessaoService";
 import { useSessaoStore } from "./store";
 
 export function useSessaoAtual(): Sessao | null {
@@ -31,7 +31,7 @@ export function useBootstrapSessao(): void {
       return;
     }
     let cancelado = false;
-    sessaoService
+    container.sessao
       .refresh()
       .then((sessao) => {
         if (!cancelado) definirSessao(sessao);
@@ -46,12 +46,12 @@ export function useBootstrapSessao(): void {
 }
 
 export async function login(email: string, senha: string): Promise<void> {
-  const sessao = await sessaoService.login(email, senha);
+  const sessao = await container.sessao.login(email, senha);
   useSessaoStore.getState().definirSessao(sessao);
 }
 
 export async function logout(): Promise<void> {
   const accessToken = useSessaoStore.getState().sessao?.accessToken ?? null;
-  await sessaoService.logout(accessToken);
+  await container.sessao.logout(accessToken);
   useSessaoStore.getState().definirSessao(null);
 }

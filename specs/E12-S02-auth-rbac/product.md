@@ -2,6 +2,7 @@
 name: PRODUCT
 description: Por que a plataforma precisa de autenticação real antes de sair do protótipo.
 story: E12-S02
+alwaysApply: false
 ---
 
 # product.md — E12-S02 Autenticação e RBAC

@@ -53,6 +53,12 @@ graphify-out/
 # impeccable skill — consentimento por máquina, não é estado de projeto
 .impeccable/config.local.json
 
+# Playwright (E12-S03) — artefatos de execução local
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
 # Temporary/scratch
 .tmp/
 scratch/

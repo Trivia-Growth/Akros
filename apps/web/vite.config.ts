@@ -1,9 +1,14 @@
 import { URL, fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
+  // E12-S03: e2e/ é suite do Playwright (@playwright/test), não do Vitest — os dois definem
+  // `test`/`expect` globais e colidem se o Vitest tentar coletar os arquivos .spec.ts de lá.
+  test: {
+    exclude: [...configDefaults.exclude, "e2e/**"],
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

@@ -2,6 +2,7 @@
 name: SPEC
 description: Mutações que ainda pegavam ação direto do useMockDb passam a ir por porta/container.
 story: E12-S01
+alwaysApply: false
 ---
 
 # spec.md — E12-S01 Contrato de portas em uso
