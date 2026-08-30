@@ -393,19 +393,48 @@ eval:spec ✅, mermaid ✅, Playwright 5/5 ✅ (+1 fixme).
 `E12-S01` (contrato de portas) → `E12-S02` (auth real) → `E12-S03` (matriz executável). Todos 🟩.
 Auth real funcionando ponta a ponta, validado em browser real e via Playwright.
 
+### E13-S01 implementado (🟩) — primeira tabela de negócio real
+`crm.clientes` no ar em `mhxopadkizktsenohnbm`, RLS provado **de verdade** via PostgREST (não
+simulado): logado como Carlos (cliente) só a própria linha volta; logado como Lucas (admin) as
+duas voltam; `INSERT`/`DELETE` sem GRANT pra `authenticated` — 403 confirmado nos dois. Fecha o
+`test.fixme` do E12-S03 (AC-6) com um teste real (Playwright bate direto no PostgREST).
+
+**ADR-0010 novo** (schema relacional + JSONB pra blob variável; migrations em
+`supabase/migrations/`, não `db/migrations/` — que nunca existiu de fato, `db/README.md` corrigido
+com nota). Segundo usuário `cliente` seed criado (`renata.alves@example.com`) — ampliação
+consciente do escopo de E12-S02 ("só 2 usuários"), registrada porque sem um segundo cliente real
+não dava pra provar isolamento de linha nenhum.
+
+**4 gaps reais achados rodando a bateria completa de gates** (nenhum tinha sido rodado nas stories
+anteriores até o momento em que "rodar tudo antes de commitar" virou hábito nesta sessão):
+1. PostgREST só expõe `public`/`graphql_public` por padrão — schema `crm` precisou ser adicionado
+   via Management API (`PATCH /v1/projects/{ref}/postgrest`, `db_schema`).
+2. `service_role` não tem GRANT automático em schema criado dinamicamente (só em `public`, de
+   fábrica) — precisou de migration própria (`0002`) com `GRANT ... TO service_role`.
+3. `supabase/config.toml` **não existia no repo** — as 3 funções de sessão do E12-S02 nunca
+   tinham sido declaradas nele; `check-edge-functions.mjs` (gate que existe desde E00-S11
+   especificamente pra isso) nunca tinha rodado. Gerado via `supabase init` + declaradas as 3
+   funções com `verify_jwt = false`.
+4. `.impeccable/hook.cache.json` (gerado pela skill impeccable a cada sessão) não estava no
+   `.gitignore` nem no `files.ignore` do `biome.json` — `biome check .` (gate real do pre-push)
+   quebrava pra qualquer um que tivesse essa skill ativa. Corrigido nos dois lugares.
+
+**Lição registrada duas vezes agora (E12-S03 e E13-S01): rodar a bateria completa de gates
+(`arch:check`, `audit:esteira`, `eval:spec`, `lint:migrations`, `check-edge-functions`, `mermaid`,
+`biome check .` — não só `typecheck`/`test`/`build`) antes de considerar uma story pronta, mesmo
+sob autonomia. Cada vez que isso não aconteceu, dívida real ficou pra trás sem ninguém notar.**
+
+Gates finais: os 10 acima + Playwright (6/6, zero fixme).
+
 ### Próximo passo
-`E13` — schema real + RLS + audit + LGPD. Pontos que já têm decisão tomada (não re-abrir):
-- **ADR-0009**: papel decide schema (`portal` × `admin`, GRANT/REVOKE); `cliente_id` do claim do
-  JWT decide linha dentro do `portal`. Sem `org_id`.
-- **Migrations vão em `supabase/migrations/`** (convenção real do Supabase CLI — `db/migrations/`
-  do `db/README.md` é aspiracional/genérico de template, nunca existiu de fato; projeto já está
-  `supabase link`ado ao `mhxopadkizktsenohnbm`). Marcar como `SPEC_DEVIATION` do `db/README.md`
-  quando a primeira migration for criada, ou atualizar o README — decisão a tomar no design.md
-  do E13.
-- **"E13 só é pronto quando as linhas de dados da matriz de autorização (E12-S03, AC-6) ficam
-  verdes"** — critério de conclusão já registrado, não é novo.
-- Tier arquitetural: precisa de `design.md` traduzindo ADR-0009 em DDL concreto (schema por
-  tabela, GRANT por papel, policy por `cliente_id`) antes de escrever a primeira migration.
+`E13-S02` (schema `jornada`) replica o padrão já provado em `E13-S01` — ver
+`specs/E13-S01-schema-clientes-rls/design.md` pro mecanismo de RLS (papel via claim do JWT,
+`cliente_id`/`auth_user_id` pra linha) e `docs/adr/0010-*.md` pra forma de tabela
+(núcleo relacional + JSONB) e convenção de migration. Cada schema novo de bounded context precisa
+repetir os passos "achados" nesta story: adicionar o schema em `db_schema` (Management API) e
+`GRANT ... TO service_role` antes de tentar seed via `service_role`.
+`E13-S07` (trocar `MockClienteRepository` por adapter Supabase real) é a story que finalmente
+liga a UI no schema real — nenhum dos E13-S02..S06 muda o que a UI lê.
 
 ---
 *Atualizar este arquivo ao pausar a sessão. Use `/handoff` para semiautomatizar.*

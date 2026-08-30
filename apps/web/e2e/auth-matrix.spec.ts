@@ -2,14 +2,19 @@ import { type Page, expect, test } from "@playwright/test";
 
 /**
  * E12-S03 — matriz de autorização executável (ver spec.md). Cobre isolamento por papel/rota
- * (ADR-0008 sessão + ADR-0009 papel/cliente_id), que é o que existe implementado hoje.
- * Isolamento por linha (cliente A x cliente B) aguarda E13 — ver o `test.fixme` no final.
+ * (ADR-0008 sessão + ADR-0009 papel/cliente_id) e, desde E13-S01, isolamento por linha
+ * (`cliente_id`, RLS de `crm.clientes`) verificado direto via PostgREST — a UI ainda lê mock
+ * até E13-S07 trocar o adapter.
  */
 
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 const CLIENTE_EMAIL = process.env.E2E_CLIENTE_EMAIL;
 const CLIENTE_PASSWORD = process.env.E2E_CLIENTE_PASSWORD;
+const CLIENTE_B_EMAIL = process.env.E2E_CLIENTE_B_EMAIL;
+const CLIENTE_B_PASSWORD = process.env.E2E_CLIENTE_B_PASSWORD;
+const SUPABASE_URL = process.env.E2E_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.E2E_SUPABASE_ANON_KEY;
 
 test.beforeAll(() => {
   if (!ADMIN_EMAIL || !ADMIN_PASSWORD || !CLIENTE_EMAIL || !CLIENTE_PASSWORD) {
@@ -75,13 +80,44 @@ test.describe("Matriz de autorização — E12-S02/ADR-0008/ADR-0009", () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 
-  test.fixme(
-    "AC-6: cliente A não vê dado de cliente B (aguarda E13 — RLS + segundo usuário seed)",
-    async () => {
-      // Hoje só existe 1 usuário `cliente` seed (product.md de E12-S02, decisão consciente:
-      // sem self-signup) e o dado de negócio é 100% mockado no browser — não há policy de banco
-      // pra violar ainda. Fica `fixme` documentado em vez de omitido: é o critério de "pronto"
-      // do E13 citado no handoff de 28/08 (docs/STATE.md) — RLS real + um segundo cliente seed.
-    },
-  );
+  test("AC-6 (E13-S01): RLS de crm.clientes isola cliente A de cliente B, no nível de API", async ({
+    request,
+  }) => {
+    // A UI ainda lê tudo de useMockDb (E13-S07 troca isso) — mas o schema/RLS já são reais
+    // (E13-S01). Este teste bate direto no PostgREST, não na UI, pra provar o isolamento onde
+    // ele de fato existe hoje: no banco. Fecha o `test.fixme` que ficou aqui até então.
+    test.skip(
+      !CLIENTE_B_EMAIL || !CLIENTE_B_PASSWORD || !SUPABASE_URL || !SUPABASE_ANON_KEY,
+      "Preencha E2E_CLIENTE_B_*/E2E_SUPABASE_* em .env.test.local (ver E13-S01/tasks.md).",
+    );
+
+    async function loginToken(email: string, senha: string): Promise<string> {
+      const res = await request.post(`${SUPABASE_URL}/functions/v1/sessao-login`, {
+        headers: { Origin: "http://localhost:5173" },
+        data: { email, senha },
+      });
+      const body = await res.json();
+      return body.accessToken as string;
+    }
+
+    async function verComoCliente(token: string): Promise<{ email: string }[]> {
+      const res = await request.get(`${SUPABASE_URL}/rest/v1/clientes?select=email`, {
+        headers: {
+          apikey: SUPABASE_ANON_KEY as string,
+          Authorization: `Bearer ${token}`,
+          "Accept-Profile": "crm",
+        },
+      });
+      return res.json();
+    }
+
+    const tokenA = await loginToken(CLIENTE_EMAIL as string, CLIENTE_PASSWORD as string);
+    const tokenB = await loginToken(CLIENTE_B_EMAIL as string, CLIENTE_B_PASSWORD as string);
+
+    const linhasVistasPorA = await verComoCliente(tokenA);
+    const linhasVistasPorB = await verComoCliente(tokenB);
+
+    expect(linhasVistasPorA).toEqual([{ email: CLIENTE_EMAIL }]);
+    expect(linhasVistasPorB).toEqual([{ email: CLIENTE_B_EMAIL }]);
+  });
 });

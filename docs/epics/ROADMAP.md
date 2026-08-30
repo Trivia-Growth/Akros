@@ -257,3 +257,19 @@ credenciais + Edge Functions) → `E15` (lazy loading + resiliência) → `E16` 
 
 > **E13 só é considerado pronto quando as linhas de dados da matriz de autorização (E12-S03) ficam
 > verdes** — não quando as tabelas sobem. Ver handoff completo em `docs/STATE.md`.
+
+## E13 — Schema real, RLS, audit, LGPD
+
+ADR-0009 (papel + `cliente_id`, sem `org_id`) e ADR-0010 (núcleo relacional + JSONB de blob;
+migrations em `supabase/migrations/`) já fecham as decisões duras. Rollout **por bounded
+context**, um de cada vez — mesmo padrão do E06 (S01 fixa o modelo, S02+ replicam).
+
+| Story | Título | Descrição | Owner | Status | Spec |
+|-------|--------|-----------|-------|--------|------|
+| E13-S01 | Schema `crm.clientes` + RLS + segundo cliente seed | RLS provado de verdade via PostgREST no projeto real: cliente só vê a própria linha, admin vê todas, sem INSERT/DELETE pra `authenticated`. Fecha o `test.fixme` do E12-S03 (AC-6) com teste real. | @claude-code | 🟩 | ✅ |
+| E13-S02 | Schema `jornada` (fases/etapas) | Réplica do padrão pra jornada gamificada. Depende de E13-S01. | — | ⬜ | ⏳ |
+| E13-S03 | Schema `documentos` + `pagamentos` | Réplica do padrão. Depende de E13-S01. | — | ⬜ | ⏳ |
+| E13-S04 | Schema `comunicacao` + `agenda` + `programas` | Réplica do padrão (contextos restantes). Depende de E13-S01. | — | ⬜ | ⏳ |
+| E13-S05 | `audit.*` append-only em todas as tabelas de E13-S01..S04 | Trilha de auditoria (baseline mínimo + os-grade). | — | ⬜ | ⏳ |
+| E13-S06 | Schema `lgpd.*` (consentimento, export, delete) | Base legal, direito de exclusão/portabilidade. | — | ⬜ | ⏳ |
+| E13-S07 | Frontend: trocar `MockClienteRepository` por adapter Supabase | Primeiro bounded context a sair do mock de verdade — prova que o padrão porta/adapter (ADR-0002) aguenta a troca sem reescrever UI. Depende de E13-S01. | — | ⬜ | ⏳ |

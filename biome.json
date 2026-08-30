@@ -15,7 +15,9 @@
       ".triviaiox-core/**",
       ".codex/**",
       ".claude/**",
-      "graphify-out/**"
+      "graphify-out/**",
+      "**/.impeccable/hook.cache.json",
+      "**/.impeccable/config.local.json"
     ]
   },
   "organizeImports": { "enabled": true },

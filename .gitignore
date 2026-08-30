@@ -50,8 +50,10 @@ supabase/.temp/
 # graphify (can be regenerated)
 graphify-out/
 
-# impeccable skill — consentimento por máquina, não é estado de projeto
-.impeccable/config.local.json
+# impeccable skill — consentimento por máquina/sessão, não é estado de projeto (qualquer nível —
+# a skill roda tanto na raiz quanto em apps/web/)
+**/.impeccable/config.local.json
+**/.impeccable/hook.cache.json
 
 # Playwright (E12-S03) — artefatos de execução local
 test-results/
