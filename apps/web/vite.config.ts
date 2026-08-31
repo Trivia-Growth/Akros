@@ -8,6 +8,15 @@ export default defineConfig({
   // `test`/`expect` globais e colidem se o Vitest tentar coletar os arquivos .spec.ts de lá.
   test: {
     exclude: [...configDefaults.exclude, "e2e/**"],
+    // Cobertura como DIAGNÓSTICO, não como meta de porcentagem: o limiar que vale é por camada
+    // (`domain/` e `application/` são puros e não têm desculpa), não um número global que se
+    // satisfaz testando o que é fácil. Rode com `pnpm --filter @akros/web exec vitest run --coverage`.
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/main.tsx", "src/shared/lib/test-utils.tsx"],
+    },
   },
   resolve: {
     alias: {

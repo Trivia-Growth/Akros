@@ -68,6 +68,11 @@ export function Stepper({
               type="button"
               disabled={!clickable}
               onClick={() => clickable && onSelect?.(item.id)}
+              // Nas etapas concluída/bloqueada o conteúdo é só um ícone `aria-hidden`, então o
+              // botão ficava sem nome acessível — leitor de tela anunciava "botão" e mais nada
+              // (axe `button-name`, impacto crítico). O título já está visível ao lado; aqui ele
+              // vira o nome do controle.
+              aria-label={item.title}
               aria-current={item.status === "em_andamento" ? "step" : undefined}
               className={cn(
                 "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors duration-200",
