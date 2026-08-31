@@ -67,6 +67,10 @@ fix(E03-S01): descrição do fix
 chore(E00-S00): descrição da tarefa de infra
 ```
 
+> **O subject não pode começar com maiúscula** (`subject-case` do config-conventional). Isso pega
+> sigla no início: `feat(E14-S01): RLS FORCE vira gate` é **rejeitado**. Comece por um verbo em
+> minúscula e a sigla vem depois — `feat(E14-S01): exige RLS FORCE em toda tabela`.
+
 ### Migrations
 Formato: `NNNN_E0N-S0N_descricao.sql`
 - `NNNN` = sequência crescente (garante ordem de execução no Supabase)
