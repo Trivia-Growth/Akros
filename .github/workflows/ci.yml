@@ -142,6 +142,16 @@ jobs:
   e2e:
     name: e2e
     runs-on: ubuntu-latest
+    # DESLIGADO por padrão, e a razão não é conveniência: a matriz de autorização (E12-S03)
+    # autentica DE VERDADE contra o projeto Supabase de produção — não há mock de rede. Ligar
+    # significa colocar a senha dos usuários seed nos secrets do repositório e aceitar que todo PR
+    # faça login em produção. É decisão de produto, não de engenharia.
+    #
+    # Para ligar: `gh variable set E2E_HABILITADO --body true` mais os 8 secrets abaixo.
+    # Enquanto estiver desligado, NÃO marque este check como obrigatório na branch protection —
+    # check obrigatório que não roda bloqueia merge. Registrado em docs/SECURITY_DEBT.md para não
+    # virar "gate que existe no papel".
+    if: vars.E2E_HABILITADO == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup

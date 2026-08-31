@@ -123,6 +123,15 @@ nasce sem `skip` e instala o binário, o que fecha o furo **na CI**; local conti
 design (não travar quem não tem a ferramenta).
 **Fecha em:** já fechado do lado da CI quando o pipeline estiver ativo com o check obrigatório.
 
+### Matriz de autorização (e2e) não roda na CI
+O job `e2e` de `.github/workflows/ci.yml` está desligado (`vars.E2E_HABILITADO`). Ele autentica de
+verdade contra o projeto Supabase de produção — não há mock de rede —, então ligar exige colocar a
+senha dos usuários seed nos secrets do repositório e aceitar login em produção a cada PR. Hoje a
+matriz só roda na máquina de quem lembra (`pnpm --filter @akros/web test:e2e`), o que a torna
+best-effort: uma regressão de autorização passa no merge.
+**Fecha em:** decisão sobre usuários de teste em ambiente separado do real (relacionado a SD-09),
+e então `E2E_HABILITADO=true` com o check obrigatório na branch protection.
+
 ## Referências
 - `seguranca/baseline-minimo.md`, `seguranca/os-grade.md` — checklists que geraram estas entradas.
 - `docs/epics/ROADMAP.md` — perguntas abertas de produto (nº 6, 8) espelhadas aqui do ângulo de
