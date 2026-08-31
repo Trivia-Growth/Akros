@@ -540,5 +540,67 @@ repetir os passos "achados" nesta story: adicionar o schema em `db_schema` (Mana
 `E13-S07` (trocar `MockClienteRepository` por adapter Supabase real) é a story que finalmente
 liga a UI no schema real — nenhum dos E13-S02..S06 muda o que a UI lê.
 
+## Handoff — 2026-08-31 (E13-S08 implementado, épico E13 fecha 🟩)
+
+**E13-S08 implementado (🟩)** — primeiro adapter Supabase real no frontend, escopo deliberadamente
+estreito (ver `specs/E13-S08-adapter-supabase-clientes/design.md`):
+- `@supabase/supabase-js` entra no bundle pela primeira vez (`shared/supabase/client.ts`),
+  configurado por ADR-0008 (`persistSession: false`, `autoRefreshToken: false`, `accessToken`
+  lendo o token em memória do `useSessaoStore` — nunca `localStorage`).
+- `SupabaseClienteRepository` (crm/infrastructure) implementa `ClienteRepository`. Problema
+  central: `crm.clientes.id` é uuid real, mas jornada/documentos/pagamentos/comunicacao (ainda
+  mock, E13-S09+) só conhecem os ids string do mock (`"cliente-carlos"`). Resolvido com um mapa
+  id-uuid↔id-mock **confinado dentro do adapter** (`MAPA_ID_REAL_PARA_MOCK`) — nenhum outro
+  arquivo sabe que o uuid existe. `// SPEC_DEVIATION` documentada; mapa fecha (é deletado, não
+  substituído) quando E13-S09 migrar aquelas features e todo mundo passar a usar uuid.
+- `app/di.ts`: `clientes` agora é `isDemoMode ? MockClienteRepository : SupabaseClienteRepository`.
+- Novos hooks em `crm/application/hooks.ts` (`useClienteReal`, `useClientesReais`) — mesma
+  estratégia de todo o front: mock reativo (`useMockDb`) em modo demo, fetch-on-mount +
+  `refetch()` manual fora dele (sem Realtime — decisão de escopo, operador único).
+- Migrado: `useClienteAtivo()` (portal) e `Clientes360Page`/`Cliente360.tsx` (admin, lista +
+  detalhe + `PastaDriveCard`). **Não migrado nesta story** (ficam mock mesmo fora do modo demo,
+  followup E13-S09): `KanbanPage`, `ProgramasPage`, `ConciliacaoPage`, `FilaRevisaoPage`,
+  `AdminAgendaPage`, `AdminDashboardPage` — dependem de `criarClienteAPartirDeLead`/`crm.leads`,
+  que não existem no schema ainda.
+
+**Bug real encontrado e corrigido durante a verificação** (não estava no design, achado só ao
+rodar Playwright): `jornada/interfaces/DashboardPage.tsx` chamava `useEtapasPorResponsavel` e
+`usePrevisao` **depois** de um `if (!cliente || !jornada) return`. Isso nunca quebrou em modo
+mock porque `cliente` vinha sempre síncrono (array em memória, mesmo resultado em toda renderização
+de uma instância montada). Com `useClienteAtivo()` agora podendo resolver `cliente` de forma
+assíncrona (fetch real), a primeira renderização tem `cliente === undefined` (early return, 2
+hooks a menos) e a renderização seguinte tem `cliente` definido (2 hooks a mais) — "Rendered more
+hooks than during the previous render" no React, app inteiro quebrando com error boundary do
+Router. Fix: mover as duas chamadas de hook pra antes do early return (ambas já toleram
+`jornada: undefined`). Auditadas as outras 6 telas do portal que usam `useClienteAtivo`
+(Jornada/Perfil/Pagamentos/Mensagens/Documentos/Agenda) — nenhuma tinha o mesmo padrão de risco.
+
+**Verificado ao vivo** (browser real, `VITE_DEMO_MODE=false`, não só Playwright):
+- Admin em `/admin/clientes` mostra exatamente as 2 linhas reais (Carlos, Renata), não as 5
+  personas do mock.
+- Abrir Carlos em `Cliente360` mostra dado real, incluindo `perfilImigratorio` (jsonb) com
+  familiar cadastrado.
+- Editar "Nome da pasta deste cliente" e salvar → `UPDATE` chegou em `crm.clientes` de verdade,
+  confirmado por releitura via `service_role` (não só o 200/204 da UI) — depois revertido pro
+  valor original.
+- Login real como Carlos → `/portal` mostra "Olá, Carlos" com visto/case manager reais, **e**
+  jornada/documentos/pagamentos/reuniões (ainda mock) casam certinho via o id ponte — prova que
+  o `SPEC_DEVIATION` do mapa funciona sem vazar pro resto do app.
+- `pnpm exec playwright test`: 6/6 (matriz de autorização completa, incluindo o AC-3 que exercita
+  exatamente este fluxo).
+
+**Epico E13 fecha inteiro** (S01-S08 🟩): 10 schemas reais no ar, RLS provado ao vivo em todos,
+auditoria append-only, e agora a UI de fato lendo/escrevendo em pelo menos um bounded context real
+— prova ponta a ponta que ADR-0002 (portas/adapters) aguenta a migração sem reescrever telas.
+`docs/SECURITY_DEBT.md` P0 "frontend não usa schema real" fica parcialmente resolvido — só
+`clientes` migrou; as demais 4+ features seguem mockadas até E13-S09.
+
+### Próximo passo
+`E13-S09` (fora desta sessão, não iniciada): migrar `jornada`/`documentos`/`pagamentos`/
+`comunicacao` pra Supabase real, criar `crm.leads` + `criarClienteAPartirDeLead` real, e só então
+migrar as 6 telas admin que ficaram mock nesta story. Quando isso fechar, o mapa
+`MAPA_ID_REAL_PARA_MOCK` em `SupabaseClienteRepository` deve ser **deletado** (não substituído) —
+todo mundo passa a falar uuid.
+
 ---
 *Atualizar este arquivo ao pausar a sessão. Use `/handoff` para semiautomatizar.*

@@ -20,6 +20,7 @@ import {
 import { MockConfiguracoesRepository } from "@/features/configuracoes/infrastructure/MockConfiguracoesRepository";
 import { MockClienteRepository } from "@/features/crm/infrastructure/MockClienteRepository";
 import { MockPropostaRepository } from "@/features/crm/infrastructure/MockPropostaRepository";
+import { SupabaseClienteRepository } from "@/features/crm/infrastructure/SupabaseClienteRepository";
 import { MockAnalisadorDocumento } from "@/features/documentos/infrastructure/MockAnalisadorDocumento";
 import {
   MockAssinaturaService,
@@ -34,11 +35,15 @@ import { MockProgramaRepository } from "@/features/programas/infrastructure/Mock
 import { sessaoService } from "@/features/sessao/infrastructure/EdgeFunctionSessaoService";
 import { MockConteudoRepository } from "@/features/site/infrastructure/MockConteudoRepository";
 import { MockLeadRepository } from "@/shared/contracts/MockLeadRepository";
+import { isDemoMode } from "@/shared/lib/env";
 
 export const container = {
   configuracoes: new MockConfiguracoesRepository(),
   leads: new MockLeadRepository(),
-  clientes: new MockClienteRepository(),
+  /** E13-S08: primeira porta com adapter Supabase real, condicionado ao modo demo. Ver
+   * design.md do E13-S08 pro porquê do escopo estreito (só `clientes` — as demais features
+   * seguem mock até E13-S09). */
+  clientes: isDemoMode ? new MockClienteRepository() : new SupabaseClienteRepository(),
   propostas: new MockPropostaRepository(),
   jornada: new MockJornadaRepository(),
   progresso: new MockProgressoRepository(),

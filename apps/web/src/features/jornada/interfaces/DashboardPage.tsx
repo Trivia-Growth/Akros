@@ -30,6 +30,8 @@ export function DashboardPage() {
   const documentos = useDocumentosCliente(cliente?.id);
   const pagamentos = usePagamentosCliente(cliente?.id);
   const reunioes = useReunioesCliente(cliente?.id);
+  const porResponsavel = useEtapasPorResponsavel(jornada);
+  const previsao = usePrevisao(jornada);
 
   if (!cliente || !jornada) {
     return <p className="text-ink-muted">Nenhum cliente ativo selecionado.</p>;
@@ -43,9 +45,6 @@ export function DashboardPage() {
     title: f.titulo,
     status: f.status,
   }));
-
-  const porResponsavel = useEtapasPorResponsavel(jornada);
-  const previsao = usePrevisao(jornada);
 
   const docsPendentes = documentos.filter((d) => d.status === "pendente").length;
   const pagamentoAtrasado = pagamentos.some((p) => p.status === "atrasado");

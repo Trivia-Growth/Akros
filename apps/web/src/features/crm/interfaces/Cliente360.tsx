@@ -8,6 +8,7 @@ import {
 import type { EmailThread } from "@/features/comunicacao/domain/types";
 import { EmailThreadPane, MensagemBubble } from "@/features/comunicacao/interfaces/ComunicacaoPage";
 import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
+import { useClienteReal } from "@/features/crm/application/hooks";
 import {
   useCaminhoArquivoDrive,
   useContaArquivosAtiva,
@@ -83,7 +84,7 @@ interface Props {
 
 export function Cliente360({ clienteId, onBack }: Props) {
   const { t } = useTranslation("admin");
-  const cliente = useMockDb((s) => s.clientes.find((c) => c.id === clienteId));
+  const { cliente } = useClienteReal(clienteId);
   const jornada = useMockDb((s) => s.jornadas.find((j) => j.clienteId === clienteId));
   const timeline = useTimeline(clienteId);
   const timelineDesc = useMemo(() => [...timeline].reverse(), [timeline]);
@@ -413,7 +414,7 @@ function PastaDriveCard({
   pastaDriveNome,
 }: { clienteId: string; pastaDriveNome?: string }) {
   const contaArquivos = useContaArquivosAtiva();
-  const cliente = useMockDb((s) => s.clientes.find((c) => c.id === clienteId));
+  const { cliente, refetch } = useClienteReal(clienteId);
   const [valor, setValor] = useState(pastaDriveNome ?? "");
   const [salvando, setSalvando] = useState(false);
 
@@ -424,6 +425,7 @@ function PastaDriveCard({
     setSalvando(true);
     try {
       await container.clientes.atualizar(clienteId, { pastaDriveNome: valor.trim() || undefined });
+      refetch();
       toast.success("Pasta do OneDrive/Drive atualizada.");
     } finally {
       setSalvando(false);
