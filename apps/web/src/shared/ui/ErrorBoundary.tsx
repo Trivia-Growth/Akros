@@ -1,4 +1,5 @@
 import { ehFalhaDeChunk } from "@/shared/lib/carregar-com-retry";
+import { reportarErro } from "@/shared/telemetria";
 import { AlertTriangle, RefreshCw, RotateCcw } from "lucide-react";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -38,9 +39,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(erro: Error, info: ErrorInfo) {
-    // E16-S01 liga um sink aqui. Por enquanto o console é o único destino — e é melhor que
-    // engolir: sem isto, a stack do que quebrou some junto com a tela.
     console.error(`[ErrorBoundary:${this.props.area}]`, erro, info.componentStack);
+    // E16-S01 AC-3: o erro precisa chegar em algum lugar consultável, e o envio não pode quebrar
+    // o fallback — `reportarErro` engole a própria falha de propósito.
+    reportarErro(erro, this.props.area);
   }
 
   private tentarDeNovo = () => {
