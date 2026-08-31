@@ -8,6 +8,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { TETOS, checarLimite, resposta429 } from "../_shared/rate-limit.ts";
 
 const FN = "telemetria-erro";
 
@@ -37,6 +38,12 @@ serve(async (req) => {
   const cors = corsHeaders(req.headers.get("Origin"));
   if (req.method === "OPTIONS") return new Response(null, { headers: cors, status: 204 });
   if (req.method !== "POST") return new Response(null, { status: 405, headers: cors });
+
+  // Exceção deliberada ao fail-closed (ver design.md de E14-S01): esta função é anônima, não dá
+  // acesso a nada, e recusar um relatório de erro por indisponibilidade do limitador apagaria
+  // telemetria justamente quando algo já está quebrado. Aqui é fail-open com log.
+  const limite = await checarLimite({ req, rota: "telemetria-erro", ...TETOS["telemetria-erro"] });
+  if (!limite.permitido) return resposta429(limite.reiniciaEm, cors);
 
   try {
     const bruto = await req.text();

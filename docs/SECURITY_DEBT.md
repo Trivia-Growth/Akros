@@ -28,12 +28,15 @@ inteiras na memória do JS da aba — um `console.log(useMockDb.getState())` no 
 real de cliente antes de existir filtragem de estado no frontend equivalente à RLS do banco.
 **Fecha em:** `specs/E13-S09-adapters-supabase-restantes/` AC-3 — a store deixa de ser **carregada** fora do modo demo. Filtrar não resolve: quando o filtro roda, o dado já está na memória.
 
-### Edge Functions sem rate limiting
-`grep -rn "rate\|limit" supabase/functions/` não devolve nada. `sessao-login` aceita tentativa
-ilimitada de senha: força bruta e enumeração de usuário sem custo. `seguranca/os-grade.md` pede
-rate limit `fail-closed` em função pública e a `Definition-of-Done.md` §4 lista como obrigatório.
-Superfície reduzida hoje (2 usuários seed), o que diminui o alcance, não o risco.
-**Fecha em:** `specs/E14-S01-rate-limit-edge-functions/` — contador em `seguranca.rate_limit`, chave hasheada (IP é dado pessoal), `fail-closed` no caminho de sessão. Especificada em 2026-08-31.
+### Edge Functions sem rate limiting — código pronto, **não deployado**
+`E14-S01` implementada em 2026-08-31: `seguranca.rate_limit` + `_shared/rate-limit.ts`, aplicado
+nas 4 funções (`fail-closed` nas de sessão, `fail-open` documentado na telemetria), com gate
+impedindo função pública nova sem teto.
+
+**Continua `P0` até o deploy.** O código está no repositório, não em produção. Fecha com:
+`supabase secrets set RATE_LIMIT_SECRET=...`, `supabase db push`, e o deploy das 4 funções — ver
+`specs/E14-S01-rate-limit-edge-functions/tasks.md`. Verificação: a 11ª tentativa de login errado
+do mesmo IP deve devolver `429`.
 
 ## P1 — corrigir antes de dado real de cliente
 

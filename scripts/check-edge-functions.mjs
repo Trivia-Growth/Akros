@@ -85,6 +85,27 @@ for (const name of folders) {
   }
 }
 
+// E14-S01 AC-6: toda função pública precisa declarar teto de rate limit.
+// `seguranca/os-grade.md` pede rate limit fail-closed em função pública, e a regra sobreviveu
+// meses sem gate: `grep -rn "rate\\|limit" supabase/functions/` não devolvia nada. Regra sem gate
+// é convenção, e convenção não sobrevive à décima função.
+const SEM_RATE_LIMIT_OK = new Set([
+  // Nenhuma exceção hoje. Para abrir uma, escreva aqui o motivo — não basta acrescentar o nome.
+]);
+for (const name of folders) {
+  if (SEM_RATE_LIMIT_OK.has(name)) continue;
+  const entrada = join(FUNCTIONS_DIR, name, "index.ts");
+  if (!existsSync(entrada)) continue;
+  const texto = readFileSync(entrada, "utf8");
+  if (!/\bcheckarLimite\b|\bchecarLimite\b/.test(texto)) {
+    errors.push(
+      `Função sem rate limit: supabase/functions/${name}/index.ts não chama ` +
+        "`checarLimite` (E14-S01 AC-6, fecha SD-01). Use `_shared/rate-limit.ts` e declare o teto " +
+        "em `TETOS`, ou registre a exceção com motivo em SEM_RATE_LIMIT_OK.",
+    );
+  }
+}
+
 // AC-2: functions.invoke apontando para função inexistente ou não declarada.
 const tsFiles = walkTsFiles(WEB_SRC);
 const invokeCalls = findInvokeCalls(tsFiles);
