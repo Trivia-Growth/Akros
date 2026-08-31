@@ -9,12 +9,15 @@ Uma feature **não está pronta** até passar em TODOS os gates abaixo. Não é 
 
 ## 1. Spec & Tasks Integridade
 
-- [ ] Spec.md existe e está linkada no frontmatter de tasks.md
+- [ ] `spec.md` existe e declara `tier` no frontmatter (`trivial` | `pequeno` | `arquitetural`)
 - [ ] AC (Acceptance Criteria) estão em formato Given/When/Then
-- [ ] tasks.md existe com **1 task por AC** (mapear T-N → AC-N)
+- [ ] **Os artefatos que o tier exige existem** (ADR-0011): `pequeno` → `tasks.md`;
+      `arquitetural` → `tasks.md` + `product.md` + `design.md`
+- [ ] **Todo AC é citado por alguma task.** Não é "1 task por AC" — uma task pode cobrir vários
+      AC quando são a mesma mudança (ADR-0011)
 - [ ] Cada task tem um **gate executável** (comando ou script)
 - [ ] Nenhum `SPEC_DEVIATION` pendente em tasks.md ou código
-- [ ] **SE tem UI:** impeccable checklist preenchido (ver seção 7 abaixo)
+- [ ] **SE tem UI:** impeccable checklist preenchido (ver seção 8 abaixo)
 
 ## 2. Code & Tests
 
@@ -60,7 +63,7 @@ Uma feature **não está pronta** até passar em TODOS os gates abaixo. Não é 
 - [ ] Spec buraco encontrado? → ADR ou spec atualizada
 - [ ] `/revisao-adversarial` rodou e retornou verde
 
-## 7. UI Polish — impeccable (OBRIGATÓRIO se feature tem UI)
+## 8. UI Polish — impeccable (OBRIGATÓRIO se feature tem UI)
 
 Se feature toca frontend (`apps/web/src/interfaces/` ou componentes), deve passar por impeccable.
 
@@ -107,7 +110,7 @@ Se feature toca frontend (`apps/web/src/interfaces/` ou componentes), deve passa
 
 ---
 
-## 8. DevOps / Merge
+## 9. DevOps / Merge
 
 - [ ] Branch atualizado com main (sem merge conflicts)
 - [ ] PR abre (título + descrição com AC ref)

@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato (AC) da resiliência de módulo — falha contida, navegação viva, chunk com retry. E15-S01.
 story: E15-S01
+tier: arquitetural
 alwaysApply: false
 ---
 

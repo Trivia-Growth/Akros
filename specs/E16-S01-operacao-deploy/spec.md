@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato (AC) de operação — deploy preview por PR, CSP/HSTS e sink de erro de cliente. E16-S01.
 story: E16-S01
+tier: pequeno
 alwaysApply: false
 ---
 

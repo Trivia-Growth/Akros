@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Eval de fidelidade spec→implementação (Padrão OS).
-// Para cada specs/NNNN-*/: extrai os AC da spec, checa cobertura por task (tasks.md) e
-// referência em código/teste (token AC-N), e conta SPEC_DEVIATION abertos.
-// Falha (exit 1) se algum AC não é coberto por NENHUMA task (rastreabilidade quebrada).
+// Para cada specs/E0N-S0N-*/: lê o `tier` do frontmatter da spec, exige os artefatos daquele
+// tier (ADR-0011), checa cobertura de AC por task e referência em código/teste, e conta
+// SPEC_DEVIATION abertos.
+// Falha (exit 1) em artefato faltando ou AC sem task — exceto o que estiver no baseline de dívida.
 // Referência em teste é AVISO até a feature ser implementada.
 // Uso: node scripts/eval-spec-fidelity.mjs [dir]
 // Adaptado do spec-driven (template/scripts/eval-spec-fidelity.mjs).
@@ -28,6 +29,23 @@ function walkCode(dir) {
 
 const acTokens = (s) => new Set(s.match(/AC-\d+/g) || []);
 
+/** Lê o `tier` do frontmatter da spec. `audit-esteira` é quem exige que ele exista. */
+function lerTier(texto) {
+  if (!texto.startsWith("---")) return null;
+  const fim = texto.indexOf("\n---", 3);
+  if (fim === -1) return null;
+  const m = texto.slice(3, fim).match(/^tier:\s*(\S+)/m);
+  return m ? m[1].toLowerCase().replace(/\*/g, "") : null;
+}
+
+// ADR-0011 — política de artefato por tier. `spec.md` é pré-requisito para entrar na avaliação,
+// então não aparece aqui.
+const ARTEFATOS_POR_TIER = {
+  trivial: [],
+  pequeno: ["tasks.md"],
+  arquitetural: ["tasks.md", "product.md", "design.md"],
+};
+
 const specsDir = join(ROOT, "specs");
 if (!existsSync(specsDir)) { console.log("Sem specs/ — nada a avaliar."); process.exit(0); }
 
@@ -37,21 +55,25 @@ const codeACs = acTokens(codeBlob);
 const deviations = (codeBlob.match(/SPEC_DEVIATION/g) || []).length;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Baseline de dívida (RATCHET — temporário, ver ADR pendente sobre política de artefato).
+// Baseline de dívida (RATCHET — ver ADR-0011).
 //
-// Ao corrigir o filtro de pasta (auditoria de 2026-08-30) o gate revelou 314 AC sem task, todos
-// de stories JÁ implementadas e fechadas. Falhar em cima disso pararia o trabalho em andamento
-// sem consertar nada. O baseline nomeia essa dívida uma vez: AC listado aqui é dívida conhecida,
-// AC fora daqui falha na hora. A dívida só pode diminuir — o gate também falha se o baseline
-// citar AC que hoje JÁ tem task (obriga a apagar a linha em vez de deixar apodrecer).
+// Duas dívidas herdadas, medidas quando o filtro de pasta foi corrigido (o gate passava avaliando
+// ZERO specs): AC sem task, e artefato que o tier exige e não existe. Falhar em cima disso
+// pararia o trabalho sem consertar nada, e gerar os arquivos em massa produziria documentação que
+// ninguém escreveu (decisão do dono do produto, ADR-0011).
 //
-// Este arquivo deve SUMIR quando a política de artefato for decidida. Regenerar (só com decisão
-// explícita): `node scripts/eval-spec-fidelity.mjs --atualizar-baseline`
+// Ratchet: item listado passa, item novo falha na hora, item já pago que continua listado TAMBÉM
+// falha — obriga a apagar a linha. A dívida só encolhe. O arquivo some quando a lista zerar.
+//
+// Regravar (só com decisão explícita):
+//   node scripts/eval-spec-fidelity.mjs --atualizar-baseline
 const BASELINE_PATH = join(ROOT, "specs", "_debt-baseline.json");
 const ATUALIZAR = process.argv.includes("--atualizar-baseline");
-const baseline = existsSync(BASELINE_PATH)
-  ? JSON.parse(readFileSync(BASELINE_PATH, "utf8"))
-  : {};
+const baselineRaw = existsSync(BASELINE_PATH) ? JSON.parse(readFileSync(BASELINE_PATH, "utf8")) : {};
+const baseline = {
+  acSemTask: baselineRaw.acSemTask ?? {},
+  artefatoAusente: baselineRaw.artefatoAusente ?? {},
+};
 
 let hardFail = 0;
 const rows = [];
@@ -59,18 +81,30 @@ for (const name of readdirSync(specsDir)) {
   if (!isSpecDir(name)) continue;
   const dir = join(specsDir, name);
   if (!existsSync(join(dir, "spec.md"))) continue;
-  const acs = [...acTokens(readFileSync(join(dir, "spec.md"), "utf8"))].sort();
+  const specTexto = readFileSync(join(dir, "spec.md"), "utf8");
+  const tier = lerTier(specTexto) ?? "pequeno"; // audit-esteira exige o campo; aqui só não explode
+  const acs = [...acTokens(specTexto)].sort();
   if (!acs.length) continue;
+
+  // ── artefatos exigidos pelo tier (ADR-0011) ──
+  const exigidos = ARTEFATOS_POR_TIER[tier] ?? ARTEFATOS_POR_TIER.pequeno;
+  const faltando = exigidos.filter((a) => !existsSync(join(dir, a)));
+  const artefatoConhecido = new Set(baseline.artefatoAusente[name] ?? []);
+  const artefatoNovo = faltando.filter((a) => !artefatoConhecido.has(a));
+  const artefatoObsoleto = [...artefatoConhecido].filter((a) => !faltando.includes(a)).sort();
+
+  // ── AC coberto por task ──
   const taskACs = existsSync(join(dir, "tasks.md")) ? acTokens(readFileSync(join(dir, "tasks.md"), "utf8")) : new Set();
-  const uncovered = acs.filter((ac) => !taskACs.has(ac));
+  const uncovered = tier === "trivial" ? [] : acs.filter((ac) => !taskACs.has(ac));
   const noTest = acs.filter((ac) => !codeACs.has(ac));
-  const conhecidos = new Set(baseline[name] ?? []);
+  const conhecidos = new Set(baseline.acSemTask[name] ?? []);
   const novos = uncovered.filter((ac) => !conhecidos.has(ac));
-  // Dívida que já foi paga mas continua no baseline: força a limpeza (o ratchet só aperta).
   const obsoletos = [...conhecidos].filter((ac) => !uncovered.includes(ac)).sort();
-  hardFail += novos.length + obsoletos.length;
+
+  hardFail += novos.length + obsoletos.length + artefatoNovo.length + artefatoObsoleto.length;
   rows.push({
     name,
+    tier,
     acs,
     byTask: acs.length - uncovered.length,
     byTest: acs.length - noTest.length,
@@ -78,14 +112,23 @@ for (const name of readdirSync(specsDir)) {
     novos,
     obsoletos,
     noTest,
+    faltando,
+    artefatoNovo,
+    artefatoObsoleto,
     divida: uncovered.length - novos.length,
+    dividaArtefato: faltando.length - artefatoNovo.length,
   });
 }
 
 console.log("\nEval de fidelidade spec→implementação\n");
 for (const r of rows) {
-  console.log(`  ${r.name}`);
+  console.log(`  ${r.name}  [${r.tier}]`);
   console.log(`    AC: ${r.acs.length} · por task: ${r.byTask}/${r.acs.length} · em código/teste: ${r.byTest}/${r.acs.length}`);
+  if (r.artefatoNovo.length)
+    console.log(`    ✗ artefato exigido pelo tier '${r.tier}' e ausente: ${r.artefatoNovo.join(", ")}`);
+  if (r.artefatoObsoleto.length)
+    console.log(`    ✗ baseline desatualizado — estes artefatos já existem, apague do baseline: ${r.artefatoObsoleto.join(", ")}`);
+  if (r.dividaArtefato) console.log(`    · artefato em dívida (baseline): ${r.faltando.join(", ")}`);
   if (r.novos.length) console.log(`    ✗ AC sem task (rastreabilidade): ${r.novos.join(", ")}`);
   if (r.obsoletos.length)
     console.log(`    ✗ baseline desatualizado — estes AC já têm task, apague do baseline: ${r.obsoletos.join(", ")}`);
@@ -95,16 +138,27 @@ for (const r of rows) {
 const dividaTotal = rows.reduce((n, r) => n + r.divida, 0);
 
 if (ATUALIZAR) {
-  const novo = {};
-  for (const r of rows) if (r.uncovered.length) novo[r.name] = r.uncovered;
+  const novo = { acSemTask: {}, artefatoAusente: {} };
+  for (const r of rows) {
+    if (r.uncovered.length) novo.acSemTask[r.name] = r.uncovered;
+    if (r.faltando.length) novo.artefatoAusente[r.name] = r.faltando;
+  }
   writeFileSync(BASELINE_PATH, `${JSON.stringify(novo, null, 2)}\n`);
-  console.log(`\n  Baseline regravado: ${Object.keys(novo).length} specs, ${rows.reduce((n, r) => n + r.uncovered.length, 0)} AC.`);
+  console.log(
+    `\n  Baseline regravado: ${Object.keys(novo.acSemTask).length} specs com AC sem task, ` +
+      `${Object.keys(novo.artefatoAusente).length} com artefato ausente.`,
+  );
   process.exit(0);
 }
 
 console.log(`\n  SPEC_DEVIATION abertos no código: ${deviations}`);
+const dividaArtefatoTotal = rows.reduce((n, r) => n + r.dividaArtefato, 0);
 if (dividaTotal)
-  console.log(`  Dívida de rastreabilidade no baseline: ${dividaTotal} AC em ${rows.filter((r) => r.divida).length} specs (ver specs/_debt-baseline.json).`);
+  console.log(`  Dívida de rastreabilidade no baseline: ${dividaTotal} AC em ${rows.filter((r) => r.divida).length} specs.`);
+if (dividaArtefatoTotal)
+  console.log(`  Dívida de artefato no baseline: ${dividaArtefatoTotal} arquivo(s) em ${rows.filter((r) => r.dividaArtefato).length} specs.`);
+if (dividaTotal || dividaArtefatoTotal)
+  console.log("  (ver specs/_debt-baseline.json e ADR-0011 — a lista só encolhe.)");
 
 // Gate que não avalia nada não pode passar verde — foi exatamente assim que o filtro de pasta
 // errado ficou meses invisível (auditoria de 2026-08-30). Se `specs/` existe, tem que render
@@ -120,8 +174,8 @@ if (!rows.length) {
 
 if (hardFail) {
   console.error(
-    `\n✗ ${hardFail} problema(s) de rastreabilidade fora do baseline — AC sem task, ou baseline desatualizado.\n`,
+    `\n✗ ${hardFail} problema(s) fora do baseline — artefato exigido pelo tier ausente, AC sem task, ou baseline desatualizado (ADR-0011).\n`,
   );
   process.exit(1);
 }
-console.log(`\n✓ Rastreabilidade spec→task OK (referência em teste é aviso até implementar).\n`);
+console.log("\n✓ Artefato por tier e rastreabilidade spec→task OK (referência em teste é aviso).\n");

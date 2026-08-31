@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato técnico do schema lgpd (consentimentos, solicitações).
 story: E13-S07
+tier: arquitetural
 alwaysApply: false
 ---
 

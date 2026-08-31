@@ -30,6 +30,7 @@ function fixture({
   corpo = "",
   docsMd = [],
   scripts = { "ci:local": "lefthook run pre-push" },
+  tier = "pequeno",
 } = {}) {
   const root = mkdtempSync(join(tmpdir(), "audit-esteira-"));
   mkdirSync(join(root, "docs"), { recursive: true });
@@ -39,7 +40,13 @@ function fixture({
   if (specDir) {
     const dir = join(root, "specs", specDir);
     mkdirSync(dir, { recursive: true });
-    if (comSpec) writeFileSync(join(dir, "spec.md"), doc("### AC-1 — algo"));
+    if (comSpec) {
+      const fm = tier === null ? "" : `tier: ${tier}\n`;
+      writeFileSync(
+        join(dir, "spec.md"),
+        `---\nname: SPEC\ndescription: fixture\n${fm}alwaysApply: false\n---\n\n### AC-1 — algo\n`,
+      );
+    }
   } else {
     mkdirSync(join(root, "specs"), { recursive: true });
   }
@@ -125,4 +132,17 @@ test("script declarado no package.json não acusa", () => {
 test("prosa com a palavra pnpm não vira falso positivo", () => {
   const r = run(fixture({ corpo: "O monorepo pnpm já existe; veja `pnpm-workspace.yaml`." }));
   assert.equal(r.ok, true);
+});
+
+// ADR-0011: sem tier declarado nenhum gate consegue exigir o artefato certo.
+test("falha para spec sem `tier` no frontmatter", () => {
+  const r = run(fixture({ tier: null }));
+  assert.equal(r.ok, false);
+  assert.match(r.output, /spec sem `tier` no frontmatter/);
+});
+
+test("falha para tier com valor inválido", () => {
+  const r = run(fixture({ tier: "medio" }));
+  assert.equal(r.ok, false);
+  assert.match(r.output, /tier inválido: medio/);
 });

@@ -190,8 +190,18 @@ if (existsSync(specsDir)) {
   for (const name of readdirSync(specsDir)) {
     if (!isSpecDir(name)) continue;
     vistas++;
-    if (!existsSync(join(specsDir, name, "spec.md")))
+    const specPath = join(specsDir, name, "spec.md");
+    if (!existsSync(specPath)) {
       err(join(specsDir, name), "feature sem `spec.md`");
+      continue;
+    }
+    // ADR-0011: o tier decide quais artefatos a feature precisa ter. Sem ele declarado, nenhum
+    // gate consegue exigir a coisa certa — era a lacuna que sustentava a regra não cumprida.
+    const fmSpec = parseFrontmatter(readFileSync(specPath, "utf8"));
+    const tier = (fmSpec?.tier ?? "").toLowerCase().replace(/\*/g, "").trim();
+    if (!tier) err(specPath, "spec sem `tier` no frontmatter (trivial | pequeno | arquitetural)");
+    else if (!["trivial", "pequeno", "arquitetural"].includes(tier))
+      err(specPath, `tier inválido: ${tier} (use trivial | pequeno | arquitetural)`);
   }
   // Mesma armadilha do eval de fidelidade: com o filtro de nome errado esta checagem varria uma
   // lista vazia e reportava OK. Zero pastas de feature em `specs/` é sinal de gate quebrado.

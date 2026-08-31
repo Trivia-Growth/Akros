@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato técnico dos schemas agenda + programas.
 story: E13-S04
+tier: arquitetural
 alwaysApply: false
 ---
 

@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato técnico dos schemas documentos + pagamentos.
 story: E13-S03
+tier: arquitetural
 alwaysApply: false
 ---
 

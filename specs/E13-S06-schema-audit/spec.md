@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato técnico de audit.eventos + trigger genérico nas 17 tabelas de negócio.
 story: E13-S06
+tier: arquitetural
 alwaysApply: false
 ---
 

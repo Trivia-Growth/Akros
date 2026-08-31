@@ -10,14 +10,22 @@ import test from "node:test";
 
 const SCRIPT = resolve("scripts/eval-spec-fidelity.mjs");
 
-const SPEC = `---
+const SPEC = (tier = "pequeno") => `---
 name: SPEC
 description: fixture
+tier: ${tier}
 alwaysApply: false
 ---
 
 ### AC-1 — primeiro
 ### AC-2 — segundo
+`;
+
+const DOC = `---
+name: DOC
+description: fixture
+alwaysApply: false
+---
 `;
 
 const TASKS = (acs) => `---
@@ -34,12 +42,20 @@ ${acs.map((ac) => `## Task ${ac} — cobre ${ac}\n**Gate:** \`echo ok\``).join("
  * @param tasks   ACs cobertos por `tasks.md`; `null` = sem `tasks.md`
  * @param testeAC ACs citados em código/teste fora de `specs/`
  */
-function fixture({ dirName = "E01-S01-exemplo", tasks = ["AC-1", "AC-2"], testeAC = [], baseline = null } = {}) {
+function fixture({
+  dirName = "E01-S01-exemplo",
+  tasks = ["AC-1", "AC-2"],
+  testeAC = [],
+  baseline = null,
+  tier = "pequeno",
+  extras = [],
+} = {}) {
   const root = mkdtempSync(join(tmpdir(), "eval-spec-"));
   const dir = join(root, "specs", dirName);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "spec.md"), SPEC);
+  writeFileSync(join(dir, "spec.md"), SPEC(tier));
   if (tasks) writeFileSync(join(dir, "tasks.md"), TASKS(tasks));
+  for (const extra of extras) writeFileSync(join(dir, extra), DOC);
   if (baseline)
     writeFileSync(join(root, "specs", "_debt-baseline.json"), JSON.stringify(baseline, null, 2));
   mkdirSync(join(root, "src"), { recursive: true });
@@ -101,19 +117,68 @@ test("AC sem referência em teste é aviso, não falha", () => {
 // dívida nomeada passa, dívida nova falha, e dívida já paga tem que sair do arquivo.
 
 test("AC no baseline é dívida conhecida — não falha", () => {
-  const r = run(fixture({ tasks: ["AC-1"], baseline: { "E01-S01-exemplo": ["AC-2"] } }));
+  const r = run(fixture({ tasks: ["AC-1"], baseline: { acSemTask: { "E01-S01-exemplo": ["AC-2"] } } }));
   assert.equal(r.ok, true);
   assert.match(r.output, /dívida conhecida \(baseline\): 1 AC/);
 });
 
 test("AC novo fora do baseline falha mesmo com baseline presente", () => {
-  const r = run(fixture({ tasks: [], baseline: { "E01-S01-exemplo": ["AC-2"] } }));
+  const r = run(fixture({ tasks: [], baseline: { acSemTask: { "E01-S01-exemplo": ["AC-2"] } } }));
   assert.equal(r.ok, false);
   assert.match(r.output, /AC sem task \(rastreabilidade\): AC-1/);
 });
 
 test("baseline que cita AC já coberto falha — obriga a limpar", () => {
-  const r = run(fixture({ tasks: ["AC-1", "AC-2"], baseline: { "E01-S01-exemplo": ["AC-2"] } }));
+  const r = run(fixture({ tasks: ["AC-1", "AC-2"], baseline: { acSemTask: { "E01-S01-exemplo": ["AC-2"] } } }));
+  assert.equal(r.ok, false);
+  assert.match(r.output, /baseline desatualizado/);
+});
+
+// ── Artefato por tier (ADR-0011) ─────────────────────────────────────────────
+// A regra antiga do CLAUDE.md ("nunca implemente sem spec.md e tasks.md") era violada por 73% do
+// repositório. O ADR-0011 troca a regra única pela exigência por tier, verificada aqui.
+
+test("tier pequeno exige tasks.md", () => {
+  const r = run(fixture({ tier: "pequeno", tasks: null }));
+  assert.equal(r.ok, false);
+  assert.match(r.output, /artefato exigido pelo tier 'pequeno' e ausente: tasks\.md/);
+});
+
+test("tier arquitetural exige tasks.md, product.md e design.md", () => {
+  const r = run(fixture({ tier: "arquitetural" }));
+  assert.equal(r.ok, false);
+  assert.match(r.output, /artefato exigido pelo tier 'arquitetural' e ausente: product\.md, design\.md/);
+});
+
+test("tier arquitetural completo passa", () => {
+  const r = run(fixture({ tier: "arquitetural", extras: ["product.md", "design.md"] }));
+  assert.equal(r.ok, true);
+});
+
+test("tier trivial não exige artefato nem cobertura de AC por task", () => {
+  const r = run(fixture({ tier: "trivial", tasks: null }));
+  assert.equal(r.ok, true);
+});
+
+test("artefato ausente listado no baseline é dívida conhecida", () => {
+  const r = run(
+    fixture({
+      tier: "arquitetural",
+      baseline: { artefatoAusente: { "E01-S01-exemplo": ["product.md", "design.md"] } },
+    }),
+  );
+  assert.equal(r.ok, true);
+  assert.match(r.output, /artefato em dívida \(baseline\)/);
+});
+
+test("baseline que cita artefato já existente falha — obriga a limpar", () => {
+  const r = run(
+    fixture({
+      tier: "arquitetural",
+      extras: ["product.md", "design.md"],
+      baseline: { artefatoAusente: { "E01-S01-exemplo": ["design.md"] } },
+    }),
+  );
   assert.equal(r.ok, false);
   assert.match(r.output, /baseline desatualizado/);
 });

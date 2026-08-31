@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato técnico do schema comunicacao (conversas, e-mail, eventos, agente, base de conhecimento).
 story: E13-S05
+tier: arquitetural
 alwaysApply: false
 ---
 

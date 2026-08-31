@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato (AC) dos invariantes do Padrão OS — o que precisa estar verde para a esteira virar template. E00-S06.
 story: E00-S06
+tier: arquitetural
 alwaysApply: false
 ---
 

@@ -2,6 +2,7 @@
 name: SPEC
 description: Matriz de autorização executável (Playwright) — quem acessa o quê, hoje e pós-E13.
 story: E12-S03
+tier: pequeno
 alwaysApply: false
 ---
 

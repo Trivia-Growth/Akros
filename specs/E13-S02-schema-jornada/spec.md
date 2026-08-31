@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato técnico do schema jornada (jornadas/fases/etapas) + RLS.
 story: E13-S02
+tier: arquitetural
 alwaysApply: false
 ---
 

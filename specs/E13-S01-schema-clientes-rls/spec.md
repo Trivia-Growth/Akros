@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato técnico do schema crm.clientes + RLS por papel/cliente_id.
 story: E13-S01
+tier: arquitetural
 alwaysApply: false
 ---
 

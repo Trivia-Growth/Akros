@@ -54,7 +54,7 @@ Cada sessão pode estar em um épico diferente. Para não haver conflito:
    - `@dev` → implementa (somente após tasks.md existir)
    - `@qa` → valida ACs contra os gates
    - `@devops` → merge, commit, push
-4. **Nunca implemente sem `spec.md` e `tasks.md` existirem.** Se não existirem, crie-os primeiro.
+4. **Nunca implemente sem os artefatos que o tier exige** (ADR-0011). Se não existirem, crie-os primeiro.
 5. **Ao concluir**, atualize `docs/epics/ROADMAP.md` (status, AC verdes) e `docs/STATE.md`.
 
 ## Convenções de nomeação — rastreio épico/story (OBRIGATÓRIO)
@@ -91,10 +91,24 @@ Ver `db/README.md` para detalhes.
 
 ## Antes de codar — descubra o tier
 *Isso introduz decisão difícil de reverter ou nova fronteira de domínio?*
-- **Trivial** (≤3 arquivos, sem decisão): só o PR (ou `specs/quick/`).
-- **Pequeno** (feature isolada, <10 tasks): `spec.md` + `tasks.md`.
-- **Arquitetural** (novo bounded context, integração externa, decisão irreversível, schema com dados em
-  produção): `design.md` aprovado **antes** de implementar. Sem ele → pare e sinalize.
+
+O `tier` é **declarado no frontmatter da `spec.md`** (`trivial` | `pequeno` | `arquitetural`) e
+decide quais artefatos são obrigatórios — **ADR-0011**, verificado por `pnpm run eval:spec`:
+
+| Tier | Quando | `spec.md` | `tasks.md` | `product.md` | `design.md` |
+|---|---|---|---|---|---|
+| **trivial** | ≤3 arquivos, sem decisão | opcional | não | não | não |
+| **pequeno** | feature isolada | **sim** | **sim** | não | não |
+| **arquitetural** | novo bounded context, integração externa, decisão irreversível, schema com dado em produção | **sim** | **sim** | **sim** | **sim** |
+
+No tier arquitetural o `design.md` é aprovado **antes** de implementar. Sem ele → pare e sinalize.
+
+`tasks.md` exige **rastreabilidade, não cardinalidade**: todo AC precisa ser citado por alguma
+task, e uma task pode cobrir vários AC quando são a mesma mudança. Toda task continua tendo gate
+executável.
+
+Dívida herdada (stories fechadas antes desta regra) vive em `specs/_debt-baseline.json` e só
+encolhe — nada é gerado retroativamente.
 
 > Se os passos passarem de ~5 ou surgirem dependências complexas → crie `tasks.md` formal.
 > Leia `ANTI-PADROES.md` antes de criar qualquer artefato.

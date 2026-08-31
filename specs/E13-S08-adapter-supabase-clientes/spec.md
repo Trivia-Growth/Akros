@@ -2,6 +2,7 @@
 name: SPEC
 description: Contrato técnico da troca de adapter mock→Supabase pra clientes (escopo estreito).
 story: E13-S08
+tier: arquitetural
 alwaysApply: false
 ---
 

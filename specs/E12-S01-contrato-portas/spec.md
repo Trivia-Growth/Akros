@@ -2,6 +2,7 @@
 name: SPEC
 description: Mutações que ainda pegavam ação direto do useMockDb passam a ir por porta/container.
 story: E12-S01
+tier: pequeno
 alwaysApply: false
 ---
 
