@@ -11,8 +11,9 @@ alwaysApply: false
 - **Data:** 2026-08-31
 - **Story ativa:** nenhuma em implementação. **E13 fechado** (S01–S08), **E15-S01 fechado**
   (resiliência de módulo) e **E00-S06 em andamento** (invariantes da esteira — 3 dos 4 aplicados).
-- **PR aberto:** [#3](https://github.com/Trivia-Growth/Akros/pull/3) — 15 checks verdes, mergeable.
-  Aguarda merge do `@devops`.
+- **PR #3 mergeado** em 2026-08-31 (`31066f9`, merge commit para preservar os SHAs por story do
+  ROADMAP). `main` passou de 28/08 para hoje: recebeu E12-S02 → E13-S08 **e** a esteira nova, e
+  a CI rodou verde sobre ela.
 - **Próximo passo:** `E13-S09` — migrar `jornada`/`documentos`/`pagamentos`/`comunicacao` para
   Supabase real, criar `crm.leads` + `criarClienteAPartirDeLead`, e então as 6 telas admin que
   ficaram mock. Ao fechar, **deletar** (não substituir) o `MAPA_ID_REAL_PARA_MOCK` em
@@ -35,9 +36,13 @@ alwaysApply: false
 - **ADR-0011 — política de artefato por tier.** A regra "nunca implemente sem spec.md e tasks.md"
   era violada por 73% do repositório. `tier` vira campo obrigatório na spec e decide o que é
   exigido; a dívida herdada fica nomeada e só encolhe.
-- **CI ligada.** `.github/workflows/ci.yml` com um job por gate; `main` protegida com 12 checks
-  obrigatórios, sem force-push e sem deleção. `enforce_admins` ficou **desligado** de propósito —
-  ligar tranca o único mantenedor numa emergência; decisão a revisitar quando o time crescer.
+- **CI ligada e `main` protegida.** 12 checks obrigatórios, strict, sem force-push e sem deleção.
+  `enforce_admins` ficou **desligado** de propósito — ligar tranca o único mantenedor numa
+  emergência; revisitar quando o time crescer. `e2e` fora dos obrigatórios enquanto estiver
+  desligado (bloqueio 2).
+- **Atenção — worktree obsoleto.** `/Users/lucasazevedo/Documents/GitHub/Akros` é um segundo
+  worktree deste repositório, parado em `main` de 06/08 (32 commits atrás, sem nenhum dos gates
+  novos). Rode `git pull` lá antes de tocar qualquer coisa, ou remova o worktree.
 - **E15-S01.** 68 chunks, entrada de 850,74 kB para 596,25 kB, `ErrorBoundary` por rota. Um
   `throw` no admin não derruba mais o site.
 
