@@ -1,10 +1,40 @@
 {
   "$schema": "https://turbo.build/schema.json",
+
+  // Mudança em qualquer um destes invalida o cache de TODAS as tasks — são a configuração
+  // compartilhada que muda o resultado de build/lint/typecheck sem aparecer em `src/`.
+  "globalDependencies": [
+    "tsconfig.json",
+    "biome.json",
+    "pnpm-lock.yaml",
+    ".dependency-cruiser.cjs"
+  ],
+
+  // Remote cache: exige `pnpm exec turbo login && pnpm exec turbo link` uma vez por máquina/CI
+  // (passo manual, precisa de conta). `signature: true` assina os artefatos — sem isso um cache
+  // remoto comprometido injeta build alheio no pipeline.
+  "remoteCache": { "signature": true },
+
   "tasks": {
     "build": { "dependsOn": ["^build"], "outputs": ["dist/**"], "cache": true },
     "dev": { "cache": false, "persistent": true },
-    "lint": { "cache": true },
-    "typecheck": { "dependsOn": ["^build"], "cache": true },
+
+    // `inputs` explícito: sem isso o Turbo considera todo arquivo do pacote, e qualquer mexida em
+    // README/spec/fixture invalida o cache de lint e typecheck sem motivo.
+    "lint": {
+      "cache": true,
+      "inputs": ["src/**", "e2e/**", "*.json", "*.ts", "*.cjs"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "cache": true,
+      "inputs": ["src/**", "tsconfig*.json", "package.json"]
+    },
+
+    // `cache: false` é deliberado: a suíte lê `.env.test.local` (não versionado, fora de qualquer
+    // `inputs` possível — ver `docs/STATE.md`, handoff de 2026-08-30). Um acerto de cache
+    // devolveria verde de uma execução feita com outro ambiente. Ligar cache aqui só depois que a
+    // dependência de env sumir.
     "test": { "cache": false }
   }
 }

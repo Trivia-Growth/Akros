@@ -14,4 +14,14 @@ export class MockProgramaRepository implements ProgramaRepository {
     const programa = useMockDb.getState().programas.find((p) => p.codigo === codigo) ?? null;
     return comLatencia(programa);
   }
+
+  async salvar(programa: Programa): Promise<void> {
+    useMockDb.getState().salvarPrograma(programa);
+    return comLatencia(undefined);
+  }
+
+  async duplicar(programaId: string): Promise<Programa | null> {
+    const duplicado = useMockDb.getState().duplicarPrograma(programaId);
+    return comLatencia(duplicado);
+  }
 }

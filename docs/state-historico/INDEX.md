@@ -6,15 +6,14 @@ alwaysApply: false
 
 # Índice — histórico do STATE.md
 
-> `docs/STATE.md` guarda só a sessão mais recente + bloqueios abertos. Quando crescer demais
-> (regra de bolso: acima de ~500 linhas ou `alwaysApply: true` pesando no contexto de toda sessão),
-> arquive o conteúdo antigo aqui por período, cronológico reverso, e registre 1 linha nesta tabela.
+> `docs/STATE.md` guarda só a seção `## Agora` (estado corrente + bloqueios). Sessão encerrada é
+> arquivada aqui por mês, e ganha uma linha nesta tabela. Cada arquivo é `alwaysApply: false` —
+> nunca entra no carregamento automático de sessão.
 
 | Período | Arquivo | O que tem |
 |---------|---------|-----------|
-| — | — | Nenhuma rotação ainda. Primeira entrada aparece aqui quando `docs/STATE.md` for arquivado pela primeira vez. |
+| 2026-08 | `docs/state-historico/2026-08.md` | Rodadas 1 e 2 (E00–E11, 47 stories mockadas), épico E12 (auth real via Supabase, ADR-0008/0009, matriz Playwright) e épico E13 (10 schemas reais com RLS, `audit.*` append-only, primeiro adapter Supabase no frontend). |
 
 ## Como buscar
-`grep -rn "termo" docs/state-historico/` acha rápido sem abrir cada arquivo. Cada arquivo é
-`alwaysApply: false` — só entra no contexto se puxado explicitamente (`/handoff`, ou pedindo pra
-ler), nunca no carregamento automático de sessão.
+`grep -rn "termo" docs/state-historico/` acha rápido sem abrir cada arquivo. Puxe o arquivo do mês
+só quando o `## Agora` do `STATE.md` não bastar.

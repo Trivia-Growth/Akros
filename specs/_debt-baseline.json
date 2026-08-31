@@ -1,0 +1,646 @@
+{
+  "acSemTask": {
+    "E01-S01-homepage": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E01-S02-quem-somos": [
+      "AC-1",
+      "AC-2"
+    ],
+    "E01-S03-vistos": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E01-S04-metodologia": [
+      "AC-1",
+      "AC-2",
+      "AC-3"
+    ],
+    "E01-S05-outros-servicos": [
+      "AC-1",
+      "AC-2"
+    ],
+    "E01-S06-blog": [
+      "AC-1",
+      "AC-2",
+      "AC-3"
+    ],
+    "E01-S07-contatos-lead": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E02-S01-dashboard": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E02-S02-jornada": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E02-S03-documentos": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E02-S04-assinatura": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E02-S05-pagamentos": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E02-S06-agenda": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E02-S08-perfil-processo-familia": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E03-S01-kanban": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E03-S02-clientes-360": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E03-S03-gestao-jornada": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E03-S04-proposta": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E03-S05-dashboard-admin": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E04-S01-whatsapp": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E04-S02-agentes-ia": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E04-S03-agenda-integrada": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E04-S04-fireflies": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E04-S05-custo-ia-conversas": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E04-S07-agenda-tool-agente": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6",
+      "AC-7"
+    ],
+    "E04-S08-transcricao-configuravel": [
+      "AC-1",
+      "AC-2",
+      "AC-3"
+    ],
+    "E04-S09-agente-simplificado": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E04-S10-base-conhecimento-compartilhada": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E04-S11-multiconta-canal": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E04-S12-email-unificado-arquivos": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6",
+      "AC-7",
+      "AC-8"
+    ],
+    "E04-S13-cliente360-pagamentos-drive-leads": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E04-S14-inbox-midia-rica": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E04-S15-byok-agente-whisper": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E04-S16-conversas-thread-completa": [
+      "AC-1",
+      "AC-2",
+      "AC-3"
+    ],
+    "E05-S01-impersonacao": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E05-S02-cenarios": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E06-S01-modelo-programa": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E06-S02-programa-religioso": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E06-S03-abertura-caso-programa": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E06-S04-catalogo-programas": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5"
+    ],
+    "E06-S05-editor-etapas-analise-ia": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6",
+      "AC-7",
+      "AC-8"
+    ],
+    "E07-S01-porta-analise-ia": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E07-S02-feedback-cliente": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E07-S03-fila-revisao-humana": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E07-S04-carta-experiencia-recomendacao": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E08-S01-timeline-unificada": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6",
+      "AC-7"
+    ],
+    "E08-S02-chat-portal": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6",
+      "AC-7"
+    ],
+    "E08-S03-politica-canal-documento": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E09-S01-dono-da-etapa": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E09-S02-previsao-ritmo": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E09-S03-painel-gargalos": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E09-S04-alertas-inatividade": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E09-S05-etapa-aprovacao-akros": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ],
+    "E10-S01-pagamento-transferencia": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E11-S01-qualificacao-whatsapp": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6",
+      "AC-7"
+    ],
+    "E11-S02-perfil-lead": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6"
+    ],
+    "E11-S03-cadencia-followup": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6",
+      "AC-7"
+    ],
+    "E11-S04-gate-aprovacao-agendamento": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6",
+      "AC-7"
+    ],
+    "E11-S05-base-reativacao": [
+      "AC-1",
+      "AC-2",
+      "AC-3",
+      "AC-4",
+      "AC-5",
+      "AC-6",
+      "AC-7"
+    ],
+    "E12-S03-playwright-matriz-autorizacao": [
+      "AC-2",
+      "AC-3",
+      "AC-4"
+    ]
+  },
+  "artefatoAusente": {
+    "E00-S04-mock-di": [
+      "product.md"
+    ],
+    "E00-S06-invariantes-padrao-os": [
+      "product.md"
+    ],
+    "E01-S01-homepage": [
+      "tasks.md"
+    ],
+    "E01-S02-quem-somos": [
+      "tasks.md"
+    ],
+    "E01-S03-vistos": [
+      "tasks.md"
+    ],
+    "E01-S04-metodologia": [
+      "tasks.md"
+    ],
+    "E01-S05-outros-servicos": [
+      "tasks.md"
+    ],
+    "E01-S06-blog": [
+      "tasks.md"
+    ],
+    "E01-S07-contatos-lead": [
+      "tasks.md"
+    ],
+    "E02-S01-dashboard": [
+      "tasks.md"
+    ],
+    "E02-S02-jornada": [
+      "tasks.md"
+    ],
+    "E02-S03-documentos": [
+      "tasks.md"
+    ],
+    "E02-S04-assinatura": [
+      "tasks.md"
+    ],
+    "E02-S05-pagamentos": [
+      "tasks.md"
+    ],
+    "E02-S06-agenda": [
+      "tasks.md"
+    ],
+    "E02-S08-perfil-processo-familia": [
+      "tasks.md"
+    ],
+    "E03-S01-kanban": [
+      "tasks.md"
+    ],
+    "E03-S02-clientes-360": [
+      "tasks.md"
+    ],
+    "E03-S03-gestao-jornada": [
+      "tasks.md"
+    ],
+    "E03-S04-proposta": [
+      "tasks.md"
+    ],
+    "E03-S05-dashboard-admin": [
+      "tasks.md"
+    ],
+    "E04-S01-whatsapp": [
+      "tasks.md"
+    ],
+    "E04-S02-agentes-ia": [
+      "tasks.md"
+    ],
+    "E04-S03-agenda-integrada": [
+      "tasks.md"
+    ],
+    "E04-S04-fireflies": [
+      "tasks.md"
+    ],
+    "E04-S05-custo-ia-conversas": [
+      "tasks.md"
+    ],
+    "E04-S07-agenda-tool-agente": [
+      "tasks.md",
+      "product.md"
+    ],
+    "E04-S08-transcricao-configuravel": [
+      "tasks.md"
+    ],
+    "E04-S09-agente-simplificado": [
+      "tasks.md"
+    ],
+    "E04-S10-base-conhecimento-compartilhada": [
+      "tasks.md"
+    ],
+    "E04-S11-multiconta-canal": [
+      "tasks.md"
+    ],
+    "E04-S12-email-unificado-arquivos": [
+      "tasks.md",
+      "product.md"
+    ],
+    "E04-S13-cliente360-pagamentos-drive-leads": [
+      "tasks.md"
+    ],
+    "E04-S14-inbox-midia-rica": [
+      "tasks.md"
+    ],
+    "E04-S15-byok-agente-whisper": [
+      "tasks.md"
+    ],
+    "E04-S16-conversas-thread-completa": [
+      "tasks.md"
+    ],
+    "E05-S01-impersonacao": [
+      "tasks.md"
+    ],
+    "E05-S02-cenarios": [
+      "tasks.md"
+    ],
+    "E06-S01-modelo-programa": [
+      "tasks.md",
+      "product.md"
+    ],
+    "E06-S02-programa-religioso": [
+      "tasks.md"
+    ],
+    "E06-S03-abertura-caso-programa": [
+      "tasks.md"
+    ],
+    "E06-S04-catalogo-programas": [
+      "tasks.md"
+    ],
+    "E06-S05-editor-etapas-analise-ia": [
+      "tasks.md"
+    ],
+    "E07-S01-porta-analise-ia": [
+      "tasks.md",
+      "product.md"
+    ],
+    "E07-S02-feedback-cliente": [
+      "tasks.md"
+    ],
+    "E07-S03-fila-revisao-humana": [
+      "tasks.md"
+    ],
+    "E07-S04-carta-experiencia-recomendacao": [
+      "tasks.md"
+    ],
+    "E08-S01-timeline-unificada": [
+      "tasks.md",
+      "product.md",
+      "design.md"
+    ],
+    "E08-S02-chat-portal": [
+      "tasks.md"
+    ],
+    "E08-S03-politica-canal-documento": [
+      "tasks.md"
+    ],
+    "E09-S01-dono-da-etapa": [
+      "tasks.md"
+    ],
+    "E09-S02-previsao-ritmo": [
+      "tasks.md"
+    ],
+    "E09-S03-painel-gargalos": [
+      "tasks.md"
+    ],
+    "E09-S04-alertas-inatividade": [
+      "tasks.md"
+    ],
+    "E09-S05-etapa-aprovacao-akros": [
+      "tasks.md"
+    ],
+    "E10-S01-pagamento-transferencia": [
+      "tasks.md"
+    ],
+    "E11-S01-qualificacao-whatsapp": [
+      "tasks.md"
+    ],
+    "E11-S02-perfil-lead": [
+      "tasks.md"
+    ],
+    "E11-S03-cadencia-followup": [
+      "tasks.md"
+    ],
+    "E11-S04-gate-aprovacao-agendamento": [
+      "tasks.md"
+    ],
+    "E11-S05-base-reativacao": [
+      "tasks.md"
+    ],
+    "E13-S01-schema-clientes-rls": [
+      "product.md"
+    ],
+    "E13-S02-schema-jornada": [
+      "product.md"
+    ],
+    "E13-S03-schema-documentos-pagamentos": [
+      "product.md"
+    ],
+    "E13-S04-schema-agenda-programas": [
+      "product.md"
+    ],
+    "E13-S05-schema-comunicacao": [
+      "product.md"
+    ],
+    "E13-S06-schema-audit": [
+      "product.md"
+    ],
+    "E13-S07-schema-lgpd": [
+      "product.md"
+    ],
+    "E13-S08-adapter-supabase-clientes": [
+      "product.md"
+    ]
+  }
+}

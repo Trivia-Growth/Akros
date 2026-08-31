@@ -49,7 +49,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -209,7 +209,6 @@ function AudioBubblePlayer({
   mensagem: Mensagem;
   conversaId: string;
 }) {
-  const transcreverMensagem = useMockDb((state) => state.transcreverMensagem);
   const whisperAtivo = useMockDb(
     (state) => state.integracoes.find((i) => i.id === "whisper")?.ativa ?? false,
   );
@@ -262,7 +261,7 @@ function AudioBubblePlayer({
       ) : whisperAtivo ? (
         <button
           type="button"
-          onClick={() => transcreverMensagem(conversaId, mensagem.id)}
+          onClick={() => container.conversas.transcreverMensagem(conversaId, mensagem.id)}
           className="self-start text-xs font-medium text-gold-700 hover:text-gold-800"
         >
           Transcrever áudio
@@ -282,7 +281,6 @@ function AudioBubblePlayer({
 function Inbox() {
   const { t } = useTranslation("admin");
   const conversas = useConversas();
-  const enviarMensagemConversaRica = useMockDb((state) => state.enviarMensagemConversaRica);
   const [selecionadaId, setSelecionadaId] = useState<string | null>(conversas[0]?.id ?? null);
   const [mensagem, setMensagem] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -312,7 +310,7 @@ function Inbox() {
       : file.type.startsWith("audio/")
         ? ("audio" as const)
         : ("arquivo" as const);
-    enviarMensagemConversaRica(selecionadaId, { tipo, midiaNome: file.name });
+    container.conversas.enviarMensagemRica(selecionadaId, { tipo, midiaNome: file.name });
     toast.success("Anexo enviado no ambiente de demonstração.");
   }
 
@@ -324,7 +322,7 @@ function Inbox() {
       return;
     }
     setGravando(false);
-    enviarMensagemConversaRica(selecionadaId, {
+    container.conversas.enviarMensagemRica(selecionadaId, {
       tipo: "audio",
       midiaNome: `audio-gravado-${Date.now()}.m4a`,
       duracaoSegundos: Math.max(segundosGravando, 1),
@@ -505,8 +503,6 @@ function Inbox() {
 function EmailInbox() {
   const threads = useEmailThreads();
   const contas = useMockDb((state) => state.contasAgenda);
-  const marcarComoLida = useMockDb((state) => state.marcarEmailThreadComoLida);
-  const enviarEmailThread = useMockDb((state) => state.enviarEmailThread);
   const [selecionadaId, setSelecionadaId] = useState<string | null>(threads[0]?.id ?? null);
   const [resposta, setResposta] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -516,14 +512,14 @@ function EmailInbox() {
 
   function selecionar(threadId: string) {
     setSelecionadaId(threadId);
-    marcarComoLida(threadId);
+    container.email.marcarComoLido(threadId);
   }
 
   async function handleResponder() {
     if (!resposta.trim() || !selecionadaId || enviando) return;
     setEnviando(true);
     try {
-      enviarEmailThread(selecionadaId, resposta.trim());
+      await container.email.responder(selecionadaId, resposta.trim());
       setResposta("");
     } finally {
       setEnviando(false);
@@ -712,9 +708,12 @@ export function EmailThreadPane({
 
 function AgentConfig() {
   const agentes = useMockDb((state) => state.agentesIA);
-  const salvarAgenteIA = useMockDb((state) => state.salvarAgenteIA);
-  const contasAgenda = useMockDb((state) =>
-    state.contasAgenda.filter((conta) => conta.escopos.includes("agenda")),
+  const todasContasAgenda = useMockDb((state) => state.contasAgenda);
+  // Zustand: filtrar dentro do seletor devolve array novo a cada chamada, o que quebra
+  // useSyncExternalStore (loop infinito de re-render). Filtra fora, memoizado pela fonte estável.
+  const contasAgenda = useMemo(
+    () => todasContasAgenda.filter((conta) => conta.escopos.includes("agenda")),
+    [todasContasAgenda],
   );
   const contasCanal = useMockDb((state) => state.contasCanal);
   const basesConhecimento = useMockDb((state) => state.basesConhecimento);
@@ -750,7 +749,7 @@ function AgentConfig() {
           apiKeyFinal: chave ? chave.slice(-4).toUpperCase() : config.llm?.apiKeyFinal,
         },
       };
-      salvarAgenteIA(configFinal);
+      await container.agenteIA.salvarAgente(configFinal);
       setConfig(configFinal);
       setChaveLLM("");
       toast.success("Agente atualizado no ambiente de demonstração.");
@@ -1338,7 +1337,6 @@ const TIPO_FONTE_LABEL = {
 
 function KnowledgeBaseCatalog() {
   const basesConhecimento = useMockDb((state) => state.basesConhecimento);
-  const salvarBaseConhecimento = useMockDb((state) => state.salvarBaseConhecimento);
   const agentes = useMockDb((state) => state.agentesIA);
   const [nome, setNome] = useState("");
   const [tipo, setTipo] = useState<keyof typeof TIPO_FONTE_LABEL>("documento");
@@ -1354,7 +1352,12 @@ function KnowledgeBaseCatalog() {
 
   function adicionar() {
     if (!nome.trim()) return;
-    salvarBaseConhecimento({ nome: nome.trim(), tipo, status, itens: Number(itens) || 0 });
+    container.baseConhecimento.salvar({
+      nome: nome.trim(),
+      tipo,
+      status,
+      itens: Number(itens) || 0,
+    });
     toast.success("Fonte adicionada ao catálogo.");
     setNome("");
     setItens("");

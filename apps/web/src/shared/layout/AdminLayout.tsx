@@ -1,6 +1,8 @@
 import { DemoBar } from "@/features/demo/interfaces/DemoBar";
+import { logout } from "@/features/sessao/application/hooks";
 import { useMockDb } from "@/mocks/store";
 import { LanguageSwitcher } from "@/shared/i18n/LanguageSwitcher";
+import { isDemoMode } from "@/shared/lib/env";
 import { NotificationCenter } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
 import {
@@ -11,6 +13,7 @@ import {
   FileSearch,
   KanbanSquare,
   LayoutDashboard,
+  LogOut,
   Menu,
   MessageCircle,
   RotateCcw,
@@ -22,7 +25,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 const NAV_ITEMS = [
   {
@@ -169,6 +172,7 @@ function SidebarContent({
 }
 
 export function AdminLayout() {
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const leads = useMockDb((s) => s.leads);
   const documentos = useMockDb((s) => s.documentos);
@@ -252,6 +256,16 @@ export function AdminLayout() {
             <div className="ml-auto flex items-center gap-3">
               <LanguageSwitcher />
               <NotificationCenter items={notificacoes} label="Fila de atenção" />
+              {!isDemoMode && (
+                <button
+                  type="button"
+                  onClick={() => logout().then(() => navigate("/login"))}
+                  className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-ink-muted hover:bg-cream-200 hover:text-navy"
+                >
+                  <LogOut className="h-3.5 w-3.5" aria-hidden />
+                  Sair
+                </button>
+              )}
             </div>
           </header>
           <main className="workspace-main flex-1 px-5 py-7 lg:px-8 lg:py-9 print:p-0">

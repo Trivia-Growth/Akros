@@ -6,6 +6,7 @@
 
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, dirname, relative, resolve, extname } from "node:path";
+import { isSpecDir } from "./lib/spec-dirs.mjs";
 
 const ROOT = resolve(process.argv[2] || ".");
 const IGNORE_DIRS = new Set([
@@ -122,13 +123,90 @@ for (const f of files) {
   }
 }
 
+// 2b) Caminho `docs/**.md` citado em PROSA (fora de link markdown) que não existe.
+// Por que existe: `docs/SECURITY_DEBT.md` era citado por 10 documentos — CLAUDE.md, DoD,
+// ANTI-PADROES, 2 ADRs, 2 skills — e nunca foi criado. Como as menções eram texto e crase, e não
+// `[link](caminho)`, a checagem (2) não via nada. Documento que promete um arquivo e não entrega
+// é fonte de verdade apodrecendo (auditoria de 2026-08-30).
+const bareDocRe = /\bdocs\/[A-Za-z0-9_\-/.]*\.md\b/g;
+const isPlaceholder = (t) => /NNNN|XXXX|AAAA|YYYY|MM-|-MM|[<>*]|\.\.\./.test(t);
+for (const f of files) {
+  const text = readFileSync(f, "utf8");
+  const vistos = new Set();
+  let m;
+  while ((m = bareDocRe.exec(text))) {
+    const target = m[0];
+    if (isPlaceholder(target) || vistos.has(target)) continue;
+    vistos.add(target);
+    if (!existsSync(resolve(ROOT, target))) err(f, `cita caminho inexistente → ${target}`);
+  }
+}
+
+// 2c) `pnpm run <script>` citado em documentação que não existe no package.json.
+// Por que existe: o README — porta de entrada do projeto e do padrão — mandava rodar
+// `pnpm run prepare-hooks` e `pnpm run eval:spec-fidelity`; os scripts reais são `prepare` e
+// `eval:spec`. Ninguém percebeu porque o README é o ÚNICO documento sem cobertura de gate
+// (está em NO_FRONTMATTER_OK). Documentação de onboarding que não roda é pior que ausente:
+// quem chega assume que errou (auditoria de 2026-08-31).
+//
+// Só `pnpm run <nome>` explícito é checado. `pnpm <nome>` sem `run` casaria prosa em português
+// ("monorepo pnpm já existe" vira `pnpm já`) — falso positivo não pode existir num gate.
+const scriptsDeclarados = new Set();
+const appsDir = join(ROOT, "apps");
+const pkgsDeApps = existsSync(appsDir)
+  ? readdirSync(appsDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => join("apps", d.name, "package.json"))
+  : [];
+for (const pkg of ["package.json", ...pkgsDeApps]) {
+  const full = join(ROOT, pkg);
+  if (!existsSync(full)) continue;
+  try {
+    for (const nome of Object.keys(JSON.parse(readFileSync(full, "utf8")).scripts ?? {}))
+      scriptsDeclarados.add(nome);
+  } catch {
+    err(full, "package.json inválido");
+  }
+}
+if (scriptsDeclarados.size) {
+  const cmdRe = /pnpm run ([a-z][a-z0-9:._-]*)/g;
+  for (const f of files) {
+    const text = readFileSync(f, "utf8");
+    const vistos = new Set();
+    let m;
+    while ((m = cmdRe.exec(text))) {
+      const nome = m[1];
+      if (vistos.has(nome)) continue;
+      vistos.add(nome);
+      if (!scriptsDeclarados.has(nome)) err(f, `cita script inexistente → pnpm run ${nome}`);
+    }
+  }
+}
+
 // 3) Toda pasta specs/NNNN-* precisa de spec.md
 const specsDir = join(ROOT, "specs");
 if (existsSync(specsDir)) {
+  let vistas = 0;
   for (const name of readdirSync(specsDir)) {
-    if (/^\d{4}-/.test(name) && !existsSync(join(specsDir, name, "spec.md")))
+    if (!isSpecDir(name)) continue;
+    vistas++;
+    const specPath = join(specsDir, name, "spec.md");
+    if (!existsSync(specPath)) {
       err(join(specsDir, name), "feature sem `spec.md`");
+      continue;
+    }
+    // ADR-0011: o tier decide quais artefatos a feature precisa ter. Sem ele declarado, nenhum
+    // gate consegue exigir a coisa certa — era a lacuna que sustentava a regra não cumprida.
+    const fmSpec = parseFrontmatter(readFileSync(specPath, "utf8"));
+    const tier = (fmSpec?.tier ?? "").toLowerCase().replace(/\*/g, "").trim();
+    if (!tier) err(specPath, "spec sem `tier` no frontmatter (trivial | pequeno | arquitetural)");
+    else if (!["trivial", "pequeno", "arquitetural"].includes(tier))
+      err(specPath, `tier inválido: ${tier} (use trivial | pequeno | arquitetural)`);
   }
+  // Mesma armadilha do eval de fidelidade: com o filtro de nome errado esta checagem varria uma
+  // lista vazia e reportava OK. Zero pastas de feature em `specs/` é sinal de gate quebrado.
+  if (vistas === 0)
+    err(specsDir, "nenhuma pasta de feature reconhecida (`E01-S01-*` / `0001-*`) — filtro quebrado?");
 }
 
 // Relatório

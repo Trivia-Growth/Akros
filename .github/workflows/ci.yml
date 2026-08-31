@@ -1,0 +1,221 @@
+# CI — espelho do `pre-push` do lefthook.yml, um job por gate.
+#
+# Divisão deliberada (pedido de 2026-08-30): a análise pesada roda LOCAL no `pre-push`; a CI é a
+# pós-validação. O que a torna barata:
+#   • `concurrency` cancela o run anterior do mesmo ref — push em sequência não empilha pipeline;
+#   • `turbo run --affected` pula build/typecheck/lint do que não mudou;
+#   • cache do store do pnpm compartilhado entre os 13 jobs.
+# O custo real não está no número de jobs (rodam em paralelo, o relógio é o do job mais lento) —
+# está em re-run. Por isso: cancelamento agressivo e nenhuma etapa que não seja gate.
+#
+# Regra: se um gate NÃO está no `pre-push` do lefthook.yml, ele não entra aqui — exceto os três
+# marcados "SÓ NA CI", que existem justamente porque não dá para rodá-los no commit.
+# Único comando do `pre-push` deixado de fora: `remind-impeccable` — é lembrete de processo para
+# humano, não gate (não falha, não verifica nada).
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Espelho do pre-push ────────────────────────────────────────────────────
+  esteira:
+    name: esteira
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm run audit:esteira
+
+  fidelidade:
+    name: fidelidade
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm run eval:spec
+
+  mermaid:
+    name: mermaid
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: node scripts/validate-mermaid.mjs
+
+  migrations:
+    name: migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      # Local o Squawk é best-effort (só roda se instalado); aqui ele está sempre presente via
+      # devDependency `squawk-cli`, então este job é o único lugar onde o lint de migration é
+      # de fato completo.
+      - run: pnpm run lint:migrations
+
+  edge-functions:
+    name: edge-functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm run check:edge-functions
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm exec biome check .
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 } # `--affected` compara com o merge-base; precisa do histórico
+      - uses: ./.github/actions/setup
+      - run: pnpm exec turbo run typecheck --affected
+
+  arquitetura:
+    name: arquitetura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm run arch:check
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: ./.github/actions/setup
+      - run: pnpm exec turbo run build --affected
+
+  testes:
+    name: testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      # `VITE_DEMO_MODE=true` reproduz o que `.env.test.local` faz na máquina do dev: os smoke de
+      # render assumem modo demo. Sem isso a suíte quebra por ambiente, não por regressão.
+      - run: pnpm test
+        env:
+          VITE_DEMO_MODE: "true"
+
+  # ── SÓ NA CI ───────────────────────────────────────────────────────────────
+  # Três gates que o commit não consegue provar: um depende de binário externo, um de browser +
+  # rede, um de banco. Eram o buraco antes deste arquivo existir.
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 } # varre o histórico do PR, não só o snapshot
+      # Binário direto em vez da action do marketplace: a action pede licença para organização, e
+      # um gate de segredo não pode depender de licenciamento para rodar.
+      - name: Instalar gitleaks
+        run: |
+          curl -sSfL -o /tmp/gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install /tmp/gitleaks /usr/local/bin/gitleaks
+      # Sem `skip`, ao contrário do pre-push: aqui é bloqueante (ver SD-07 em docs/SECURITY_DEBT.md).
+      - run: gitleaks detect --source . --no-banner --redact --exit-code 1
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    # DESLIGADO por padrão, e a razão não é conveniência: a matriz de autorização (E12-S03)
+    # autentica DE VERDADE contra o projeto Supabase de produção — não há mock de rede. Ligar
+    # significa colocar a senha dos usuários seed nos secrets do repositório e aceitar que todo PR
+    # faça login em produção. É decisão de produto, não de engenharia.
+    #
+    # Para ligar: `gh variable set E2E_HABILITADO --body true` mais os 8 secrets abaixo.
+    # Enquanto estiver desligado, NÃO marque este check como obrigatório na branch protection —
+    # check obrigatório que não roda bloqueia merge. Registrado em docs/SECURITY_DEBT.md para não
+    # virar "gate que existe no papel".
+    if: vars.E2E_HABILITADO == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm --filter @akros/web exec playwright install --with-deps chromium
+      # A matriz de autorização (E12-S03) autentica DE VERDADE contra o projeto Supabase — não há
+      # mock de rede. Credenciais vêm de secrets do repositório, nunca de arquivo.
+      - run: pnpm --filter @akros/web exec playwright test
+        env:
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_CLIENTE_EMAIL: ${{ secrets.E2E_CLIENTE_EMAIL }}
+          E2E_CLIENTE_PASSWORD: ${{ secrets.E2E_CLIENTE_PASSWORD }}
+          E2E_CLIENTE_B_EMAIL: ${{ secrets.E2E_CLIENTE_B_EMAIL }}
+          E2E_CLIENTE_B_PASSWORD: ${{ secrets.E2E_CLIENTE_B_PASSWORD }}
+          E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trace
+          path: apps/web/test-results/
+          retention-days: 7
+
+  db-tests:
+    name: db-tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+        ports: ["5432:5432"]
+    steps:
+      - uses: actions/checkout@v4
+      # Hoje este job prova UMA coisa, e ela é real: todas as migrations aplicam do zero, na
+      # ordem, sem erro. É o único lugar onde isso é verificado — `lint:migrations` lê o SQL,
+      # não executa.
+      # As migrations dependem de primitivas que o Supabase provisiona antes da primeira delas
+      # (auth.uid(), auth.jwt(), auth.users e os roles anon/authenticated/service_role). O shim
+      # declara exatamente essas — migration nova que use outra faz este job quebrar, que é o
+      # comportamento certo.
+      - name: Preparar ambiente Supabase mínimo
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/00-shim-supabase.sql
+
+      - name: Aplicar migrations do zero
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          for f in supabase/migrations/*.sql; do
+            echo "── $f"
+            psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"
+          done
+      # As asserções de RLS por pgTAP ainda não existem (nenhum `*_test.sql` em supabase/tests/).
+      # Quando o primeiro chegar, troque a imagem por uma que traga a extensão pgTAP e rode
+      # `pg_prove` aqui — a policy de isolamento por `cliente_id` é o que precisa de asserção.
+      - name: pgTAP (aguarda o primeiro teste)
+        run: |
+          if compgen -G "supabase/tests/*_test.sql" > /dev/null; then
+            echo "::error::Existem testes pgTAP mas o job ainda não os executa — ajuste este step."
+            exit 1
+          fi
+          echo "Nenhum teste pgTAP ainda. Migrations aplicaram limpo."

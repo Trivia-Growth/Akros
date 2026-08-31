@@ -7,6 +7,7 @@
       "node_modules/**",
       "dist/**",
       "coverage/**",
+      "**/coverage/**",
       "test-results/**",
       "playwright-report/**",
       "e2e/.auth/**",
@@ -15,7 +16,10 @@
       ".triviaiox-core/**",
       ".codex/**",
       ".claude/**",
-      "graphify-out/**"
+      "graphify-out/**",
+      "specs/_debt-baseline.json",
+      "**/.impeccable/hook.cache.json",
+      "**/.impeccable/config.local.json"
     ]
   },
   "organizeImports": { "enabled": true },

@@ -6,17 +6,23 @@ alwaysApply: false
 
 # db/ — Database Akros
 
+> **ADR-0010:** `db/migrations/` abaixo é a convenção genérica herdada do template — nunca
+> existiu de fato neste repo. As migrations reais vivem em **`supabase/migrations/`** (mesmo
+> formato de nome), porque é o único diretório que `supabase db push`/`migration new` reconhece
+> (o projeto já está `supabase link`ado a `mhxopadkizktsenohnbm`). Este README documenta o
+> **formato** (nome, RLS obrigatória) — o **diretório** é `supabase/migrations/`.
+
 ## Estrutura
 
 ```
 db/
-├── README.md                 # Este arquivo
-├── rls.template.sql          # Template de RLS policies
-├── migrations/               # Migrações versionadas
-│   ├── 0001_E00-S00_setup.sql
-│   ├── 0002_E01-S01_nova_tabela.sql
-│   └── ...
-└── rollback/                 # Scripts de reversão (backup, nunca usar em prod)
+├── README.md                 # Este arquivo (formato/convenção)
+└── rls.template.sql          # Template de RLS policies
+
+supabase/
+└── migrations/                       # Migrações versionadas de verdade (ver ADR-0010)
+    ├── 0001_E13-S01_schema_clientes.sql
+    └── ...
 ```
 
 ## Migration Format
@@ -42,8 +48,8 @@ Exemplo:
 -- Created: YYYY-MM-DD
 
 -- Rollback: [Comando de reversão, se houver]
-
-BEGIN;
+-- Sem BEGIN/COMMIT explícito — o Supabase CLI já roda cada arquivo dentro da própria transação
+-- (Squawk reprova BEGIN/COMMIT manual, ver scripts/lint-migrations.mjs).
 
 -- Sua DDL aqui
 CREATE TABLE IF NOT EXISTS public.sua_tabela (
@@ -56,13 +62,14 @@ CREATE TABLE IF NOT EXISTS public.sua_tabela (
 -- RLS FORCE (obrigatório)
 ALTER TABLE public.sua_tabela ENABLE ROW LEVEL SECURITY;
 
+-- GRANT antes de POLICY — Postgres avalia privilégio de tabela antes de RLS
+GRANT SELECT ON public.sua_tabela TO authenticated;
+
 -- Policies
 CREATE POLICY "Users can view own rows"
   ON public.sua_tabela
   FOR SELECT
   USING (auth.uid() = user_id);
-
-COMMIT;
 ```
 
 ## RLS Rules

@@ -1,3 +1,4 @@
+import { useClientesReais } from "@/features/crm/application/hooks";
 import { useMockDb } from "@/mocks/store";
 import { Avatar, Badge } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
@@ -14,7 +15,7 @@ const SAUDE_VARIANT = {
 
 export function Clientes360Page() {
   const { t } = useTranslation("admin");
-  const clientes = useMockDb((s) => s.clientes);
+  const { clientes } = useClientesReais();
   const jornadas = useMockDb((s) => s.jornadas);
   const [busca, setBusca] = useState("");
   const [clienteId, setClienteId] = useState<string | null>(null);

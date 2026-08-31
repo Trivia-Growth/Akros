@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@/shared/i18n/config";
 import { useMockDb } from "@/mocks/store";
+import { esperarSemViolacoesGraves } from "@/shared/lib/a11y-test";
 import { renderWithRouter } from "@/shared/lib/test-utils";
 import { cleanup, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -59,5 +60,36 @@ describe("Admin — smoke test de render (sem loop infinito)", () => {
     await waitFor(() => screen.getAllByRole("heading", { level: 1 }));
     expect(errorSpy).not.toHaveBeenCalledWith(expect.stringContaining("Maximum update depth"));
     errorSpy.mockRestore();
+  });
+});
+
+// ── Acessibilidade (axe-core) ────────────────────────────────────────────────
+// Parte verificável do checklist impeccable virando gate: label de formulário, nome acessível de
+// botão, ordem de heading, papel ARIA válido. NÃO cobre contraste — `color-contrast` precisa de
+// layout real e jsdom não faz layout (ver `shared/lib/a11y-test.ts`); contraste segue no peer
+// review manual até existir passada com browser de verdade.
+describe("admin-render — acessibilidade", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("AdminDashboardPage não tem violação grave de acessibilidade", async () => {
+    const { container } = renderWithRouter(<AdminDashboardPage />, ["/admin"]);
+    await esperarSemViolacoesGraves(container);
+  });
+
+  it("Clientes360Page não tem violação grave de acessibilidade", async () => {
+    const { container } = renderWithRouter(<Clientes360Page />, ["/admin/clientes"]);
+    await esperarSemViolacoesGraves(container);
+  });
+
+  it("KanbanPage não tem violação grave de acessibilidade", async () => {
+    const { container } = renderWithRouter(<KanbanPage />, ["/admin/leads"]);
+    await esperarSemViolacoesGraves(container);
+  });
+
+  it("PropostasPage não tem violação grave de acessibilidade", async () => {
+    const { container } = renderWithRouter(<PropostasPage />, ["/admin/propostas"]);
+    await esperarSemViolacoesGraves(container);
   });
 });

@@ -1,88 +1,286 @@
-import { AdminAgendaPage } from "@/features/agenda/interfaces/AdminAgendaPage";
-import { AgendaPage } from "@/features/agenda/interfaces/AgendaPage";
-import { ComunicacaoPage } from "@/features/comunicacao/interfaces/ComunicacaoPage";
-import { MensagensPage } from "@/features/comunicacao/interfaces/MensagensPage";
-import { ConfiguracoesPage } from "@/features/configuracoes/interfaces/ConfiguracoesPage";
-import { AdminDashboardPage } from "@/features/crm/interfaces/AdminDashboardPage";
-import { AprovacoesPage } from "@/features/crm/interfaces/AprovacoesPage";
-import { Clientes360Page } from "@/features/crm/interfaces/Clientes360Page";
-import { KanbanPage } from "@/features/crm/interfaces/KanbanPage";
-import { PerfilPage } from "@/features/crm/interfaces/PerfilPage";
-import { PropostaDocumentoPage } from "@/features/crm/interfaces/PropostaDocumentoPage";
-import { PropostasPage } from "@/features/crm/interfaces/PropostasPage";
-import { ReativacaoPage } from "@/features/crm/interfaces/ReativacaoPage";
-import { DocumentosPage } from "@/features/documentos/interfaces/DocumentosPage";
-import { FilaRevisaoPage } from "@/features/documentos/interfaces/FilaRevisaoPage";
-import { DashboardPage } from "@/features/jornada/interfaces/DashboardPage";
-import { JornadaPage } from "@/features/jornada/interfaces/JornadaPage";
-import { OperacaoPage } from "@/features/jornada/interfaces/OperacaoPage";
-import { ConciliacaoPage } from "@/features/pagamentos/interfaces/ConciliacaoPage";
-import { PagamentosPage } from "@/features/pagamentos/interfaces/PagamentosPage";
-import { ProgramasPage } from "@/features/programas/interfaces/ProgramasPage";
-import { BlogPage } from "@/features/site/interfaces/BlogPage";
-import { BlogPostPage } from "@/features/site/interfaces/BlogPostPage";
-import { ContatosPage } from "@/features/site/interfaces/ContatosPage";
-import { HomePage } from "@/features/site/interfaces/HomePage";
-import { MetodologiaPage } from "@/features/site/interfaces/MetodologiaPage";
-import { QuemSomosPage } from "@/features/site/interfaces/QuemSomosPage";
-import { ServicosPage } from "@/features/site/interfaces/ServicosPage";
-import { VistosPage } from "@/features/site/interfaces/VistosPage";
+import { RequireRole } from "@/features/sessao/interfaces/RequireRole";
 import { AdminLayout } from "@/shared/layout/AdminLayout";
 import { PortalLayout } from "@/shared/layout/PortalLayout";
 import { PublicLayout } from "@/shared/layout/PublicLayout";
-import { UiShowcase } from "@/shared/ui/UiShowcase";
+import { isDemoMode } from "@/shared/lib/env";
 import { createBrowserRouter } from "react-router-dom";
+import { admin, portal, rota, site } from "./rota";
+
+/**
+ * E12-S02: fora do modo demo, `/portal` e `/admin` exigem sessão real do papel correspondente.
+ * Em modo demo (padrão — ver `shared/lib/env.ts`), zero guarda: comportamento igual ao de sempre.
+ *
+ * E15-S01: cada rota é carregada por `rota()` — chunk próprio, retry no `import()` e
+ * `ErrorBoundary` **abaixo** do shell. O layout e o `RequireRole` continuam sendo import
+ * estático: são o esqueleto que precisa sobreviver à queda do conteúdo, então não podem estar
+ * no mesmo chunk que cai.
+ */
+const portalElement = isDemoMode ? (
+  <PortalLayout />
+) : (
+  <RequireRole papel="cliente">
+    <PortalLayout />
+  </RequireRole>
+);
+const adminElement = isDemoMode ? (
+  <AdminLayout />
+) : (
+  <RequireRole papel="admin">
+    <AdminLayout />
+  </RequireRole>
+);
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <PublicLayout />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: "quem-somos", element: <QuemSomosPage /> },
-      { path: "servicos", element: <ServicosPage /> },
-      { path: "metodologia", element: <MetodologiaPage /> },
-      { path: "vistos", element: <VistosPage /> },
-      { path: "blog", element: <BlogPage /> },
-      { path: "blog/:slug", element: <BlogPostPage /> },
-      { path: "contatos", element: <ContatosPage /> },
+      {
+        index: true,
+        element: rota(site, () =>
+          import("@/features/site/interfaces/HomePage").then((m) => ({ default: m.HomePage })),
+        ),
+      },
+      {
+        path: "quem-somos",
+        element: rota(site, () =>
+          import("@/features/site/interfaces/QuemSomosPage").then((m) => ({
+            default: m.QuemSomosPage,
+          })),
+        ),
+      },
+      {
+        path: "servicos",
+        element: rota(site, () =>
+          import("@/features/site/interfaces/ServicosPage").then((m) => ({
+            default: m.ServicosPage,
+          })),
+        ),
+      },
+      {
+        path: "metodologia",
+        element: rota(site, () =>
+          import("@/features/site/interfaces/MetodologiaPage").then((m) => ({
+            default: m.MetodologiaPage,
+          })),
+        ),
+      },
+      {
+        path: "vistos",
+        element: rota(site, () =>
+          import("@/features/site/interfaces/VistosPage").then((m) => ({ default: m.VistosPage })),
+        ),
+      },
+      {
+        path: "blog",
+        element: rota(site, () =>
+          import("@/features/site/interfaces/BlogPage").then((m) => ({ default: m.BlogPage })),
+        ),
+      },
+      {
+        path: "blog/:slug",
+        element: rota(site, () =>
+          import("@/features/site/interfaces/BlogPostPage").then((m) => ({
+            default: m.BlogPostPage,
+          })),
+        ),
+      },
+      {
+        path: "contatos",
+        element: rota(site, () =>
+          import("@/features/site/interfaces/ContatosPage").then((m) => ({
+            default: m.ContatosPage,
+          })),
+        ),
+      },
     ],
   },
   {
+    path: "/login",
+    element: rota(site, () =>
+      import("@/features/sessao/interfaces/LoginPage").then((m) => ({ default: m.LoginPage })),
+    ),
+  },
+  {
     path: "/portal",
-    element: <PortalLayout />,
+    element: portalElement,
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: "jornada", element: <JornadaPage /> },
-      { path: "documentos", element: <DocumentosPage /> },
-      { path: "pagamentos", element: <PagamentosPage /> },
-      { path: "mensagens", element: <MensagensPage /> },
-      { path: "agenda", element: <AgendaPage /> },
-      { path: "perfil", element: <PerfilPage /> },
+      {
+        index: true,
+        element: rota(portal, () =>
+          import("@/features/jornada/interfaces/DashboardPage").then((m) => ({
+            default: m.DashboardPage,
+          })),
+        ),
+      },
+      {
+        path: "jornada",
+        element: rota(portal, () =>
+          import("@/features/jornada/interfaces/JornadaPage").then((m) => ({
+            default: m.JornadaPage,
+          })),
+        ),
+      },
+      {
+        path: "documentos",
+        element: rota(portal, () =>
+          import("@/features/documentos/interfaces/DocumentosPage").then((m) => ({
+            default: m.DocumentosPage,
+          })),
+        ),
+      },
+      {
+        path: "pagamentos",
+        element: rota(portal, () =>
+          import("@/features/pagamentos/interfaces/PagamentosPage").then((m) => ({
+            default: m.PagamentosPage,
+          })),
+        ),
+      },
+      {
+        path: "mensagens",
+        element: rota(portal, () =>
+          import("@/features/comunicacao/interfaces/MensagensPage").then((m) => ({
+            default: m.MensagensPage,
+          })),
+        ),
+      },
+      {
+        path: "agenda",
+        element: rota(portal, () =>
+          import("@/features/agenda/interfaces/AgendaPage").then((m) => ({
+            default: m.AgendaPage,
+          })),
+        ),
+      },
+      {
+        path: "perfil",
+        element: rota(portal, () =>
+          import("@/features/crm/interfaces/PerfilPage").then((m) => ({ default: m.PerfilPage })),
+        ),
+      },
     ],
   },
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: adminElement,
     children: [
-      { index: true, element: <AdminDashboardPage /> },
-      { path: "leads", element: <KanbanPage /> },
-      { path: "aprovacoes", element: <AprovacoesPage /> },
-      { path: "clientes", element: <Clientes360Page /> },
-      { path: "documentos", element: <FilaRevisaoPage /> },
-      { path: "propostas", element: <PropostasPage /> },
-      { path: "propostas/:id", element: <PropostaDocumentoPage /> },
-      { path: "pagamentos", element: <ConciliacaoPage /> },
-      { path: "programas", element: <ProgramasPage /> },
-      { path: "operacao", element: <OperacaoPage /> },
-      { path: "reativacao", element: <ReativacaoPage /> },
-      { path: "comunicacao", element: <ComunicacaoPage /> },
-      { path: "agenda", element: <AdminAgendaPage /> },
-      { path: "configuracoes", element: <ConfiguracoesPage /> },
+      {
+        index: true,
+        element: rota(admin, () =>
+          import("@/features/crm/interfaces/AdminDashboardPage").then((m) => ({
+            default: m.AdminDashboardPage,
+          })),
+        ),
+      },
+      {
+        path: "leads",
+        element: rota(admin, () =>
+          import("@/features/crm/interfaces/KanbanPage").then((m) => ({ default: m.KanbanPage })),
+        ),
+      },
+      {
+        path: "aprovacoes",
+        element: rota(admin, () =>
+          import("@/features/crm/interfaces/AprovacoesPage").then((m) => ({
+            default: m.AprovacoesPage,
+          })),
+        ),
+      },
+      {
+        path: "clientes",
+        element: rota(admin, () =>
+          import("@/features/crm/interfaces/Clientes360Page").then((m) => ({
+            default: m.Clientes360Page,
+          })),
+        ),
+      },
+      {
+        path: "documentos",
+        element: rota(admin, () =>
+          import("@/features/documentos/interfaces/FilaRevisaoPage").then((m) => ({
+            default: m.FilaRevisaoPage,
+          })),
+        ),
+      },
+      {
+        path: "propostas",
+        element: rota(admin, () =>
+          import("@/features/crm/interfaces/PropostasPage").then((m) => ({
+            default: m.PropostasPage,
+          })),
+        ),
+      },
+      {
+        path: "propostas/:id",
+        element: rota(admin, () =>
+          import("@/features/crm/interfaces/PropostaDocumentoPage").then((m) => ({
+            default: m.PropostaDocumentoPage,
+          })),
+        ),
+      },
+      {
+        path: "pagamentos",
+        element: rota(admin, () =>
+          import("@/features/pagamentos/interfaces/ConciliacaoPage").then((m) => ({
+            default: m.ConciliacaoPage,
+          })),
+        ),
+      },
+      {
+        path: "programas",
+        element: rota(admin, () =>
+          import("@/features/programas/interfaces/ProgramasPage").then((m) => ({
+            default: m.ProgramasPage,
+          })),
+        ),
+      },
+      {
+        path: "operacao",
+        element: rota(admin, () =>
+          import("@/features/jornada/interfaces/OperacaoPage").then((m) => ({
+            default: m.OperacaoPage,
+          })),
+        ),
+      },
+      {
+        path: "reativacao",
+        element: rota(admin, () =>
+          import("@/features/crm/interfaces/ReativacaoPage").then((m) => ({
+            default: m.ReativacaoPage,
+          })),
+        ),
+      },
+      {
+        path: "comunicacao",
+        element: rota(admin, () =>
+          import("@/features/comunicacao/interfaces/ComunicacaoPage").then((m) => ({
+            default: m.ComunicacaoPage,
+          })),
+        ),
+      },
+      {
+        path: "agenda",
+        element: rota(admin, () =>
+          import("@/features/agenda/interfaces/AdminAgendaPage").then((m) => ({
+            default: m.AdminAgendaPage,
+          })),
+        ),
+      },
+      {
+        path: "configuracoes",
+        element: rota(admin, () =>
+          import("@/features/configuracoes/interfaces/ConfiguracoesPage").then((m) => ({
+            default: m.ConfiguracoesPage,
+          })),
+        ),
+      },
     ],
   },
   {
     path: "/dev/ui",
-    element: <UiShowcase />,
+    element: rota(site, () =>
+      import("@/shared/ui/UiShowcase").then((m) => ({ default: m.UiShowcase })),
+    ),
   },
 ]);

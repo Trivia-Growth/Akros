@@ -129,6 +129,23 @@ cliente específico ou alternar cenários — para a apresentação em localhost
 
 ---
 
+## Sessão / Autenticação (E12-S02, ADR-0008/0009)
+
+**Papel (role):** `cliente` ou `admin` — vem de `app_metadata.role` no JWT do Supabase Auth. Decide
+qual guarda de rota (`RequireRole`) deixa passar.
+
+**Sessão:** access token (memória, TTL 15min) + dados do usuário (`papel`, `clienteId`). Nunca
+persistido em `localStorage`/`sessionStorage` — ver ADR-0008.
+
+**Cookie de sessão:** o refresh token, em cookie `HttpOnly; Secure; SameSite=Strict`, gravado e lido
+só pelas Edge Functions `sessao-*`. Nunca chega ao JavaScript do browser.
+
+**Modo demo (`isDemoMode`):** flag (`VITE_DEMO_MODE`) que decide se a plataforma roda sem
+autenticação (impersonação livre, para demo ao vivo) ou com login real e guarda de rota. Padrão:
+ligado (demo). Criada em E05-S01, ativada por E12-S02.
+
+---
+
 ## Rodada 2 — termos novos (E06–E11, ADR-0004/0005/0006)
 
 **Programa (de visto):** dado versionado que define um fluxo completo de imigração — fases,

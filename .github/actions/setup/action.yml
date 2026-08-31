@@ -1,0 +1,18 @@
+name: Setup
+description: Node 22 + pnpm com cache do store, e dependências instaladas. Um lugar só — 13 jobs usam.
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 9.0.0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: pnpm
+    - name: Instalar dependências
+      shell: bash
+      # `--frozen-lockfile` é o que faz o CI recusar um lockfile desatualizado em vez de
+      # silenciosamente resolver outra árvore de dependências que a da máquina do dev.
+      run: pnpm install --frozen-lockfile
