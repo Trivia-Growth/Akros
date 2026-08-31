@@ -513,8 +513,25 @@ não criado — por isso `audit:esteira` mostra 1 problema agora; não é meu, n
 `specs/E16-S01-operacao-deploy/` também deles. Confirma que seguem trabalhando em paralelo,
 como avisado.
 
+### E13-S07 implementado (🟩) — schema `lgpd`
+2 tabelas (`consentimentos`, `solicitacoes`), sem entidade prévia no mock — nascem direto do
+checklist de `seguranca/os-grade.md`. Cliente cria/lê a própria solicitação de export/delete; só
+admin processa (`UPDATE` de status). Cobertas pelo trigger de auditoria (E13-S06) — confirmado
+via `audit.eventos` ganhando linha pras duas. RLS provado nas duas direções (releitura via
+`service_role` confirmando bloqueio real de novo).
+
+**Epico E13 fecha as 7 stories de schema** (S01-S07): 10 schemas reais no ar
+(`crm`/`jornada`/`documentos`/`pagamentos`/`agenda`/`programas`/`comunicacao`/`audit`/`lgpd` +
+`public`), todos com RLS provado ao vivo via PostgREST, todos cobertos por auditoria append-only.
+Só falta **E13-S08** (trocar adapter mock→Supabase no frontend) pra fechar o épico inteiro —
+essa é a story que faz a UI de fato usar tudo isso; até lá, dado de negócio continua 100% mockado
+(ver `docs/SECURITY_DEBT.md`, primeiro P0).
+
 ### Próximo passo
-`E13-S07` (`lgpd.*`) e `E13-S08` (troca de adapter). Mecanismo de RLS já provado 6x — ver
+`E13-S08` (trocar `MockClienteRepository` por adapter Supabase) — primeira prova de que o padrão
+porta/adapter (ADR-0002) aguenta a troca sem reescrever UI. É a maior mudança de risco do épico
+(toca ~8 telas que consomem `clientes` hoje) — recomendo tratar como story isolada, com peer
+review em browser real antes de fechar (mesmo padrão de E12-S01/S02). — ver
 `specs/E13-S01-schema-clientes-rls/design.md` pro mecanismo de RLS (papel via claim do JWT,
 `cliente_id`/`auth_user_id` pra linha) e `docs/adr/0010-*.md` pra forma de tabela
 (núcleo relacional + JSONB) e convenção de migration. Cada schema novo de bounded context precisa
