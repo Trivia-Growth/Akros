@@ -69,9 +69,22 @@ falhar, o boundary da Camada 2 assume e o fallback oferece **recarregar a págin
 resolve chunk obsoleto e não resolve bug de render.
 
 ## Regra de arquitetura que nasce aqui
-Frente não importa frente. Hoje isso é convenção; passa a ser regra verificada em
-`.dependency-cruiser.cjs` — sem ela, o code-splitting é desfeito na primeira importação cruzada
-sem ninguém perceber. Ver `specs/E00-S06-invariantes-padrao-os/design.md`, invariante 3.
+
+A intenção era "frente não importa frente". A implementação mostrou que a formulação estava
+errada: portal e admin **compartilham bounded context de propósito** (`crm` tem a `PerfilPage`, do
+portal, e a `Clientes360Page`, do admin). A regra virou o que é verdade e é verificável:
+**`features/site` não importa outro domínio, e nenhum domínio importa `features/site`** — duas
+regras em `.dependency-cruiser.cjs`, com teste em `scripts/arch-rules.test.mjs` provando que elas
+falham quando a importação cruzada é introduzida de propósito. Ver AC-6 da `spec.md`.
+
+Entre portal e admin o isolamento é de **chunk** e de **fronteira de falha**, não de importação —
+que é o que as camadas 1 e 2 entregam.
+
+**Achado de brinde ao escrever o teste do gate:** `tsPreCompilationDeps` estava no default
+(`false`), então o dependency-cruiser **não enxergava `import type`** — a violação mais fácil de
+cometer sem perceber (`domain/` importando um tipo de `infrastructure/`) passava verde. Ligado; o
+código real continuou limpo, e o número de dependências analisadas subiu de 542 para 593. Um teste
+específico impede que a opção seja desligada de novo sem ninguém notar.
 
 ## Alternativas descartadas
 - **Boundary só na raiz:** simples e inútil — é o comportamento de hoje com mensagem mais bonita.

@@ -282,3 +282,22 @@ context**, um de cada vez — mesmo padrão do E06 (S01 fixa o modelo, S02+ repl
 | E13-S06 | `audit.*` append-only em todas as tabelas de E13-S01..S05 | Trigger genérico (`SECURITY DEFINER`, `search_path` fixo) nas 17 tabelas. Append-only garantido por GRANT (nunca UPDATE/DELETE pra ninguém) — RLS sozinha não bastaria porque `service_role` tem `BYPASSRLS`. Provado: `service_role` tentando `UPDATE`/`DELETE` em `audit.eventos` recebe 403 de privilégio de verdade. | @claude-code | 🟩 | ✅ | 2026-08-31 | `dc58b67` |
 | E13-S07 | Schema `lgpd.*` (consentimento, export, delete) | 2 tabelas — cliente cria/lê a própria solicitação, só admin processa. Cobertas por `audit.*`. RLS provado (incluindo releitura confirmando bloqueio real). Automação de export/delete de fato fica pra quando houver dado real de cliente. | @claude-code | 🟩 | ✅ | 2026-08-31 | `a0b0d1e` |
 | E13-S08 | Frontend: trocar `MockClienteRepository` por adapter Supabase | Primeiro bounded context a sair do mock de verdade — prova que o padrão porta/adapter (ADR-0002) aguenta a troca sem reescrever UI. Escopo estreito: só `useClienteAtivo` (portal) e `Clientes360Page`/`Cliente360` (admin) — as 6 telas que criam cliente a partir de lead ficam mock (dependem de `crm.leads`, ainda não existe). Mapa temporário id-uuid↔id-mock confinado no adapter (SPEC_DEVIATION, fecha em E13-S09). Verificado ao vivo: admin vê as 2 linhas reais, edição persiste (reread via `service_role`), portal do Carlos mostra dado real cruzado com jornada/documentos/pagamentos ainda mock. | @claude-code | 🟩 | ✅ | 2026-08-31 | `ce673de` |
+
+## E00 — Fundação (continuação): esteira como padrão
+
+| Story | Título | Descrição | Owner | Status | Spec | Concluída | Commit |
+|-------|--------|-----------|-------|--------|------|-----------|--------|
+| E00-S06 | Invariantes do Padrão OS | Quatro invariantes para a esteira virar template, cada um com gate, lugar no `lefthook.yml` e custo de retrofit. Recomendação: 3 integrais + 1 pela metade, não 4 aspiracionais. Inclui a política de artefato por tier (ADR-0011) e o teste do próprio gate em cada script. **Arquitetural** | @claude-code | 🟨 | ✅ | — | — |
+
+## E15 — Resiliência e performance de carga
+
+| Story | Título | Descrição | Owner | Status | Spec | Concluída | Commit |
+|-------|--------|-----------|-------|--------|------|-----------|--------|
+| E15-S01 | Resiliência de módulo | Três camadas de isolamento: `React.lazy` por rota, `ErrorBoundary` por rota abaixo do shell, retry no `import()` dinâmico. AC que fecha a story: teste provando que um `throw` no admin não impede o site de renderizar. Chunk de entrada de 850,74 kB → 596,25 kB em 68 chunks. **Arquitetural** | @claude-code | 🟩 | ✅ | 2026-08-31 | — |
+| E15-S02 | Container assíncrono (dieta do chunk de entrada) | Tirar `src/mocks/` e `supabase-js` do chunk de entrada — hoje `app/di.ts` importa todo adapter estaticamente (`SPEC_DEVIATION` registrada em E15-S01). Encolhe sozinho conforme E13-S09+ substitui mock por adapter real; avaliar se ainda vale depois disso. | — | ⬜ | ⏳ | — | — |
+
+## E16 — Operação
+
+| Story | Título | Descrição | Owner | Status | Spec | Concluída | Commit |
+|-------|--------|-----------|-------|--------|------|-----------|--------|
+| E16-S01 | Preview, headers e telemetria | Deploy preview por PR no Netlify; CSP em `Report-Only` + HSTS (fecha SD-02); sink de erro de cliente ligado ao `ErrorBoundary` de E15-S01 (fecha SD-10), com serializador por lista de permissão para não vazar PII. Runbook de rollback em `docs/runbook-rollback.md`. | — | ⬜ | ✅ | — | — |

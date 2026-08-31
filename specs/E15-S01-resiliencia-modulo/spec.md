@@ -47,7 +47,17 @@ não visita aquela frente, e o chunk de entrada é menor que o atual (850,74 kB,
 **Then** há nova tentativa antes de propagar o erro; esgotadas as tentativas, o fallback do
 boundary oferece recarregar a página.
 
-### AC-6 — Frente não importa frente
+### AC-6 — O site institucional não se mistura com o resto
 **Given** o código de `apps/web/src/features/`
 **When** `pnpm run arch:check` roda
-**Then** qualquer importação de uma frente por outra falha o gate.
+**Then** importação de `features/site` para qualquer outro domínio — ou de qualquer domínio para
+`features/site` — falha o gate, e existe teste provando que ele falha com uma importação cruzada
+introduzida de propósito.
+
+> **Refinado durante a implementação (2026-08-31).** O AC dizia "frente não importa frente". Ao
+> escrever a regra, ficou claro que as três frentes **não** mapeiam uma-para-uma em pastas de
+> feature: portal e admin compartilham bounded context de propósito (`crm` tem a `PerfilPage` do
+> portal e a `Clientes360Page` do admin). Proibir importação entre eles seria proibir o desenho
+> correto. A fronteira que existe de verdade é a do site institucional — que é justamente o canal
+> de captação de lead, o que mais importa proteger. Entre portal e admin o isolamento é de chunk e
+> de fronteira de falha (AC-1 a AC-4), não de importação.
