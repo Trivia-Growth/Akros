@@ -191,6 +191,15 @@ jobs:
       # Hoje este job prova UMA coisa, e ela é real: todas as migrations aplicam do zero, na
       # ordem, sem erro. É o único lugar onde isso é verificado — `lint:migrations` lê o SQL,
       # não executa.
+      # As migrations dependem de primitivas que o Supabase provisiona antes da primeira delas
+      # (auth.uid(), auth.jwt(), auth.users e os roles anon/authenticated/service_role). O shim
+      # declara exatamente essas — migration nova que use outra faz este job quebrar, que é o
+      # comportamento certo.
+      - name: Preparar ambiente Supabase mínimo
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/tests/00-shim-supabase.sql
+
       - name: Aplicar migrations do zero
         env:
           PGPASSWORD: postgres
@@ -200,12 +209,12 @@ jobs:
             echo "── $f"
             psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"
           done
-      # As asserções de RLS por pgTAP ainda não existem (nenhum arquivo em supabase/tests/).
+      # As asserções de RLS por pgTAP ainda não existem (nenhum `*_test.sql` em supabase/tests/).
       # Quando o primeiro chegar, troque a imagem por uma que traga a extensão pgTAP e rode
       # `pg_prove` aqui — a policy de isolamento por `cliente_id` é o que precisa de asserção.
       - name: pgTAP (aguarda o primeiro teste)
         run: |
-          if compgen -G "supabase/tests/*.sql" > /dev/null; then
+          if compgen -G "supabase/tests/*_test.sql" > /dev/null; then
             echo "::error::Existem testes pgTAP mas o job ainda não os executa — ajuste este step."
             exit 1
           fi

@@ -1,4 +1,4 @@
-import { supabase } from "@/shared/supabase/client";
+import { getSupabase } from "@/shared/supabase/client";
 import type { ClienteRepository } from "../application/ports";
 import type { Cliente, PerfilImigratorio } from "../domain/types";
 
@@ -69,14 +69,14 @@ function paraColunas(patch: Partial<Cliente>): Record<string, unknown> {
 
 export class SupabaseClienteRepository implements ClienteRepository {
   async listar(): Promise<Cliente[]> {
-    const { data, error } = await supabase.schema("crm").from("clientes").select();
+    const { data, error } = await getSupabase().schema("crm").from("clientes").select();
     if (error) throw error;
     return (data as LinhaClienteSupabase[]).map(paraDominio);
   }
 
   async obter(id: string): Promise<Cliente | null> {
     const idReal = MAPA_ID_MOCK_PARA_REAL[id] ?? id;
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .schema("crm")
       .from("clientes")
       .select()
@@ -94,7 +94,7 @@ export class SupabaseClienteRepository implements ClienteRepository {
 
   async atualizar(id: string, patch: Partial<Cliente>): Promise<void> {
     const idReal = MAPA_ID_MOCK_PARA_REAL[id] ?? id;
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .schema("crm")
       .from("clientes")
       .update(paraColunas(patch))
