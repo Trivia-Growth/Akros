@@ -28,6 +28,22 @@ inteiras na memória do JS da aba — um `console.log(useMockDb.getState())` no 
 real de cliente antes de existir filtragem de estado no frontend equivalente à RLS do banco.
 **Fecha em:** E13-S08, junto da troca de adapter.
 
+### Sem CSP e sem HSTS em produção
+`netlify.toml` tem `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` e `Permissions-Policy` —
+não tem `Content-Security-Policy` nem `Strict-Transport-Security`. Isso importa mais aqui do que
+no caso genérico: o **ADR-0008 aceita explicitamente** que "XSS com a página aberta continua
+podendo agir em nome do usuário" e nomeia **CSP estrita** como a mitigação. A mitigação nomeada
+não existe. Mitigação parcial hoje: zero ocorrências de `dangerouslySetInnerHTML` (verificado
+30/08/2026) e TTL curto do access token.
+**Fecha em:** E16-S01 AC-2 — sobe primeiro como `Content-Security-Policy-Report-Only`.
+
+### Edge Functions sem rate limiting
+`grep -rn "rate\|limit" supabase/functions/` não devolve nada. `sessao-login` aceita tentativa
+ilimitada de senha: força bruta e enumeração de usuário sem custo. `seguranca/os-grade.md` pede
+rate limit `fail-closed` em função pública e a `Definition-of-Done.md` §4 lista como obrigatório.
+Superfície reduzida hoje (2 usuários seed), o que diminui o alcance, não o risco.
+**Fecha em:** story própria de segurança, antes de qualquer usuário além dos seed.
+
 ## P1 — corrigir antes de dado real de cliente
 
 ### Dados bancários fictícios (`pagamentos.dados_recebimento`)
@@ -52,6 +68,23 @@ access token (15min) e rotação do refresh — mas um usuário ativo continuame
 deslogado por inatividade pura (só fechar a aba encerra a sessão, por design do ADR-0008). Não
 implementado; registrado como fora do ADR, decisão de produto separada se a Akros pedir.
 
+### PII de documento de imigração enviada a LLM de terceiro
+Ao trocar `MockAnalisadorDocumento` por um adapter de LLM real, passaporte, comprovante de
+residência e carta de experiência saem do perímetro. O **ADR-0005** chama isso pelo nome —
+"documento de imigração é PII pesado" — e aponta para este arquivo. Hoje o analisador é
+determinístico e local; nada sai da máquina.
+**Fecha em:** decisão registrada sobre provedor, retenção e opt-out de treino, antes do primeiro
+adapter real. Trilha `ia/` cumprida (`@prompt-engineer` + `@security`).
+
+### Credenciais de integração externa ainda sem cofre
+Google Calendar, Microsoft Graph, Calendly, Meta Graph, OpenRouter, Whisper e Fireflies aparecem
+como formulário de credencial em `/admin/configuracoes`. Todas mockadas — nenhum token real é
+aceito ou persistido. Quando qualquer uma virar real, cai a exigência de
+`seguranca/os-grade.md` §Credenciais externas: `refresh_token` em Supabase Vault, `access_token`
+cifrado, nada exposto na UI. O **ADR-0007** já registrou essa preocupação ao aprovar a tool de
+agenda do agente.
+**Fecha em:** E14 (cofre de credenciais).
+
 ## P2 — aceito, monitorar
 
 ### Credenciais coladas em texto puro no histórico desta sessão de chat
@@ -64,7 +97,8 @@ conversa em si contém os valores em claro. Se esse histórico for exposto, essa
 devem ser tratadas como comprometidas.
 
 ### Migrations aplicadas direto em produção via `supabase db push` manual
-Sem pipeline `.github/workflows/` neste repo ainda — `squawk`/`lint:migrations` rodam local/
+Pipeline `.github/workflows/ci.yml` criado em 30/08/2026 mas ainda **não ativo** (sem check
+obrigatório em `main`) — até lá `squawk`/`lint:migrations` seguem rodando local/
 best-effort (`lefthook.yml`), sem revisão de PR antes de cada `db push` real (E13-S01..S05 foram
 aplicadas assim, sessão solo). Aceitável em fase de prototipagem com um único operador; deve virar
 CI real (job dedicado, aprovação antes de aplicar) antes de mais de uma pessoa mexer em schema.
@@ -75,6 +109,19 @@ Verificação de RLS de E13-S01..S05 foi manual (curl direto no PostgREST, docum
 caso de isolamento por `cliente_id` (AC-6) — não é cobertura abrangente de toda policy de todo
 schema. Caminho natural é pgTAP (citado em `lefthook.yml`, depende de Docker — não instalado
 neste ambiente) rodando como job de CI dedicado.
+
+### `pnpm audit` não roda em nenhum gate
+O script `audit:deps` existe no `package.json` e não é chamado por nada — nem pelo `lefthook.yml`,
+nem pela CI. `seguranca/baseline-minimo.md` §7 pede `pnpm audit` quebrando o build em
+vulnerabilidade alta. Árvore de dependências pequena e recente reduz a exposição, não a fecha.
+**Fecha em:** job bloqueante no `.github/workflows/ci.yml`.
+
+### Secret scanning é best-effort local
+O `gitleaks` no `pre-push` tem `skip: "! command -v gitleaks"` — numa máquina sem o binário, o
+gate passa sem varrer nada, silenciosamente. O job `gitleaks` de `.github/workflows/ci.yml` já
+nasce sem `skip` e instala o binário, o que fecha o furo **na CI**; local continua best-effort por
+design (não travar quem não tem a ferramenta).
+**Fecha em:** já fechado do lado da CI quando o pipeline estiver ativo com o check obrigatório.
 
 ## Referências
 - `seguranca/baseline-minimo.md`, `seguranca/os-grade.md` — checklists que geraram estas entradas.
