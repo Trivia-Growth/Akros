@@ -97,6 +97,10 @@ const squawkInstalled = () => {
 
 function runSquawk() {
   if (files.length === 0) return;
+  // Seam de teste: `scripts/lint-migrations.test.mjs` verifica as convenções da casa, não o
+  // Squawk (que é ferramenta de terceiro, com suíte própria). Sem isso o teste do gate falharia
+  // pelo motivo errado.
+  if (process.env.LINT_MIGRATIONS_SKIP_SQUAWK === "1") return;
   if (!squawkInstalled()) {
     console.log("… Squawk não instalado — segurança de migration só será checada na CI.");
     console.log("  (rode `pnpm install` — squawk-cli é devDependency — para o gate completo no pre-push)\n");
@@ -148,7 +152,53 @@ function checkSequence() {
   }
 }
 
+// ── RLS FORCE em toda tabela (sempre, bloqueante) ────────────────────────────
+// `CLAUDE.md` e `seguranca/os-grade.md` abrem com "RLS FORCE em toda tabela" — é a promessa de
+// segurança mais alta do projeto, e até 2026-08-31 era cumprida só por disciplina: 16 de 16
+// tabelas tinham FORCE porque alguém lembrou, não porque algo verificava. A 17ª tabela passaria
+// em todos os gates sem ele.
+//
+// FORCE importa e ENABLE sozinho não basta: sem FORCE, o dono da tabela (e o `service_role`,
+// que é quem as Edge Functions usam) ignora as policies. RLS "ligada" sem FORCE é RLS que não
+// vale para exatamente o caminho mais privilegiado.
+//
+// Escape consciente: `-- rls-force: excecao — <motivo>` no arquivo que cria a tabela. Exige
+// motivo escrito; não existe pular em silêncio.
+function checkRlsForce() {
+  for (const f of files) {
+    const raw = readFileSync(f, "utf8");
+    const sql = stripComments(raw).toLowerCase();
+    const temExcecao = /--\s*rls-force:\s*excecao/i.test(raw);
+
+    for (const m of sql.matchAll(
+      /\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?([a-z_][a-z0-9_]*)\.([a-z_][a-z0-9_]*)/g,
+    )) {
+      const [, schema, table] = m;
+      if (temExcecao) continue;
+
+      const alvo = `${schema}\\.${table}`;
+      const temEnable = new RegExp(
+        `alter\\s+table\\s+(?:only\\s+)?${alvo}\\s+enable\\s+row\\s+level\\s+security`,
+      ).test(combinedSql);
+      const temForce = new RegExp(
+        `alter\\s+table\\s+(?:only\\s+)?${alvo}\\s+force\\s+row\\s+level\\s+security`,
+      ).test(combinedSql);
+
+      if (!temEnable)
+        err(f, `tabela '${schema}.${table}' sem ENABLE ROW LEVEL SECURITY (em qualquer migration)`);
+      if (!temForce)
+        err(
+          f,
+          `tabela '${schema}.${table}' sem FORCE ROW LEVEL SECURITY — sem FORCE o dono da tabela ` +
+            "e o service_role ignoram as policies (ver seguranca/os-grade.md). Para abrir " +
+            "exceção, documente com '-- rls-force: excecao — <motivo>'",
+        );
+    }
+  }
+}
+
 for (const f of files) checkConventions(f);
+checkRlsForce();
 checkSequence();
 
 if (errors.length) {
@@ -158,7 +208,7 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `✓ Convenções OK em ${files.length} migration(s) (DROP com reverso, CREATE POLICY com GRANT).`,
+  `✓ Convenções OK em ${files.length} migration(s) (DROP com reverso, CREATE POLICY com GRANT, RLS FORCE em toda tabela).`,
 );
 
 runSquawk();
