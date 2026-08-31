@@ -51,7 +51,7 @@ Uma feature **não está pronta** até passar em TODOS os gates abaixo. Não é 
 - [ ] ADRs criados/atualizados (se mudança de arquitetura)
 - [ ] glossary.md atualizado com termos novos
 - [ ] docs/STATE.md atualizado com status final
-- [ ] docs/ROADMAP.md marcado como ✅
+- [ ] docs/epics/ROADMAP.md marcado como ✅
 
 ## 7. Revisão Adversarial (QA Gate)
 

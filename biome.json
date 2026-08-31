@@ -7,6 +7,7 @@
       "node_modules/**",
       "dist/**",
       "coverage/**",
+      "**/coverage/**",
       "test-results/**",
       "playwright-report/**",
       "e2e/.auth/**",
@@ -16,6 +17,7 @@
       ".codex/**",
       ".claude/**",
       "graphify-out/**",
+      "specs/_debt-baseline.json",
       "**/.impeccable/hook.cache.json",
       "**/.impeccable/config.local.json"
     ]
