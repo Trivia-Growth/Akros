@@ -34,6 +34,11 @@ AC-3 depende do `ErrorBoundary` de **E15-S01**. Os demais são independentes.
 ## Acceptance Criteria
 
 ### AC-1 — Todo PR gera uma URL navegável
+> **Já satisfeito, descoberto em 2026-08-31.** O primeiro PR real (#3) trouxe
+> `netlify/imigrationakros/deploy-preview` verde sem nenhuma mudança em `netlify.toml`: a
+> integração do Netlify com o repositório já gerava preview por PR. O que faltava não era a
+> configuração — era **existir um PR**, coisa que não acontecia em 38 commits. A task 1 vira
+> verificação, não implementação.
 **Given** um PR aberto contra `main`
 **When** a CI conclui
 **Then** o PR tem uma URL de deploy preview daquele commit, e a URL serve a versão do PR — não a

@@ -293,7 +293,7 @@ context**, um de cada vez — mesmo padrão do E06 (S01 fixa o modelo, S02+ repl
 
 | Story | Título | Descrição | Owner | Status | Spec | Concluída | Commit |
 |-------|--------|-----------|-------|--------|------|-----------|--------|
-| E15-S01 | Resiliência de módulo | Três camadas de isolamento: `React.lazy` por rota, `ErrorBoundary` por rota abaixo do shell, retry no `import()` dinâmico. AC que fecha a story: teste provando que um `throw` no admin não impede o site de renderizar. Chunk de entrada de 850,74 kB → 596,25 kB em 68 chunks. **Arquitetural** | @claude-code | 🟩 | ✅ | 2026-08-31 | — |
+| E15-S01 | Resiliência de módulo | Três camadas de isolamento: `React.lazy` por rota, `ErrorBoundary` por rota abaixo do shell, retry no `import()` dinâmico. AC que fecha a story: teste provando que um `throw` no admin não impede o site de renderizar. Chunk de entrada de 850,74 kB → 596,25 kB em 68 chunks. **Arquitetural** | @claude-code | 🟩 | ✅ | 2026-08-31 | `e890fc2` |
 | E15-S02 | Container assíncrono (dieta do chunk de entrada) | Tirar `src/mocks/` e `supabase-js` do chunk de entrada — hoje `app/di.ts` importa todo adapter estaticamente (`SPEC_DEVIATION` registrada em E15-S01). Encolhe sozinho conforme E13-S09+ substitui mock por adapter real; avaliar se ainda vale depois disso. | — | ⬜ | ⏳ | — | — |
 
 ## E16 — Operação
