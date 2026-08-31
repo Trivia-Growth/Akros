@@ -14,6 +14,13 @@
   to     = "https://mhxopadkizktsenohnbm.supabase.co/functions/v1/sessao-:splat"
   status = 200
 
+# Telemetria de erro de cliente (E16-S01). Mesmo motivo do proxy de sessão: mantém a chamada
+# first-party, o que a torna compatível com `connect-src 'self'` da CSP acima.
+[[redirects]]
+  from   = "/api/telemetria/erro"
+  to     = "https://mhxopadkizktsenohnbm.supabase.co/functions/v1/telemetria-erro"
+  status = 200
+
 # SPA: todas as rotas servem index.html
 [[redirects]]
   from   = "/*"
@@ -21,6 +28,16 @@
   status = 200
 
 # Security headers
+#
+# CSP sobe em Report-Only de propósito (E16-S01, AC-2). O ADR-0008 aceita explicitamente que
+# "XSS com a página aberta continua podendo agir em nome do usuário" e nomeia CSP estrita como a
+# mitigação — mas subir uma política estrita direto em modo bloqueante quebra a página sem aviso
+# (fonte inline, style-src do Tailwind, chamada ao Supabase) e ninguém descobre a tempo.
+# Report-Only mostra a violação no DevTools sem quebrar nada. Promover para
+# `Content-Security-Policy` só depois de navegar as 3 frentes sem violação relatada.
+#
+# HSTS sem `preload`: entrar na preload list dos browsers é praticamente irreversível e vale
+# para todos os subdomínios. Decisão separada, quando o domínio final estiver estável.
 [[headers]]
   for = "/*"
   [headers.values]
@@ -28,6 +45,17 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy        = "strict-origin-when-cross-origin"
     Permissions-Policy     = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Content-Security-Policy-Report-Only = """default-src 'self'; \
+script-src 'self'; \
+style-src 'self' 'unsafe-inline'; \
+img-src 'self' data: blob:; \
+font-src 'self'; \
+connect-src 'self' https://mhxopadkizktsenohnbm.supabase.co; \
+frame-ancestors 'none'; \
+base-uri 'self'; \
+form-action 'self'; \
+object-src 'none'"""
 
 # Cache longo para assets com hash de conteúdo
 [[headers]]

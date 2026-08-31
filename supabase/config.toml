@@ -406,6 +406,11 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 # ADR-0008 (sessão) — três funções sem JWT de entrada (não existe token antes do login; o
 # refresh/logout leem o próprio cookie/token da requisição, não um Bearer do gateway).
+[functions.telemetria-erro]
+# Anônima de propósito: erro de cliente acontece também com o usuário deslogado, no site
+# institucional. Exigir JWT perderia exatamente os crashes mais visíveis para quem não é cliente.
+verify_jwt = false
+
 [functions.sessao-login]
 enabled = true
 verify_jwt = false

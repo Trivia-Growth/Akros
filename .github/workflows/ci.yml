@@ -8,8 +8,13 @@
 # O custo real não está no número de jobs (rodam em paralelo, o relógio é o do job mais lento) —
 # está em re-run. Por isso: cancelamento agressivo e nenhuma etapa que não seja gate.
 #
-# Regra: se um gate NÃO está no `pre-push` do lefthook.yml, ele não entra aqui — exceto os três
+# Regra: se um gate NÃO está no `pre-push` do lefthook.yml, ele não entra aqui — exceto os dois
 # marcados "SÓ NA CI", que existem justamente porque não dá para rodá-los no commit.
+#
+# O `e2e` (Playwright) é a exceção na direção contrária: roda SEMPRE no `pre-push` e NUNCA aqui.
+# Ele sobe browser e autentica contra o Supabase real; na CI isso custa minutos em todo push e
+# faz cada PR abrir sessão em produção. Na máquina de quem está desenvolvendo o custo é ~13s e as
+# credenciais já estão lá. Decisão de 2026-08-31.
 # Único comando do `pre-push` deixado de fora: `remind-impeccable` — é lembrete de processo para
 # humano, não gate (não falha, não verifica nada).
 
@@ -119,8 +124,8 @@ jobs:
           VITE_DEMO_MODE: "true"
 
   # ── SÓ NA CI ───────────────────────────────────────────────────────────────
-  # Três gates que o commit não consegue provar: um depende de binário externo, um de browser +
-  # rede, um de banco. Eram o buraco antes deste arquivo existir.
+  # Dois gates que o commit não consegue provar: um depende de binário externo que pode não estar
+  # instalado, outro de um banco limpo. Eram o buraco antes deste arquivo existir.
 
   gitleaks:
     name: gitleaks
@@ -138,42 +143,6 @@ jobs:
           sudo install /tmp/gitleaks /usr/local/bin/gitleaks
       # Sem `skip`, ao contrário do pre-push: aqui é bloqueante (ver SD-07 em docs/SECURITY_DEBT.md).
       - run: gitleaks detect --source . --no-banner --redact --exit-code 1
-
-  e2e:
-    name: e2e
-    runs-on: ubuntu-latest
-    # DESLIGADO por padrão, e a razão não é conveniência: a matriz de autorização (E12-S03)
-    # autentica DE VERDADE contra o projeto Supabase de produção — não há mock de rede. Ligar
-    # significa colocar a senha dos usuários seed nos secrets do repositório e aceitar que todo PR
-    # faça login em produção. É decisão de produto, não de engenharia.
-    #
-    # Para ligar: `gh variable set E2E_HABILITADO --body true` mais os 8 secrets abaixo.
-    # Enquanto estiver desligado, NÃO marque este check como obrigatório na branch protection —
-    # check obrigatório que não roda bloqueia merge. Registrado em docs/SECURITY_DEBT.md para não
-    # virar "gate que existe no papel".
-    if: vars.E2E_HABILITADO == 'true'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - run: pnpm --filter @akros/web exec playwright install --with-deps chromium
-      # A matriz de autorização (E12-S03) autentica DE VERDADE contra o projeto Supabase — não há
-      # mock de rede. Credenciais vêm de secrets do repositório, nunca de arquivo.
-      - run: pnpm --filter @akros/web exec playwright test
-        env:
-          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-          E2E_CLIENTE_EMAIL: ${{ secrets.E2E_CLIENTE_EMAIL }}
-          E2E_CLIENTE_PASSWORD: ${{ secrets.E2E_CLIENTE_PASSWORD }}
-          E2E_CLIENTE_B_EMAIL: ${{ secrets.E2E_CLIENTE_B_EMAIL }}
-          E2E_CLIENTE_B_PASSWORD: ${{ secrets.E2E_CLIENTE_B_PASSWORD }}
-          E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
-          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
-      - if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-trace
-          path: apps/web/test-results/
-          retention-days: 7
 
   db-tests:
     name: db-tests

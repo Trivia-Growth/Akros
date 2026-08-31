@@ -73,8 +73,13 @@ gate que nunca foi visto vermelho não é gate (ver `specs/E00-S06-invariantes-p
 Rode `pnpm run test:gates` para verificar os gates em si (30 testes hoje). Ainda sem teste:
 `check-story`, `validate-mermaid`, `nova-story`, `prepare-hooks`, `remind-impeccable`.
 
-Na CI (`.github/workflows/ci.yml`), um job por gate, mais três que só existem lá: `gitleaks`
-bloqueante, `e2e` (Playwright) e `db-tests` (migrations aplicadas do zero em Postgres limpo).
+O `pre-push` roda ainda o **e2e** (Playwright, matriz de autorização): browser real autenticando
+contra o Supabase real, ~13s. Ele roda **só aqui, nunca na CI** — lá custaria minutos em todo push
+e abriria sessão em produção a cada PR. Precisa de `apps/web/.env.test.local` e do chromium
+instalado (`pnpm --filter @akros/web exec playwright install chromium`).
+
+Na CI (`.github/workflows/ci.yml`), um job por gate, mais dois que só existem lá: `gitleaks`
+bloqueante e `db-tests` (migrations aplicadas do zero em Postgres limpo).
 
 ## Skills
 

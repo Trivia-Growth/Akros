@@ -45,6 +45,12 @@ export default defineConfig({
     // Espelha o rewrite de proxy do Netlify (ADR-0008) em dev: o browser só fala com
     // localhost:5173, então o cookie de sessão nasce first-party nos dois ambientes.
     proxy: {
+      "/api/telemetria/erro": {
+        target: "https://mhxopadkizktsenohnbm.supabase.co/functions/v1/telemetria-erro",
+        changeOrigin: true,
+        secure: true,
+        rewrite: () => "",
+      },
       "/api/sessao": {
         target: "https://mhxopadkizktsenohnbm.supabase.co/functions/v1",
         changeOrigin: true,

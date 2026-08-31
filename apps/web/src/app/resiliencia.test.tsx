@@ -144,3 +144,33 @@ describe("E15-S01 — falha de módulo fica contida", () => {
     expect(tentativas).toBe(2);
   });
 });
+
+// ── E16-S01 AC-3: o sink não pode quebrar o fallback ─────────────────────────
+describe("E16-S01 — telemetria não interfere no fallback", () => {
+  afterEach(cleanup);
+
+  it("AC-3: fallback continua renderizando quando o envio da telemetria falha", async () => {
+    const spyErro = semRuidoDeErro();
+    // `sendBeacon` indisponível e `fetch` rejeitando: o pior caso do transporte.
+    const beaconOriginal = navigator.sendBeacon;
+    // biome-ignore lint/suspicious/noExplicitAny: simulando ambiente sem sendBeacon
+    (navigator as any).sendBeacon = undefined;
+    const spyFetch = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("rede fora"));
+
+    render(
+      <Shell>
+        <ErrorBoundary {...portal}>
+          <Explode />
+        </ErrorBoundary>
+      </Shell>,
+    );
+
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Tentar de novo/ })).toBeInTheDocument();
+
+    spyFetch.mockRestore();
+    // biome-ignore lint/suspicious/noExplicitAny: restaura o ambiente
+    (navigator as any).sendBeacon = beaconOriginal;
+    spyErro.mockRestore();
+  });
+});

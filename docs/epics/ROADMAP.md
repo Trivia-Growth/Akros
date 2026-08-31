@@ -282,6 +282,7 @@ context**, um de cada vez — mesmo padrão do E06 (S01 fixa o modelo, S02+ repl
 | E13-S06 | `audit.*` append-only em todas as tabelas de E13-S01..S05 | Trigger genérico (`SECURITY DEFINER`, `search_path` fixo) nas 17 tabelas. Append-only garantido por GRANT (nunca UPDATE/DELETE pra ninguém) — RLS sozinha não bastaria porque `service_role` tem `BYPASSRLS`. Provado: `service_role` tentando `UPDATE`/`DELETE` em `audit.eventos` recebe 403 de privilégio de verdade. | @claude-code | 🟩 | ✅ | 2026-08-31 | `dc58b67` |
 | E13-S07 | Schema `lgpd.*` (consentimento, export, delete) | 2 tabelas — cliente cria/lê a própria solicitação, só admin processa. Cobertas por `audit.*`. RLS provado (incluindo releitura confirmando bloqueio real). Automação de export/delete de fato fica pra quando houver dado real de cliente. | @claude-code | 🟩 | ✅ | 2026-08-31 | `a0b0d1e` |
 | E13-S08 | Frontend: trocar `MockClienteRepository` por adapter Supabase | Primeiro bounded context a sair do mock de verdade — prova que o padrão porta/adapter (ADR-0002) aguenta a troca sem reescrever UI. Escopo estreito: só `useClienteAtivo` (portal) e `Clientes360Page`/`Cliente360` (admin) — as 6 telas que criam cliente a partir de lead ficam mock (dependem de `crm.leads`, ainda não existe). Mapa temporário id-uuid↔id-mock confinado no adapter (SPEC_DEVIATION, fecha em E13-S09). Verificado ao vivo: admin vê as 2 linhas reais, edição persiste (reread via `service_role`), portal do Carlos mostra dado real cruzado com jornada/documentos/pagamentos ainda mock. | @claude-code | 🟩 | ✅ | 2026-08-31 | `ce673de` |
+| E13-S09 | Sair do mock: jornada, documentos, pagamentos e comunicação | Fecha os **dois P0** restantes de dado real. `crm.leads` primeiro (destrava as 6 telas presas em E13-S08), depois os 4 contextos, depois a store fictícia deixa de ser **carregada** fora do modo demo — filtrar não resolve, o dado já está na memória quando o filtro roda. Termina deletando o `MAPA_ID_REAL_PARA_MOCK` (o mapa é o detector: se quebrar ao remover, algum contexto não migrou). **Arquitetural** | — | ⬜ | ✅ | — | — |
 
 ## E00 — Fundação (continuação): esteira como padrão
 
@@ -300,4 +301,11 @@ context**, um de cada vez — mesmo padrão do E06 (S01 fixa o modelo, S02+ repl
 
 | Story | Título | Descrição | Owner | Status | Spec | Concluída | Commit |
 |-------|--------|-----------|-------|--------|------|-----------|--------|
-| E16-S01 | Preview, headers e telemetria | Deploy preview por PR no Netlify; CSP em `Report-Only` + HSTS (fecha SD-02); sink de erro de cliente ligado ao `ErrorBoundary` de E15-S01 (fecha SD-10), com serializador por lista de permissão para não vazar PII. Runbook de rollback em `docs/runbook-rollback.md`. | — | ⬜ | ✅ | — | — |
+| E16-S01 | Preview, headers e telemetria | CSP `Report-Only` + HSTS (fecha **SD-02**, era P0) e sink de erro ligado ao `ErrorBoundary` com serializador por lista de permissão (fecha **SD-10**). Deploy preview já funcionava — faltava existir um PR, não configuração. **🟨 e não 🟩:** três verificações dependem de ação fora do repositório — deploy da function `telemetria-erro`, promover a CSP para bloqueante depois de navegar sem violação, e executar o runbook de rollback uma vez. | @claude-code | 🟨 | ✅ | — | — |
+
+## E14 — Cofre de credenciais e perímetro das Edge Functions
+
+| Story | Título | Descrição | Owner | Status | Spec | Concluída | Commit |
+|-------|--------|-----------|-------|--------|------|-----------|--------|
+| E14-S01 | Rate limiting nas Edge Functions | Fecha **SD-01 (P0)**. Contador em `seguranca.rate_limit` (Edge Function não tem memória entre invocações); chave `sha256(ip + segredo + rota)` porque IP é dado pessoal sob LGPD; `fail-closed` na sessão, `fail-open` documentado só na telemetria. Gate novo: função pública sem teto declarado falha o `check-edge-functions`. **Arquitetural** | — | ⬜ | ✅ | — | — |
+| E14-S02 | Cofre de credenciais (Vault) | Fecha **SD-05**. `refresh_token` em Supabase Vault, `access_token` cifrado, nada exposto na UI de `/admin/configuracoes`. | — | ⬜ | ⏳ | — | — |

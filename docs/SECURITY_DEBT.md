@@ -19,30 +19,21 @@ por tempo indeterminado, monitorar.
 `crm`/`jornada`/`documentos`/`pagamentos`/`agenda`/`programas`/`comunicacao` têm RLS real,
 provado via PostgREST (E13-S01..S05) — mas a UI ainda lê 100% de `useMockDb` (E12-S01). O
 isolamento por `cliente_id` só existe no banco; a aplicação em si não o exercita ainda.
-**Fecha em:** E13-S08 (trocar `MockClienteRepository`/demais por adapter Supabase).
+**Fecha em:** `specs/E13-S09-adapters-supabase-restantes/` (E13-S08 migrou só `clientes`; os outros 4 contextos e a deleção do mapa de id estão especificados lá).
 
 ### Store global única carrega dado de todas as personas na memória do browser
 Mesmo autenticado como um cliente só (E12-S02), `useMockDb` mantém as 5 personas mockadas
 inteiras na memória do JS da aba — um `console.log(useMockDb.getState())` no DevTools expõe tudo.
 **Aceitável hoje** porque o dado é 100% fictício (sem PII real). **Bloqueia** subir qualquer dado
 real de cliente antes de existir filtragem de estado no frontend equivalente à RLS do banco.
-**Fecha em:** E13-S08, junto da troca de adapter.
-
-### Sem CSP e sem HSTS em produção
-`netlify.toml` tem `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` e `Permissions-Policy` —
-não tem `Content-Security-Policy` nem `Strict-Transport-Security`. Isso importa mais aqui do que
-no caso genérico: o **ADR-0008 aceita explicitamente** que "XSS com a página aberta continua
-podendo agir em nome do usuário" e nomeia **CSP estrita** como a mitigação. A mitigação nomeada
-não existe. Mitigação parcial hoje: zero ocorrências de `dangerouslySetInnerHTML` (verificado
-30/08/2026) e TTL curto do access token.
-**Fecha em:** E16-S01 AC-2 — sobe primeiro como `Content-Security-Policy-Report-Only`.
+**Fecha em:** `specs/E13-S09-adapters-supabase-restantes/` AC-3 — a store deixa de ser **carregada** fora do modo demo. Filtrar não resolve: quando o filtro roda, o dado já está na memória.
 
 ### Edge Functions sem rate limiting
 `grep -rn "rate\|limit" supabase/functions/` não devolve nada. `sessao-login` aceita tentativa
 ilimitada de senha: força bruta e enumeração de usuário sem custo. `seguranca/os-grade.md` pede
 rate limit `fail-closed` em função pública e a `Definition-of-Done.md` §4 lista como obrigatório.
 Superfície reduzida hoje (2 usuários seed), o que diminui o alcance, não o risco.
-**Fecha em:** story própria de segurança, antes de qualquer usuário além dos seed.
+**Fecha em:** `specs/E14-S01-rate-limit-edge-functions/` — contador em `seguranca.rate_limit`, chave hasheada (IP é dado pessoal), `fail-closed` no caminho de sessão. Especificada em 2026-08-31.
 
 ## P1 — corrigir antes de dado real de cliente
 
@@ -123,14 +114,19 @@ nasce sem `skip` e instala o binário, o que fecha o furo **na CI**; local conti
 design (não travar quem não tem a ferramenta).
 **Fecha em:** já fechado do lado da CI quando o pipeline estiver ativo com o check obrigatório.
 
-### Matriz de autorização (e2e) não roda na CI
-O job `e2e` de `.github/workflows/ci.yml` está desligado (`vars.E2E_HABILITADO`). Ele autentica de
-verdade contra o projeto Supabase de produção — não há mock de rede —, então ligar exige colocar a
-senha dos usuários seed nos secrets do repositório e aceitar login em produção a cada PR. Hoje a
-matriz só roda na máquina de quem lembra (`pnpm --filter @akros/web test:e2e`), o que a torna
-best-effort: uma regressão de autorização passa no merge.
-**Fecha em:** decisão sobre usuários de teste em ambiente separado do real (relacionado a SD-09),
-e então `E2E_HABILITADO=true` com o check obrigatório na branch protection.
+### Matriz de autorização (e2e) é gate local, não é enforçada no servidor
+Decisão de 2026-08-31: o e2e roda **sempre** no `pre-push` (`lefthook.yml`, sem `skip`) e **nunca**
+na CI. O motivo é custo e perímetro — na CI ele levaria minutos em todo push e faria cada PR
+abrir sessão no Supabase de produção, além de exigir a senha dos usuários seed nos secrets do
+repositório.
+
+O risco que sobra: o gate depende da máquina de quem empurra. Quem tiver o hook desinstalado, ou
+usar `--no-verify`, manda regressão de autorização para a `main` sem barreira. A branch protection
+não tem como cobrir isso.
+**Mitigação:** o `pre-push` falha alto se faltar credencial ou browser (sem `skip`), então o
+caminho normal não tem como pular silenciosamente.
+**Fecha em:** ambiente de teste separado do de produção — aí o e2e pode voltar para a CI sem os
+dois problemas que o tiraram dela.
 
 ## Referências
 - `seguranca/baseline-minimo.md`, `seguranca/os-grade.md` — checklists que geraram estas entradas.

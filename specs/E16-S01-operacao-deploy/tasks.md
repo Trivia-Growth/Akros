@@ -38,3 +38,33 @@ payload.
 sem deploy correspondente.
 
 **Gate:** cada comando executado uma vez em ambiente de teste, com a saída colada no runbook.
+
+
+---
+
+## Resultado (2026-08-31)
+
+| Task | Gate | Resultado |
+|---|---|---|
+| 1 — Deploy preview por PR | URL no PR | ✅ **já funcionava** — o PR #3 trouxe `netlify/deploy-preview` verde sem mudar nada. Faltava existir um PR, não configuração. |
+| 2 — CSP `Report-Only` + HSTS | `curl -sI` no preview | ✅ escritos em `netlify.toml`. ⚠️ **Verificação pendente**: navegar as 3 frentes no preview e listar as violações relatadas antes de promover para bloqueante. |
+| 3 — Sink ligado ao boundary | `pnpm test` | ✅ `telemetria-erro` (Edge Function) + `shared/telemetria`; teste prova que o fallback sobrevive ao transporte falhando. ⚠️ **A function ainda não foi deployada.** |
+| 4 — Serializador sem PII | `pnpm test` | ✅ 5 casos em `sanitizar.test.ts` — lista de permissão, varredura de texto livre, rota sem query. |
+| 5 — Runbook de rollback | comandos executados | ⚠️ **Não fechada.** `docs/runbook-rollback.md` existe, mas os comandos seguem marcados `[NÃO EXECUTADO]` — exigem rodar `netlify` e `supabase db push` de verdade num ambiente de teste. |
+
+**Story fica 🟨, não 🟩.** Três verificações dependem de ação fora do repositório: promover a CSP,
+fazer o deploy da function e executar o rollback uma vez. Marcar como concluída sem elas seria
+exatamente o "gate verde que não verificou nada" que E00-S06 existe para impedir.
+
+### O que precisa de mão humana
+
+```bash
+# 1. Deploy da function de telemetria (sem isso o sink cai no catch e o erro só vai pro console)
+supabase functions deploy telemetria-erro
+
+# 2. CSP: navegar as 3 frentes no deploy preview com o DevTools aberto e anotar as violações
+#    relatadas. Zero violação → trocar `Content-Security-Policy-Report-Only` por
+#    `Content-Security-Policy` em netlify.toml.
+
+# 3. Rollback: executar cada comando do runbook uma vez e colar a saída, tirando os [NÃO EXECUTADO]
+```
