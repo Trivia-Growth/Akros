@@ -495,8 +495,26 @@ fora do que é meu desta story.
 mudado convenção de nome de pasta de spec (`isSpecDir` em `scripts/lib/spec-dirs.mjs` sugere
 suporte a mais de um formato) ou adicionado CI real que os próximos `db push` deveriam respeitar.
 
+### E13-S06 implementado (🟩) — `audit.*` append-only
+17 triggers (`audit.registrar_mudanca()`, `SECURITY DEFINER` com `search_path` fixo — item
+clássico de CVE de `SECURITY DEFINER` se esquecido) em todas as tabelas de negócio de
+E13-S01..S05. **Append-only garantido por GRANT, não por RLS** — `service_role` tem `BYPASSRLS`
+no Supabase, RLS literalmente não o alcança; a única forma real de bloquear `UPDATE`/`DELETE`
+"pra todos, inclusive `service_role`" (como `seguranca/os-grade.md` pede) é nunca conceder esse
+privilégio via `GRANT`. Provado ao vivo: `service_role` tentando `UPDATE`/`DELETE` em
+`audit.eventos` recebe `42501` (erro de privilégio real, não filtro de RLS). `UPDATE` em
+`crm.clientes` gerou evento com `dado_anterior`/`dado_novo` corretos.
+
+Confirmado (novamente): usuário `cliente` autenticado consultando `audit.eventos` recebe `[]`
+(admin-only, mesma forma de `regras_atendimento_ia`).
+
+`README.md` está em reescrita grande pela outra sessão (referencia `docs/NOVO-PROJETO.md`, ainda
+não criado — por isso `audit:esteira` mostra 1 problema agora; não é meu, não mexi) e apareceu
+`specs/E16-S01-operacao-deploy/` também deles. Confirma que seguem trabalhando em paralelo,
+como avisado.
+
 ### Próximo passo
-`E13-S06`/`S07` (audit/lgpd) e `E13-S08` (troca de adapter). Mecanismo já provado 6x — ver
+`E13-S07` (`lgpd.*`) e `E13-S08` (troca de adapter). Mecanismo de RLS já provado 6x — ver
 `specs/E13-S01-schema-clientes-rls/design.md` pro mecanismo de RLS (papel via claim do JWT,
 `cliente_id`/`auth_user_id` pra linha) e `docs/adr/0010-*.md` pra forma de tabela
 (núcleo relacional + JSONB) e convenção de migration. Cada schema novo de bounded context precisa
