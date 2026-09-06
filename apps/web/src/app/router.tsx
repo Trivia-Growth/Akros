@@ -3,7 +3,7 @@ import { AdminLayout } from "@/shared/layout/AdminLayout";
 import { PortalLayout } from "@/shared/layout/PortalLayout";
 import { PublicLayout } from "@/shared/layout/PublicLayout";
 import { isDemoMode } from "@/shared/lib/env";
-import { createBrowserRouter } from "react-router-dom";
+import { Navigate, createBrowserRouter } from "react-router-dom";
 import { admin, portal, rota, site } from "./rota";
 
 /**
@@ -209,16 +209,26 @@ export const router = createBrowserRouter([
       },
       {
         path: "leads",
-        element: rota(admin, () =>
-          import("@/features/crm/interfaces/KanbanPage").then((m) => ({ default: m.KanbanPage })),
+        // E13-S11 Task 5 (AC-4): kanban ainda é mock — fora do demo a rota não existe e
+        // redireciona, para nunca carregar `useMockDb` numa sessão real.
+        element: isDemoMode ? (
+          rota(admin, () =>
+            import("@/features/crm/interfaces/KanbanPage").then((m) => ({ default: m.KanbanPage })),
+          )
+        ) : (
+          <Navigate to="/admin" replace />
         ),
       },
       {
         path: "aprovacoes",
-        element: rota(admin, () =>
-          import("@/features/crm/interfaces/AprovacoesPage").then((m) => ({
-            default: m.AprovacoesPage,
-          })),
+        element: isDemoMode ? (
+          rota(admin, () =>
+            import("@/features/crm/interfaces/AprovacoesPage").then((m) => ({
+              default: m.AprovacoesPage,
+            })),
+          )
+        ) : (
+          <Navigate to="/admin" replace />
         ),
       },
       {
@@ -271,10 +281,14 @@ export const router = createBrowserRouter([
       },
       {
         path: "pagamentos",
-        element: rota(admin, () =>
-          import("@/features/pagamentos/interfaces/ConciliacaoPage").then((m) => ({
-            default: m.ConciliacaoPage,
-          })),
+        element: isDemoMode ? (
+          rota(admin, () =>
+            import("@/features/pagamentos/interfaces/ConciliacaoPage").then((m) => ({
+              default: m.ConciliacaoPage,
+            })),
+          )
+        ) : (
+          <Navigate to="/admin" replace />
         ),
       },
       {
@@ -299,10 +313,14 @@ export const router = createBrowserRouter([
       },
       {
         path: "reativacao",
-        element: rota(admin, () =>
-          import("@/features/crm/interfaces/ReativacaoPage").then((m) => ({
-            default: m.ReativacaoPage,
-          })),
+        element: isDemoMode ? (
+          rota(admin, () =>
+            import("@/features/crm/interfaces/ReativacaoPage").then((m) => ({
+              default: m.ReativacaoPage,
+            })),
+          )
+        ) : (
+          <Navigate to="/admin" replace />
         ),
       },
       {

@@ -125,4 +125,22 @@ test.describe("Matriz de autorização — E12-S02/ADR-0008/ADR-0009", () => {
     expect(linhasVistasPorA).toEqual([{ email: CLIENTE_EMAIL }]);
     expect(linhasVistasPorB).toEqual([{ email: CLIENTE_B_EMAIL }]);
   });
+
+  test("AC-7 (E13-S11 Task 5): rotas ainda mock não existem fora do demo", async ({ page }) => {
+    // Corte demo: /admin/leads, /admin/aprovacoes, /admin/pagamentos e /admin/reativacao
+    // só leem useMockDb. Fora do demo a rota redireciona pro dashboard e o item some do menu —
+    // uma sessão real nunca pode carregar a store fictícia (AC-4 do spec de E13-S11).
+    await login(page, ADMIN_EMAIL as string, ADMIN_PASSWORD as string);
+    await expect(page).toHaveURL(/\/admin$/);
+
+    for (const rotaMock of ["leads", "aprovacoes", "pagamentos", "reativacao"]) {
+      await page.goto(`/admin/${rotaMock}`);
+      await expect(page).toHaveURL(/\/admin$/);
+    }
+
+    const navegacao = page.getByRole("navigation", { name: "Navegação do admin" });
+    for (const nome of ["Leads (Kanban)", "Aprovações", "Conciliação", "Reativação"]) {
+      await expect(navegacao.getByRole("link", { name: nome })).toHaveCount(0);
+    }
+  });
 });

@@ -25,7 +25,15 @@ import { Suspense, lazy, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: {
+  to: string;
+  icon: typeof LayoutDashboard;
+  label: string;
+  end?: boolean;
+  /** E13-S11 Task 5 (AC-4): rota ainda mock — some da navegação fora do modo demo. */
+  demoOnly?: boolean;
+  descricao: string;
+}[] = [
   {
     to: "/admin",
     icon: LayoutDashboard,
@@ -37,12 +45,14 @@ const NAV_ITEMS = [
     to: "/admin/leads",
     icon: KanbanSquare,
     label: "Leads (Kanban)",
+    demoOnly: true,
     descricao: "Funil comercial: arraste leads entre estágios até fechar como cliente.",
   },
   {
     to: "/admin/aprovacoes",
     icon: CheckCircle2,
     label: "Aprovações",
+    demoOnly: true,
     descricao: "Gate humano de agendamento. Nada vai para a agenda sem aprovação.",
   },
   {
@@ -67,6 +77,7 @@ const NAV_ITEMS = [
     to: "/admin/pagamentos",
     icon: Wallet,
     label: "Conciliação",
+    demoOnly: true,
     descricao: "Concilia comprovantes de transferência enviados pelos clientes.",
   },
   {
@@ -85,6 +96,7 @@ const NAV_ITEMS = [
     to: "/admin/reativacao",
     icon: RotateCcw,
     label: "Reativação",
+    demoOnly: true,
     descricao: "Base de leads descartados/inativos, segmentada por objeção.",
   },
   {
@@ -144,7 +156,7 @@ function SidebarContent({
         Operação
       </p>
       <nav className="mt-3 flex flex-1 flex-col gap-1" aria-label="Navegação do admin">
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.filter((item) => isDemoMode || !item.demoOnly).map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

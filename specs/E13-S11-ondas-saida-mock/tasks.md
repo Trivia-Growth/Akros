@@ -132,3 +132,11 @@ por `lazy import` no modo demo; E2E serial 10/10 prova que sessão real não bai
 30 refreshes/minuto. AC-4 ainda não fecha: `/admin/leads`, `/admin/aprovacoes`,
 `/admin/pagamentos` e `/admin/reativacao` continuam rotas mock até migração ou ocultação fora do
 demo.
+
+**Fechamento 05/09 — ocultação (decisão do usuário):** as quatro rotas passam a existir só no
+modo demo; fora dele redirecionam para `/admin` (`Navigate` no router, sem carregar o chunk mock)
+e os itens somem do menu do `AdminLayout` (`demoOnly`). Decisão consciente: ocultar fecha o P0 do
+SECURITY_DEBT agora; migrar kanban/aprovações/conciliação/reativação exige mutações que seguem
+bloqueadas (sem RPC/Edge Function de transição/auditoria) e vira story própria. AC-7 novo na
+`auth-matrix.spec.ts` prova pelo caminho do usuário: admin real navega para as quatro rotas,
+cai no dashboard e não vê os itens no menu.

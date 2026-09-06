@@ -15,27 +15,27 @@ por tempo indeterminado, monitorar.
 
 ## P0 — bloqueia produção
 
-### Frontend ainda não fala com o schema real (RLS só provado no banco)
-> **Medido em 2026-08-31:** o problema é maior do que "falta migrar". `clientes` **foi** migrado
-> (E13-S08), mas 8 telas continuam lendo de `useMockDb` — `AdminDashboardPage`, `ConciliacaoPage`,
-> `FilaRevisaoPage`, `AdminAgendaPage`, `ProgramasPage`, `OperacaoPage`, `PropostaDocumentoPage`
-> e `DemoBar`. Resultado hoje, em produção: `/admin/clientes` mostra os 2 clientes reais e o
-> dashboard mostra as 5 personas fictícias. Quem opera vê duas respostas para a mesma pergunta.
-> Trocar o adapter sem migrar as telas do mesmo contexto troca "tudo mock" por "metade cada",
-> que é pior de diagnosticar.
-`crm`/`jornada`/`documentos`/`pagamentos`/`agenda`/`programas`/`comunicacao` têm RLS real,
-provado via PostgREST (E13-S01..S05) — mas a UI ainda lê 100% de `useMockDb` (E12-S01). O
-isolamento por `cliente_id` só existe no banco; a aplicação em si não o exercita ainda.
-**Fecha em:** E13-S10 aplicou as cinco coleções no projeto real em 05/09; `E13-S11` migra os
-contextos restantes e deleta o mapa de ID sem estado misto.
+Nenhum P0 aberto. Os dois últimos fecharam em 2026-09-05 com E13-S11 (Task 5) e foram movidos
+para o histórico abaixo.
 
-### Store global única carrega dado de todas as personas na memória do browser
-Mesmo autenticado como um cliente só (E12-S02), `useMockDb` mantém as 5 personas mockadas
-inteiras na memória do JS da aba — um `console.log(useMockDb.getState())` no DevTools expõe tudo.
-**Aceitável hoje** porque o dado é 100% fictício (sem PII real). **Bloqueia** subir qualquer dado
-real de cliente antes de existir filtragem de estado no frontend equivalente à RLS do banco.
-**Fecha em:** `E13-S11` — a store deixa de ser **carregada** fora do modo demo depois das ondas de
-adapter+tela. Filtrar não resolve: quando o filtro roda, o dado já está na memória.
+### Fechados em 2026-09-05 — E13-S11 (Task 5, corte demo)
+
+**1. Frontend ainda não fala com o schema real (RLS só provado no banco).**
+Medido em 2026-08-31: 8 telas liam `useMockDb` mesmo com `clientes` migrado (E13-S08) — dashboard
+mostrava personas fictícias enquanto `/admin/clientes` mostrava os reais. **Fechamento:** as ondas
+de E13-S11 migraram Programas, Configurações, Agenda, transcrições, Jornada, Documentos,
+Pagamentos, Mensagens, Propostas, Comunicação, Dashboards, Perfil, Operação, Cliente 360 e Fila de
+revisão para adapters reais com RLS por `auth.uid()`; as 4 rotas que restavam em mock
+(`/admin/leads`, `/admin/aprovacoes`, `/admin/pagamentos`, `/admin/reativacao`) foram **ocultadas
+fora do modo demo** (redirect ao dashboard, itens fora do menu) — decisão consciente de 05/09.
+Migrá-las exige mutações que seguem sem RPC/Edge Function de transição/auditoria e vira story
+própria.
+
+**2. Store global única carrega dado de todas as personas na memória do browser.**
+`useMockDb` mantinha as 5 personas inteiras na memória da aba, expostas num `console.log` do
+DevTools. **Fechamento:** fora do demo nenhuma rota carrega mais a store (as 4 restantes foram
+ocultadas acima) e o e2e serial prova que a sessão real não baixa `mocks/store`. Filtragem nunca
+seria solução — quando o filtro roda, o dado já está na memória; a saída foi não carregar.
 
 ## P1 — corrigir antes de dado real de cliente
 
