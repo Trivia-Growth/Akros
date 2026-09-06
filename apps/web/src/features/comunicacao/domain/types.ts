@@ -53,7 +53,8 @@ export interface Mensagem {
 
 export interface Conversa {
   id: string;
-  clienteId: string;
+  /** Ausente quando WhatsApp chegou de prospect ainda não convertido em cliente. */
+  clienteId?: string;
   clienteNome: string;
   canal: CanalComunicacao;
   mensagens: Mensagem[];

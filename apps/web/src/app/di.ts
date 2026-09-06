@@ -43,14 +43,31 @@ import {
 } from "@/features/jornada/infrastructure/MockJornadaRepository";
 import { MockPagamentoRepository } from "@/features/pagamentos/infrastructure/MockPagamentoRepository";
 import { MockProgramaRepository } from "@/features/programas/infrastructure/MockProgramaRepository";
+import { SupabaseProgramaRepository } from "@/features/programas/infrastructure/SupabaseProgramaRepository";
 import { sessaoService } from "@/features/sessao/infrastructure/EdgeFunctionSessaoService";
 import { MockConteudoRepository } from "@/features/site/infrastructure/MockConteudoRepository";
 import { MockLeadRepository } from "@/shared/contracts/MockLeadRepository";
+import { SupabaseLeadRepository } from "@/shared/contracts/SupabaseLeadRepository";
 import { isDemoMode } from "@/shared/lib/env";
+
+const mockLeads = new MockLeadRepository();
 
 export const container = {
   configuracoes: new MockConfiguracoesRepository(),
-  leads: new MockLeadRepository(),
+  // E13-S09: `SupabaseLeadRepository` existe e está provado contra o banco real, mas continua
+  // DESLIGADO de propósito. `KanbanPage` LÊ de `useMockDb((s) => s.leads)` e ESCREVE por
+  // `container.leads` — ligar aqui sem migrar a tela produz estado partido: escrita vai para o
+  // Supabase, leitura volta do mock, e os ids nem batem (`lead-001` × uuid). Verificado em
+  // browser real em 2026-08-31: o kanban seguiu mostrando os 12 leads mockados.
+  //
+  // Liga junto com a migração da tela (E13-S09, ondas 1–3). Ver a nota em tasks.md.
+  leads: mockLeads,
+  /**
+   * Escrita pública é separada da gestão do kanban. Em modo real, `/contatos` chama a Edge
+   * Function protegida por validação + rate limit; em demo, preserva o fluxo inteiro no Zustand.
+   * Esta separação evita ligar leituras/escritas admin pela metade.
+   */
+  capturaLeads: isDemoMode ? mockLeads : new SupabaseLeadRepository(),
   /** E13-S08: primeira porta com adapter Supabase real, condicionado ao modo demo. Ver
    * design.md do E13-S08 pro porquê do escopo estreito (só `clientes` — as demais features
    * seguem mock até E13-S09). */
@@ -68,7 +85,9 @@ export const container = {
   baseConhecimento: new MockBaseConhecimentoRepository(),
   agenteIA: new MockAgenteService(),
   conteudo: new MockConteudoRepository(),
-  programas: new MockProgramaRepository(),
+  // E13-S11 onda-folha: ProgramasPage usa hook real junto desta troca; nenhum leitor da página
+  // permanece no Zustand fora do demo. A métrica de casos já consulta clientes reais (E13-S08).
+  programas: isDemoMode ? new MockProgramaRepository() : new SupabaseProgramaRepository(),
   timeline: new MockTimelineRepository(),
   analiseDocumento: new MockAnalisadorDocumento(),
   /** E12-S02: sem variante Mock (autenticação é real desde o dia 1) — mas ainda passa pelo

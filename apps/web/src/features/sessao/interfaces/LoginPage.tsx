@@ -1,11 +1,12 @@
 import { Button, Card, Input, toast } from "@/shared/ui";
 import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login, useSessaoAtual } from "../application/hooks";
+import { login, useCarregandoSessao, useSessaoAtual } from "../application/hooks";
 
 export function LoginPage() {
   const navigate = useNavigate();
   const sessao = useSessaoAtual();
+  const carregandoSessao = useCarregandoSessao();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [entrando, setEntrando] = useState(false);
@@ -18,7 +19,7 @@ export function LoginPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (entrando) return;
+    if (entrando || carregandoSessao) return;
     setEntrando(true);
     try {
       await login(email, senha);
@@ -52,7 +53,11 @@ export function LoginPage() {
             onChange={(event) => setSenha(event.target.value)}
             required
           />
-          <Button type="submit" loading={entrando} disabled={entrando}>
+          <Button
+            type="submit"
+            loading={entrando || carregandoSessao}
+            disabled={entrando || carregandoSessao}
+          >
             Entrar
           </Button>
         </form>

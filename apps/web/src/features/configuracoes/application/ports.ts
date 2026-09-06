@@ -1,11 +1,24 @@
 import type {
+  AgenteIAIntegracao,
   ContaCanalConectada,
   ContaConectada,
   CredenciaisContaAgenda,
   IntegracaoExterna,
   ProvedorAgenda,
   ProvedorCanal,
+  UsuarioAkros,
 } from "../domain/types";
+
+/** Leitura agregada da central; separada da porta mutável enquanto não há cofre de segredos. */
+export interface ConfiguracoesConsulta {
+  carregar(): Promise<{
+    equipe: UsuarioAkros[];
+    integracoes: IntegracaoExterna[];
+    contasAgenda: ContaConectada[];
+    contasCanal: ContaCanalConectada[];
+    agentesIA: AgenteIAIntegracao[];
+  }>;
+}
 
 /** E12-S01 — primeira porta do contexto `configuracoes` (antes só existia a UI). */
 export interface ConfiguracoesRepository {

@@ -58,6 +58,11 @@ test.describe("Matriz de autorização — E12-S02/ADR-0008/ADR-0009", () => {
     await expect(page).toHaveURL(/\/portal$/);
     await expect(page.getByText("Olá, Carlos")).toBeVisible();
     await expect(page.getByText("EB-2 NIW")).toBeVisible();
+    // Access token é só memória; recarga só pode funcionar pelo refresh token HttpOnly first-party.
+    const possuiRefreshCookie = (await page.context().cookies()).some(
+      (cookie) => cookie.name === "akros_refresh_token" && cookie.httpOnly,
+    );
+    expect(possuiRefreshCookie).toBe(true);
 
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/portal$/);

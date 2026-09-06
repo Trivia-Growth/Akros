@@ -1,5 +1,4 @@
-import { container } from "@/app/di";
-import { useMockDb } from "@/mocks/store";
+import { useClientesSupabase } from "@/features/crm/application/useClientesSupabase";
 import { Badge, Button, Card, Input, Modal, Select, Textarea, toast } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
 import {
@@ -15,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { useProgramasReais } from "../application/hooks";
 import type {
   EmissorDocumento,
   EtapaTemplate,
@@ -33,9 +33,9 @@ const EMISSORES: EmissorDocumento[] = [
 ];
 
 export function ProgramasPage() {
-  const programas = useMockDb((state) => state.programas);
-  const clientes = useMockDb((state) => state.clientes);
-  const [selecionadoId, setSelecionadoId] = useState<string | null>(programas[0]?.id ?? null);
+  const { programas, carregando, erro, duplicar, salvar } = useProgramasReais();
+  const { clientes } = useClientesSupabase();
+  const [selecionadoId, setSelecionadoId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
 
   const selecionado = programas.find((programa) => programa.id === selecionadoId) ?? programas[0];
@@ -50,14 +50,23 @@ export function ProgramasPage() {
 
   async function handleDuplicar() {
     if (!selecionado) return;
-    const copia = await container.programas.duplicar(selecionado.id);
-    if (!copia) return;
-    setSelecionadoId(copia.id);
-    setEditorOpen(true);
-    toast.success("Programa duplicado. Ajuste a nova versão antes de ativá-la.");
+    try {
+      const copia = await duplicar(selecionado.id);
+      if (!copia) return;
+      setSelecionadoId(copia.id);
+      setEditorOpen(true);
+      toast.success("Programa duplicado. Ajuste a nova versão antes de ativá-la.");
+    } catch {
+      toast.error("Não foi possível duplicar o programa.");
+    }
   }
 
-  if (!selecionado) return null;
+  if (carregando) return <EstadoCatalogo mensagem="Carregando programas…" />;
+  if (erro) return <EstadoCatalogo mensagem="Não foi possível carregar o catálogo de programas." />;
+  if (!selecionado)
+    return (
+      <EstadoCatalogo mensagem="Nenhum programa real cadastrado. Crie o primeiro programa para começar." />
+    );
 
   return (
     <div className="flex flex-col gap-6">
@@ -235,12 +244,42 @@ export function ProgramasPage() {
         </div>
       </div>
 
-      {editorOpen && <ProgramaEditor programa={selecionado} onClose={() => setEditorOpen(false)} />}
+      {editorOpen && (
+        <ProgramaEditor
+          programa={selecionado}
+          onClose={() => setEditorOpen(false)}
+          onSalvar={salvar}
+        />
+      )}
     </div>
   );
 }
 
-function ProgramaEditor({ programa, onClose }: { programa: Programa; onClose: () => void }) {
+function EstadoCatalogo({ mensagem }: { mensagem: string }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-gold-700">
+          Configuração da operação
+        </p>
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
+          Programas e jornadas
+        </h1>
+      </div>
+      <Card className="text-sm text-ink-soft">{mensagem}</Card>
+    </div>
+  );
+}
+
+function ProgramaEditor({
+  programa,
+  onClose,
+  onSalvar,
+}: {
+  programa: Programa;
+  onClose: () => void;
+  onSalvar: (programa: Programa) => Promise<void>;
+}) {
   const [draft, setDraft] = useState<Programa>(() => structuredClone(programa));
 
   function atualizarFase(indice: number, patch: Partial<FaseTemplate>) {
@@ -362,7 +401,7 @@ function ProgramaEditor({ programa, onClose }: { programa: Programa; onClose: ()
     }));
   }
 
-  function salvar() {
+  async function salvar() {
     const limpo = {
       ...draft,
       codigo: draft.codigo.trim().toLowerCase().replace(/\s+/g, "-"),
@@ -382,9 +421,13 @@ function ProgramaEditor({ programa, onClose }: { programa: Programa; onClose: ()
       );
       return;
     }
-    container.programas.salvar(limpo);
-    toast.success("Jornada atualizada. Novos casos usarão esta configuração.");
-    onClose();
+    try {
+      await onSalvar(limpo);
+      toast.success("Jornada atualizada. Novos casos usarão esta configuração.");
+      onClose();
+    } catch {
+      toast.error("Não foi possível salvar a configuração.");
+    }
   }
 
   return (

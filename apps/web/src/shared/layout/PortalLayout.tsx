@@ -1,10 +1,7 @@
-import { useClienteAtivo } from "@/features/demo/application/hooks";
-import { DemoBar } from "@/features/demo/interfaces/DemoBar";
 import { logout } from "@/features/sessao/application/hooks";
-import { useMockDb } from "@/mocks/store";
 import { LanguageSwitcher } from "@/shared/i18n/LanguageSwitcher";
 import { isDemoMode } from "@/shared/lib/env";
-import { Avatar, NotificationCenter } from "@/shared/ui";
+import { NotificationCenter } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
 import {
   CalendarDays,
@@ -18,7 +15,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
@@ -31,6 +28,12 @@ const NAV_ITEMS = [
   { to: "/portal/agenda", icon: CalendarDays, label: "Agenda" },
   { to: "/portal/perfil", icon: User, label: "Meu perfil" },
 ];
+
+const PortalDemoNotifications = lazy(() => import("./PortalDemoNotifications"));
+const PortalDemoIdentity = lazy(() => import("./PortalDemoIdentity"));
+const DemoBar = lazy(() =>
+  import("@/features/demo/interfaces/DemoBar").then((modulo) => ({ default: modulo.DemoBar })),
+);
 
 function SidebarContent({
   onNavigate,
@@ -95,104 +98,6 @@ function SidebarContent({
 export function PortalLayout() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const documentos = useMockDb((s) => s.documentos);
-  const pagamentos = useMockDb((s) => s.pagamentos);
-  const reunioes = useMockDb((s) => s.reunioes);
-  const eventos = useMockDb((s) => s.eventosComunicacao);
-  const clienteAtivo = useClienteAtivo();
-  const notificacoes = clienteAtivo
-    ? [
-        ...documentos
-          .filter(
-            (doc) =>
-              doc.clienteId === clienteAtivo.id && ["pendente", "ajustes"].includes(doc.status),
-          )
-          .slice(0, 2)
-          .map((doc) => ({
-            id: `documento-${doc.id}`,
-            title:
-              doc.status === "ajustes"
-                ? "Documento precisa de ajuste"
-                : "Documento aguardando envio",
-            description: doc.nome,
-            href: "/portal/documentos",
-            tone: doc.status === "ajustes" ? ("danger" as const) : ("gold" as const),
-          })),
-        ...pagamentos
-          .filter(
-            (pagamento) => pagamento.clienteId === clienteAtivo.id && pagamento.status !== "pago",
-          )
-          .slice(0, 1)
-          .map((pagamento) => ({
-            id: `pagamento-${pagamento.id}`,
-            title: pagamento.status === "atrasado" ? "Pagamento em atraso" : "Pagamento pendente",
-            description: pagamento.descricao,
-            href: "/portal/pagamentos",
-            tone: pagamento.status === "atrasado" ? ("danger" as const) : ("gold" as const),
-          })),
-        ...reunioes
-          .filter(
-            (reuniao) => reuniao.clienteId === clienteAtivo.id && reuniao.status === "agendada",
-          )
-          .slice(0, 1)
-          .map((reuniao) => ({
-            id: `reuniao-${reuniao.id}`,
-            title: "Próxima reunião agendada",
-            description: new Date(reuniao.inicio).toLocaleDateString("pt-BR", {
-              weekday: "long",
-              day: "2-digit",
-              month: "long",
-            }),
-            href: "/portal/agenda",
-            tone: "navy" as const,
-          })),
-        ...eventos
-          .filter(
-            (evento) =>
-              evento.clienteOuLeadId === clienteAtivo.id &&
-              evento.canal === "sistema" &&
-              evento.conteudo.includes("liberada"),
-          )
-          .slice(-1)
-          .map((evento) => ({
-            id: `jornada-${evento.id}`,
-            title: "Nova fase liberada",
-            description: "Sua jornada avançou. Veja as novas orientações e atividades.",
-            href: "/portal/jornada",
-            tone: "gold" as const,
-          })),
-        ...eventos
-          .filter(
-            (evento) =>
-              evento.clienteOuLeadId === clienteAtivo.id &&
-              evento.canal === "sistema" &&
-              evento.conteudo.includes("aprovada"),
-          )
-          .slice(-2)
-          .map((evento) => ({
-            id: `etapa-aprovada-${evento.id}`,
-            title: "Etapa aprovada pela Akros",
-            description: evento.conteudo,
-            href: "/portal/jornada",
-            tone: "gold" as const,
-          })),
-        ...eventos
-          .filter(
-            (evento) =>
-              evento.clienteOuLeadId === clienteAtivo.id &&
-              evento.canal === "sistema" &&
-              evento.conteudo.includes("devolvida para ajustes"),
-          )
-          .slice(-2)
-          .map((evento) => ({
-            id: `etapa-ajuste-${evento.id}`,
-            title: "Etapa devolvida para ajustes",
-            description: evento.conteudo,
-            href: "/portal/jornada",
-            tone: "danger" as const,
-          })),
-      ]
-    : [];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -228,17 +133,27 @@ export function PortalLayout() {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="hidden lg:block">
-              <p className="text-[11px] font-semibold uppercase tracking-label text-gold-700">
-                Portal Akros
-              </p>
-              <p className="mt-0.5 text-sm font-medium text-navy">
-                {clienteAtivo ? `Olá, ${clienteAtivo.nome.split(" ")[0]}` : "Portal do Cliente"}
-              </p>
-            </div>
+            {isDemoMode ? (
+              <Suspense fallback={null}>
+                <PortalDemoIdentity />
+              </Suspense>
+            ) : (
+              <div className="hidden lg:block">
+                <p className="text-[11px] font-semibold uppercase tracking-label text-gold-700">
+                  Portal Akros
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-navy">Portal do Cliente</p>
+              </div>
+            )}
             <div className="ml-auto flex items-center gap-3">
               <LanguageSwitcher />
-              <NotificationCenter items={notificacoes} />
+              {isDemoMode ? (
+                <Suspense fallback={<NotificationCenter items={[]} />}>
+                  <PortalDemoNotifications />
+                </Suspense>
+              ) : (
+                <NotificationCenter items={[]} />
+              )}
               {!isDemoMode && (
                 <button
                   type="button"
@@ -249,13 +164,6 @@ export function PortalLayout() {
                   Sair
                 </button>
               )}
-              {clienteAtivo && (
-                <Avatar
-                  name={clienteAtivo.nome}
-                  size="sm"
-                  className="hidden ring-2 ring-gold-100 sm:flex"
-                />
-              )}
             </div>
           </header>
           <main className="workspace-main flex-1 px-5 py-7 lg:px-8 lg:py-9">
@@ -264,7 +172,11 @@ export function PortalLayout() {
         </div>
       </div>
 
-      <DemoBar />
+      {isDemoMode && (
+        <Suspense fallback={null}>
+          <DemoBar />
+        </Suspense>
+      )}
     </div>
   );
 }

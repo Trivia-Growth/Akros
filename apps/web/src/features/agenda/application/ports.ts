@@ -1,5 +1,14 @@
 import type { Reuniao, Transcricao } from "../domain/types";
 
+export interface AgendaConsulta {
+  carregarCliente(): Promise<{ reunioes: Reuniao[]; transcricoes: Transcricao[] }>;
+  carregarAdmin(): Promise<{
+    reunioes: Reuniao[];
+    transcricoes: Transcricao[];
+    nomesClientes: Record<string, string>;
+  }>;
+}
+
 export interface AgendaRepository {
   listarPorCliente(clienteId: string): Promise<Reuniao[]>;
   listarTodas(): Promise<Reuniao[]>;

@@ -9,10 +9,8 @@ import { useDemoSession } from "./useDemoSession";
  *
  * Em modo demo: persona escolhida na barra de impersonação (`useDemoSession`), como sempre foi.
  *
- * Fora do modo demo (E13-S08): `sessao.usuario.clienteId` (setado no cadastro do usuário
- * Supabase Auth como o mesmo id string do mock, ex. `"cliente-carlos"`) busca a linha real via
- * `useClienteReal` — que internamente traduz esse id pro uuid de `crm.clientes` (ver
- * `SupabaseClienteRepository`, SPEC_DEVIATION documentada em `specs/E13-S08.../design.md`).
+ * Fora do modo demo, `sessao.usuario.clienteId` é o UUID de `crm.clientes` emitido pelo claim
+ * `app_metadata.cliente_id`; não há tradução para fixture.
  */
 export function useClienteAtivo(): Cliente | undefined {
   const sessao = useSessaoAtual();
