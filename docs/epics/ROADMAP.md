@@ -288,7 +288,7 @@ context**, um de cada vez — mesmo padrão do E06 (S01 fixa o modelo, S02+ repl
 
 | Story | Título | Descrição | Owner | Status | Spec | Concluída | Commit |
 |-------|--------|-----------|-------|--------|------|-----------|--------|
-| E00-S06 | Invariantes do Padrão OS | Quatro invariantes para a esteira virar template, cada um com gate, lugar no `lefthook.yml` e custo de retrofit. Recomendação: 3 integrais + 1 pela metade, não 4 aspiracionais. Inclui a política de artefato por tier (ADR-0011) e o teste do próprio gate em cada script. **Arquitetural** | @claude-code | 🟨 | ✅ | — | — |
+| E00-S06 | Invariantes do Padrão OS | Quatro invariantes para a esteira virar template, cada um com gate, lugar no `lefthook.yml` e custo de retrofit. Recomendação: 3 integrais + 1 pela metade, não 4 aspiracionais (adotada). AC-1..AC-5 verdes por comando: `check-gate-coverage.mjs` e `check-degraded-mode.mjs` novos; guarda de coleção vazia nos 3 gates que faltavam; regra de fronteira entre frentes e teste de não-propagação já existiam. Inclui a política de artefato por tier (ADR-0011) e o teste do próprio gate em cada script. **Arquitetural** | @claude-code | 🟩 | ✅ | 2026-09-06 | — |
 
 ## E15 — Resiliência e performance de carga
 
