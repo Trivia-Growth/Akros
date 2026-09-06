@@ -16,27 +16,26 @@ por tempo indeterminado, monitorar.
 ## P0 — bloqueia produção
 
 ### Frontend ainda não fala com o schema real (RLS só provado no banco)
+> **Medido em 2026-08-31:** o problema é maior do que "falta migrar". `clientes` **foi** migrado
+> (E13-S08), mas 8 telas continuam lendo de `useMockDb` — `AdminDashboardPage`, `ConciliacaoPage`,
+> `FilaRevisaoPage`, `AdminAgendaPage`, `ProgramasPage`, `OperacaoPage`, `PropostaDocumentoPage`
+> e `DemoBar`. Resultado hoje, em produção: `/admin/clientes` mostra os 2 clientes reais e o
+> dashboard mostra as 5 personas fictícias. Quem opera vê duas respostas para a mesma pergunta.
+> Trocar o adapter sem migrar as telas do mesmo contexto troca "tudo mock" por "metade cada",
+> que é pior de diagnosticar.
 `crm`/`jornada`/`documentos`/`pagamentos`/`agenda`/`programas`/`comunicacao` têm RLS real,
 provado via PostgREST (E13-S01..S05) — mas a UI ainda lê 100% de `useMockDb` (E12-S01). O
 isolamento por `cliente_id` só existe no banco; a aplicação em si não o exercita ainda.
-**Fecha em:** `specs/E13-S09-adapters-supabase-restantes/` (E13-S08 migrou só `clientes`; os outros 4 contextos e a deleção do mapa de id estão especificados lá).
+**Fecha em:** E13-S10 aplicou as cinco coleções no projeto real em 05/09; `E13-S11` migra os
+contextos restantes e deleta o mapa de ID sem estado misto.
 
 ### Store global única carrega dado de todas as personas na memória do browser
 Mesmo autenticado como um cliente só (E12-S02), `useMockDb` mantém as 5 personas mockadas
 inteiras na memória do JS da aba — um `console.log(useMockDb.getState())` no DevTools expõe tudo.
 **Aceitável hoje** porque o dado é 100% fictício (sem PII real). **Bloqueia** subir qualquer dado
 real de cliente antes de existir filtragem de estado no frontend equivalente à RLS do banco.
-**Fecha em:** `specs/E13-S09-adapters-supabase-restantes/` AC-3 — a store deixa de ser **carregada** fora do modo demo. Filtrar não resolve: quando o filtro roda, o dado já está na memória.
-
-### Edge Functions sem rate limiting — código pronto, **não deployado**
-`E14-S01` implementada em 2026-08-31: `seguranca.rate_limit` + `_shared/rate-limit.ts`, aplicado
-nas 4 funções (`fail-closed` nas de sessão, `fail-open` documentado na telemetria), com gate
-impedindo função pública nova sem teto.
-
-**Continua `P0` até o deploy.** O código está no repositório, não em produção. Fecha com:
-`supabase secrets set RATE_LIMIT_SECRET=...`, `supabase db push`, e o deploy das 4 funções — ver
-`specs/E14-S01-rate-limit-edge-functions/tasks.md`. Verificação: a 11ª tentativa de login errado
-do mesmo IP deve devolver `429`.
+**Fecha em:** `E13-S11` — a store deixa de ser **carregada** fora do modo demo depois das ondas de
+adapter+tela. Filtrar não resolve: quando o filtro roda, o dado já está na memória.
 
 ## P1 — corrigir antes de dado real de cliente
 
@@ -45,11 +44,11 @@ Titular/banco/conta são **fictícios de propósito** (E10-S01, ROADMAP pergunta
 Substituir pelos dados reais da Akros é decisão consciente, não técnica — feita quando a Akros
 aprovar uso fora de demo.
 
-### `crm.leads` não existe — eventos/threads de lead ficam sem dono
+### Eventos/threads de lead ainda não apontam para `crm.leads`
 `comunicacao.eventos.cliente_id` e `email_threads.cliente_id` são nullable pra cobrir o caso de
 lead ainda não convertido (E13-S05/design.md). Hoje isso só significa "invisível pra qualquer
-cliente" (correto). Quando `crm.leads` existir, decidir se leads precisam de RLS própria (hoje
-não logam, só staff acessa via admin).
+cliente" (correto). E13-S09 aplicou tabela, RLS admin-only, captura pública e conversão atômica no
+projeto real em 2026-09-04. A ligação das threads/eventos entra nas ondas de E13-S11.
 
 ### Retenção de dado de lead perdido (LGPD)
 ROADMAP pergunta aberta nº 6: base legal e prazo de guarda pra lead descartado/inativo (E11-S02/

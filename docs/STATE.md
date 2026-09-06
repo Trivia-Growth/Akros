@@ -8,28 +8,44 @@ alwaysApply: false
 
 ## Agora
 
-- **Data:** 2026-08-31
-- **Story ativa:** nenhuma em implementação. **E13 fechado** (S01–S08), **E15-S01 fechado**
-  (resiliência de módulo) e **E00-S06 em andamento** (invariantes da esteira — 3 dos 4 aplicados).
-- **PR #3 mergeado** em 2026-08-31 (`31066f9`, merge commit para preservar os SHAs por story do
-  ROADMAP). `main` passou de 28/08 para hoje: recebeu E12-S02 → E13-S08 **e** a esteira nova, e
-  a CI rodou verde sobre ela.
-- **Próximo passo:** `E13-S09` — migrar `jornada`/`documentos`/`pagamentos`/`comunicacao` para
-  Supabase real, criar `crm.leads` + `criarClienteAPartirDeLead`, e então as 6 telas admin que
-  ficaram mock. Ao fechar, **deletar** (não substituir) o `MAPA_ID_REAL_PARA_MOCK` em
-  `SupabaseClienteRepository`.
+- **Data:** 2026-09-05
+- **Story ativa:** `E13-S12` 🟨. **Programas**, **Configurações**, **Agenda**, transcrições,
+  **Jornada**, **Documentos**, **Pagamentos**, **Mensagens do portal**, **Propostas**,
+  **Comunicação**, **Dashboard admin**, **Dashboard portal**, **Perfil**, **Operação** e
+  **Cliente 360** e **Fila de revisão** leem Supabase fora do demo. Consultas usam RLS por
+  `auth.uid()`, não `clienteId` legado. Jornada, upload/assinatura,
+  comprovante/conciliação, mensageria e ciclo de proposta ficam em leitura até Storage/RPC/Edge
+  Function seguros controlarem transições, arquivo e auditoria. **Evolution/OpenRouter:** Central
+  agora recebe as duas keys uma vez, guarda no Vault por RPC service-role, registra webhook via
+  Edge Function e só responde após checkbox explícito. Recebimento tem deduplicação persistente,
+  token capability no header e handoff para pedido sensível/humano.
+- **Gates:** 155 unitários, build, `arch:check`, auditoria e eval verdes; migration lint, `deno
+  check` e PostgreSQL 17 limpo passaram para E13-S12. Playwright serial
+  10/10 confirmou Cliente 360, Perfil, Fila e ausência de `mocks/store` em sessão real.
+  Bootstrap compartilha refresh no `StrictMode`, ficando abaixo do teto remoto; matriz fixa locale
+  `pt-BR` para asserções determinísticas. Mapa temporário removido; layouts isolam chunks demo.
+- **Próximo passo:** DevOps aplica `0016` e deploya `integracoes-ia-salvar`/
+  `evolution-webhook`; então administrador configura chaves só em `/admin/configuracoes` e ativa
+  agente. Em paralelo, migrar ou ocultar `/admin/leads`, `/admin/aprovacoes`,
+  `/admin/pagamentos` e `/admin/reativacao` para fechar corte demo.
 
 ### Bloqueios abertos
 
-1. **`P0` em `docs/SECURITY_DEBT.md`** bloqueiam produção: rate limiting nas Edge Functions,
-   CSP/HSTS, e o frontend que ainda lê mock fora de `clientes`.
-2. **Job `e2e` desligado na CI** (`vars.E2E_HABILITADO`). Ele autentica contra o Supabase de
-   produção; ligar exige decidir sobre usuários de teste em ambiente separado. Enquanto isso a
-   matriz de autorização só roda na máquina de quem lembra.
+1. **`P0` em `docs/SECURITY_DEBT.md`:** frontend ainda lê mock em `/admin/leads`,
+   `/admin/aprovacoes`, `/admin/pagamentos` e `/admin/reativacao`; store global mantém personas
+   enquanto essas rotas existirem fora do demo.
+2. **E2E só local:** autentica contra Supabase real; não roda na CI por decisão registrada no
+   `lefthook.yml`. Passou 6/6 em 2026-09-04.
 3. **Dívida nomeada no baseline:** 307 AC sem task e 75 artefatos ausentes em 69 specs
    (ADR-0011). Não é para regularizar em massa — encolhe quando a story antiga for tocada.
-4. **E16-S01 não implementada** (CSP, sink de erro). O deploy preview do Netlify, que era o AC-1,
-   já funcionava — descoberto ao abrir o primeiro PR.
+4. **E16-S01 permanece 🟨:** CSP/telemetria escritas; faltam verificação no preview, deploy da
+   function e exercício real do runbook de rollback.
+5. **Mutações de processo bloqueadas:** RLS histórico permite UPDATE próprio em Jornada,
+   Documento e Pagamento, mas não valida todas as transições; `comunicacao.eventos` não concede
+   INSERT ao navegador; `crm.propostas` não valida seu ciclo de vida. Não habilitar UI até
+   Storage/RPC/Edge Function aplicar transição, validação e auditoria.
+6. **Rollout E13-S12:** código/migration estão locais e testados, mas nenhuma key/instância foi
+   configurada e functions ainda precisam do deploy do DevOps. Agente permanece sem saída externa.
 
 ### Decisões recentes
 
@@ -45,6 +61,8 @@ alwaysApply: false
   novos). Rode `git pull` lá antes de tocar qualquer coisa, ou remova o worktree.
 - **E15-S01.** 68 chunks, entrada de 850,74 kB para 596,25 kB, `ErrorBoundary` por rota. Um
   `throw` no admin não derruba mais o site.
+- **ADR-0012 — Vault + capability header.** BYOK passa por Edge Function admin/CSRF, segredo fica
+  no Vault e Evolution autentica webhook por token de 256 bits em header; URL não contém segredo.
 
 ## Histórico
 
