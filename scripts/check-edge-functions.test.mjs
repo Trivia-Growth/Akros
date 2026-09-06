@@ -83,3 +83,10 @@ test("falha para função pública sem chamada a checarLimite", () => {
 test("função com rate limit passa", () => {
   assert.equal(run(fixture({ comRateLimit: true })).ok, true);
 });
+
+// AC-2 (E00-S06): zero funções varridas é caminho quebrado, não "sem funções" — o gate falha.
+test("falha quando não há nenhuma função (coleção vazia)", () => {
+  const result = run(fixture({ folder: false }));
+  assert.equal(result.ok, false);
+  assert.match(result.output, /nenhuma pasta de função/);
+});

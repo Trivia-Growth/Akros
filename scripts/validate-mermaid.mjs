@@ -62,11 +62,13 @@ const stripComments = (body) =>
 
 const errors = [];
 const warns = [];
+let blocosTotais = 0;
 
 for (const f of walk(ROOT)) {
   const rel = relative(ROOT, f) || f;
   let blocks;
   try { blocks = mermaidBlocks(readFileSync(f, "utf8")); } catch { continue; }
+  blocosTotais += blocks.length;
 
   blocks.forEach((b, n) => {
     const where = `${rel} (bloco mermaid #${n + 1}, linha ${b.start})`;
@@ -102,6 +104,17 @@ for (const f of walk(ROOT)) {
       if (o !== c) warns.push(`${where}: ${label} possivelmente desbalanceado (${o} aberto / ${c} fechado)`);
     }
   });
+}
+
+// AC-2 (E00-S06): varrer zero diagramas e reportar OK é exatamente a classe de bug que motivou a
+// auditoria de 2026-08-30 (filtro quebrado passando verde avaliando nada). Sem bloco mermaid não
+// há nada validado — falha, não sucesso.
+if (blocosTotais === 0) {
+  console.error(
+    "\n✗ Validação Mermaid: nenhum bloco ```mermaid encontrado.\n" +
+      "  Isso é falha do gate, não ausência de diagramas — verifique o diretório varrido.\n",
+  );
+  process.exit(1);
 }
 
 if (warns.length) {

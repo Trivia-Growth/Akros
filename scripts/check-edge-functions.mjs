@@ -72,6 +72,19 @@ function findInvokeCalls(files) {
 }
 
 const folders = listFunctionFolders();
+
+// AC-2 (E00-S06): gate que varre coleção vazia não passa verde. Zero pastas de função é caminho
+// quebrado, não "sem funções" — a mesma classe de bug do filtro de specs que passou meses verde
+// avaliando nada (auditoria de 2026-08-30, ver eval-spec-fidelity.mjs).
+if (folders.length === 0) {
+  console.error(
+    "\n✗ check-edge-functions: nenhuma pasta de função encontrada em supabase/functions/ " +
+      "(fora da allowlist _shared/_template/_examples).\n" +
+      "  Isso é falha do gate, não ausência de funções — verifique o caminho.\n",
+  );
+  process.exit(1);
+}
+
 const tomlText = existsSync(CONFIG_TOML) ? readFileSync(CONFIG_TOML, "utf8") : "";
 const declared = parseDeclaredFunctions(tomlText);
 

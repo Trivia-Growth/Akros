@@ -122,3 +122,10 @@ test("schema exposto nao acusa", () => {
   );
   assert.equal(r.ok, true);
 });
+
+// AC-2 (E00-S06): zero migrations varridas é falha do gate (caminho quebrado), nunca "OK em 0".
+test("falha quando não há nenhuma migration (coleção vazia)", () => {
+  const r = run(fixture({}));
+  assert.equal(r.ok, false);
+  assert.match(r.output, /nenhuma migration encontrada/);
+});

@@ -9,7 +9,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const ROOT = resolve(import.meta.dirname, "..");
+// Root override (argv[2]) existe só pra teste isolado (scripts/check-story.test.mjs, mkdtemp) —
+// o hook real (Claude Code PreToolUse) chama sem argumento e cai no repositório real.
+const ROOT = resolve(process.argv[2] || resolve(import.meta.dirname, ".."));
 const STORY_FILE = resolve(ROOT, ".current-story");
 const ROADMAP = resolve(ROOT, "docs/epics/ROADMAP.md");
 

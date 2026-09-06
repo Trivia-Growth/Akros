@@ -4,20 +4,33 @@
  * Registra uma nova story no ROADMAP.md, cria a pasta specs/E0N-S0N-<nome>/
  * com spec.md e tasks.md a partir dos templates, e grava .current-story.
  *
- * Uso: pnpm nova-story
- * O script faz perguntas interativas via stdin.
+ * Uso: pnpm nova-story                       (interativo)
+ *      node scripts/nova-story.mjs --epico 01 --story 03 --descricao "..." --owner Lucas [--tier pequeno]
  */
-import { createInterface } from "node:readline/promises";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 
-const ROOT = resolve(import.meta.dirname, "..");
+// Flags nomeadas (--epico, --story, --descricao, --owner, --tier, --root) existem só pra
+// automação e teste isolado (scripts/nova-story.test.mjs) — sem elas o script pergunta
+// interativamente, uso normal de `pnpm nova-story`. Root cai no repositório real por padrão.
+// Não usar readline/promises + stdin não-interativo aqui: rl.question() encadeado trava
+// indefinidamente quando o stdin inteiro chega de uma vez e fecha (achado ao escrever o teste
+// deste script, E00-S06 Task 1) — o processo só morre por "unsettled top-level await".
+function parseFlags(argv) {
+  const flags = {};
+  for (let i = 0; i < argv.length; i++) {
+    const m = /^--([a-z]+)$/.exec(argv[i]);
+    if (m) flags[m[1]] = argv[i + 1] ?? "";
+  }
+  return flags;
+}
+
+const flags = parseFlags(process.argv.slice(2));
+const ROOT = resolve(flags.root || resolve(import.meta.dirname, ".."));
 const ROADMAP = resolve(ROOT, "docs/epics/ROADMAP.md");
 const SPECS_DIR = resolve(ROOT, "specs");
 const TEMPLATES_DIR = resolve(ROOT, "specs/_templates");
 const STORY_FILE = resolve(ROOT, ".current-story");
-
-const rl = createInterface({ input: process.stdin, output: process.stdout });
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -41,18 +54,28 @@ function readTemplate(name) {
 
 // ─── coleta de dados ──────────────────────────────────────────────────────────
 
-console.log("\n╔══════════════════════════════════════════════╗");
-console.log("║  📋 NOVA STORY — Sinérgica OS               ║");
-console.log("╚══════════════════════════════════════════════╝\n");
-console.log("Preencha os dados da story. Isso registrará no ROADMAP e criará os arquivos de spec.\n");
+const modoFlags = flags.epico != null && flags.story != null && flags.descricao != null && flags.owner != null;
 
-const epicNum = await rl.question("Épico (número, ex: 01): ");
-const storyNum = await rl.question("Story (número dentro do épico, ex: 03): ");
-const descricao = await rl.question("Descrição curta da story (ex: listagem de ordens de serviço): ");
-const owner = await rl.question("Owner (seu nome, ex: Lucas / João / Claude): ");
-const tier = await rl.question("Tier [trivial/pequeno/arquitetural] (Enter = pequeno): ");
+let epicNum, storyNum, descricao, owner, tier;
+if (modoFlags) {
+  ({ epico: epicNum, story: storyNum, descricao, owner, tier = "pequeno" } = flags);
+} else {
+  const { createInterface } = await import("node:readline/promises");
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
 
-rl.close();
+  console.log("\n╔══════════════════════════════════════════════╗");
+  console.log("║  📋 NOVA STORY — Sinérgica OS               ║");
+  console.log("╚══════════════════════════════════════════════╝\n");
+  console.log("Preencha os dados da story. Isso registrará no ROADMAP e criará os arquivos de spec.\n");
+
+  epicNum = await rl.question("Épico (número, ex: 01): ");
+  storyNum = await rl.question("Story (número dentro do épico, ex: 03): ");
+  descricao = await rl.question("Descrição curta da story (ex: listagem de ordens de serviço): ");
+  owner = await rl.question("Owner (seu nome, ex: Lucas / João / Claude): ");
+  tier = await rl.question("Tier [trivial/pequeno/arquitetural] (Enter = pequeno): ");
+
+  rl.close();
+}
 
 const epicId = `E${pad2(epicNum.trim())}`;
 const storyId = `S${pad2(storyNum.trim())}`;
@@ -152,34 +175,30 @@ writeFileSync(tasksPath, tasksContent, "utf8");
 // ─── registrar no ROADMAP ─────────────────────────────────────────────────────
 
 const roadmapContent = readFileSync(ROADMAP, "utf8");
-const epicSection = `### ${epicId} —`;
+// Heading real é nível 2 (`## E0N — Título`), não nível 3 — script gerava linha morta antes desta
+// correção (achado ao escrever scripts/nova-story.test.mjs, E00-S06 Task 1).
+const epicSection = `## ${epicId} —`;
 
-const storyRow = `| ${fullId} | ${descricao} | [spec](../../specs/${fullId}-${slug}/spec.md) | Rascunho | ${owner} | ⏳ |`;
+// Schema real (8 colunas, ver docs/epics/ROADMAP.md): Story | Título | Descrição | Owner | Status
+// | Spec | Concluída | Commit. Título/Descrição colapsam na mesma resposta interativa — refino é
+// tarefa do @sm ao revisar a linha, não deste gerador.
+const storyRow = `| ${fullId} | ${descricao} | ${descricao} | ${owner} | ⬜ | ⏳ | — | — |`;
 
 let updatedRoadmap;
-if (roadmapContent.includes(epicSection)) {
-  // Insere no final da tabela do épico
-  const insertAfter = `| Story ID | Descrição | Spec | Status | Owner | AC verdes |`;
-  const headerLine = `|----------|-----------|------|--------|-------|-----------|`;
-  const insertPoint = roadmapContent.indexOf(headerLine, roadmapContent.indexOf(epicSection));
-  if (insertPoint !== -1) {
-    // Encontra o fim da tabela (linha em branco ou próxima seção)
-    let end = insertPoint + headerLine.length;
-    while (end < roadmapContent.length) {
-      const nextNewline = roadmapContent.indexOf("\n", end + 1);
-      if (nextNewline === -1) break;
-      const nextLine = roadmapContent.slice(end + 1, nextNewline + 1).trim();
-      if (!nextLine.startsWith("|")) break;
-      end = nextNewline;
-    }
-    updatedRoadmap =
-      roadmapContent.slice(0, end + 1) + storyRow + "\n" + roadmapContent.slice(end + 1);
-  } else {
+const epicIdx = roadmapContent.indexOf(epicSection);
+if (epicIdx !== -1) {
+  // Separador de tabela markdown (`|---|---|...`) é achado pela forma, não pelo texto das colunas
+  // — headers variam entre épicos e mudam ao longo do tempo, a forma não.
+  const linhas = roadmapContent.slice(epicIdx).split("\n");
+  const sepIdx = linhas.findIndex((l) => /^\|[\s:|-]+\|$/.test(l.trim()));
+  if (sepIdx === -1) {
     // fallback: append ao final da seção do épico
-    updatedRoadmap = roadmapContent.replace(
-      epicSection,
-      `${epicSection}\n${storyRow}\n`,
-    );
+    updatedRoadmap = roadmapContent.replace(epicSection, `${epicSection}\n${storyRow}\n`);
+  } else {
+    let fim = sepIdx + 1;
+    while (fim < linhas.length && linhas[fim].trim().startsWith("|")) fim++;
+    linhas.splice(fim, 0, storyRow);
+    updatedRoadmap = roadmapContent.slice(0, epicIdx) + linhas.join("\n");
   }
 } else {
   console.warn(`⚠️  Seção "${epicSection}" não encontrada no ROADMAP. Adicione manualmente:`);

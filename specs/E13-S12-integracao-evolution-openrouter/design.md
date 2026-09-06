@@ -3,6 +3,7 @@ name: DESIGN
 description: Desenho de Vault, Edge Functions e pipeline Evolution/OpenRouter — E13-S12.
 story: E13-S12
 tier: arquitetural
+integracoes: [evolution, openrouter]
 alwaysApply: false
 ---
 
@@ -41,3 +42,16 @@ segredo em query string.
 - Webhook recebe somente `MESSAGES_UPSERT`, sem eventos de saída; impede loop do próprio agente.
 - Recebimento primeiro persiste. Repetição retorna 200 sem nova chamada LLM/envio.
 - Sem chave/configuração/agente ativo, entrada é registrada como ignorada; não há saída.
+
+## Modo degradado
+
+- **Evolution fora do ar (webhook não recebe ou `/message/sendText` falha):** `evolution-webhook`
+  já persistiu a mensagem recebida antes de chamar qualquer serviço externo — nada se perde. Se o
+  envio da resposta falhar, a função **não reenvia** (evita duplicar mensagem no WhatsApp do
+  cliente quando a falha é só na confirmação); a falha é log estruturado sem segredo, não some
+  silenciosa.
+- **OpenRouter fora do ar / erro / timeout:** mesma regra de fail-closed do restante da sessão —
+  sem resposta do modelo, a função não envia nada ao cliente em nome do agente; erro vai para log,
+  não para o WhatsApp do cliente como se fosse resposta do agente.
+- **Sem chave/agente inativo (não é "fora do ar", é config ausente):** entrada é registrada como
+  ignorada, sem tentativa de chamada externa — ver decisão acima.
