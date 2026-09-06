@@ -9,43 +9,35 @@ alwaysApply: false
 ## Agora
 
 - **Data:** 2026-09-05
-- **Story ativa:** `E13-S12` 🟨. **Programas**, **Configurações**, **Agenda**, transcrições,
-  **Jornada**, **Documentos**, **Pagamentos**, **Mensagens do portal**, **Propostas**,
-  **Comunicação**, **Dashboard admin**, **Dashboard portal**, **Perfil**, **Operação** e
-  **Cliente 360** e **Fila de revisão** leem Supabase fora do demo. Consultas usam RLS por
-  `auth.uid()`, não `clienteId` legado. Jornada, upload/assinatura,
-  comprovante/conciliação, mensageria e ciclo de proposta ficam em leitura até Storage/RPC/Edge
-  Function seguros controlarem transições, arquivo e auditoria. **Evolution/OpenRouter:** Central
-  agora recebe as duas keys uma vez, guarda no Vault por RPC service-role, registra webhook via
-  Edge Function e só responde após checkbox explícito. Recebimento tem deduplicação persistente,
-  token capability no header e handoff para pedido sensível/humano.
-- **Gates:** 155 unitários, build, `arch:check`, auditoria e eval verdes; migration lint, `deno
-  check` e PostgreSQL 17 limpo passaram para E13-S12. Playwright serial
-  10/10 confirmou Cliente 360, Perfil, Fila e ausência de `mocks/store` em sessão real.
-  Bootstrap compartilha refresh no `StrictMode`, ficando abaixo do teto remoto; matriz fixa locale
-  `pt-BR` para asserções determinísticas. Mapa temporário removido; layouts isolam chunks demo.
-- **Próximo passo:** DevOps aplica `0016` e deploya `integracoes-ia-salvar`/
-  `evolution-webhook`; então administrador configura chaves só em `/admin/configuracoes` e ativa
-  agente. Em paralelo, migrar ou ocultar `/admin/leads`, `/admin/aprovacoes`,
-  `/admin/pagamentos` e `/admin/reativacao` para fechar corte demo.
+- **Story ativa:** `E13-S12` 🟨 (aguardando rollout DevOps). Lote E13-S09/S10/S11/S12 commitado
+  em 5 commits locais (5a0acf8..f8a1c34); push/PR é passo do @devops. **P0 do SECURITY_DEBT
+  fechado:** as 4 rotas admin que ainda liam mock (`/admin/leads`, `/admin/aprovacoes`,
+  `/admin/pagamentos`, `/admin/reativacao`) existem só no modo demo — fora dele redirecionam ao
+  dashboard e somem do menu (`demoOnly`). Sessão real não carrega `useMockDb` nem `mocks/store`;
+  e2e AC-7 prova pelo caminho do usuário. Migração real dessas 4 telas vira story própria
+  (depende de RPC/Edge Function de transição/auditoria).
+- **Gates:** 155 unitários, build, `arch:check`, biome, migration lint e `deno check` verdes no
+  lote. Playwright serial com AC-7 novo (rotas mock inexistentes fora do demo) — total 11/11.
+- **Próximo passo:** DevOps aplica `0016` e deploya `integracoes-ia-salvar`/`evolution-webhook`
+  (e dá push no lote + abre PR); então administrador configura chaves só em
+  `/admin/configuracoes` e ativa agente. Depois: story de migração das 4 telas ocultadas.
 
 ### Bloqueios abertos
 
-1. **`P0` em `docs/SECURITY_DEBT.md`:** frontend ainda lê mock em `/admin/leads`,
-   `/admin/aprovacoes`, `/admin/pagamentos` e `/admin/reativacao`; store global mantém personas
-   enquanto essas rotas existirem fora do demo.
-2. **E2E só local:** autentica contra Supabase real; não roda na CI por decisão registrada no
-   `lefthook.yml`. Passou 6/6 em 2026-09-04.
-3. **Dívida nomeada no baseline:** 307 AC sem task e 75 artefatos ausentes em 69 specs
+1. **E2E só local:** autentica contra Supabase real; não roda na CI por decisão registrada no
+   `lefthook.yml`. Auth-matrix 7/7 em 2026-09-05.
+2. **Dívida nomeada no baseline:** 307 AC sem task e 75 artefatos ausentes em 69 specs
    (ADR-0011). Não é para regularizar em massa — encolhe quando a story antiga for tocada.
-4. **E16-S01 permanece 🟨:** CSP/telemetria escritas; faltam verificação no preview, deploy da
+3. **E16-S01 permanece 🟨:** CSP/telemetria escritas; faltam verificação no preview, deploy da
    function e exercício real do runbook de rollback.
-5. **Mutações de processo bloqueadas:** RLS histórico permite UPDATE próprio em Jornada,
+4. **Mutações de processo bloqueadas:** RLS histórico permite UPDATE próprio em Jornada,
    Documento e Pagamento, mas não valida todas as transições; `comunicacao.eventos` não concede
    INSERT ao navegador; `crm.propostas` não valida seu ciclo de vida. Não habilitar UI até
-   Storage/RPC/Edge Function aplicar transição, validação e auditoria.
-6. **Rollout E13-S12:** código/migration estão locais e testados, mas nenhuma key/instância foi
-   configurada e functions ainda precisam do deploy do DevOps. Agente permanece sem saída externa.
+   Storage/RPC/Edge Function aplicar transição, validação e auditoria. É o que segura as 4 telas
+   ocultadas (kanban de leads, aprovações, conciliação, reativação).
+5. **Rollout E13-S12:** código/migration estão commitados e testados, mas nenhuma key/instância
+   foi configurada e functions ainda precisam do deploy do DevOps. Agente permanece sem saída
+   externa.
 
 ### Decisões recentes
 
