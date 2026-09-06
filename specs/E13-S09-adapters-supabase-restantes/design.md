@@ -61,3 +61,69 @@ more hooks than during the previous render", aplicação inteira caindo.
 Toda tela migrada aqui corre o mesmo risco. Regra: **nenhum hook depois de early return** nas telas
 tocadas, auditado tela a tela e não por amostragem. O `ErrorBoundary` de E15-S01 agora contém o
 estrago, mas conter não é consertar.
+
+
+---
+
+## Revisão de 2026-08-31 — a decomposição por contexto está errada
+
+O plano acima dizia "uma story-filha por contexto, como foi de E13-S01 a S05". Ao executar, medi o
+acoplamento real de tela → entidade. Duas coisas quebram a premissa.
+
+### 1. Cinco entidades usadas pelo admin não têm tabela nenhuma
+
+| Entidade do mock | Tabela real |
+|---|---|
+| `propostas` | **não existe** |
+| `integracoes` | **não existe** |
+| `contasAgenda` | **não existe** |
+| `contasCanal` | **não existe** |
+| `equipeAkros` | **não existe** |
+
+E13-S01..S07 criou 10 schemas, e nenhum cobre estas. Enquanto elas não existirem, o AC-3 ("a
+store fictícia não é carregada fora do modo demo") é **inalcançável**: `ConfiguracoesPage` sozinha
+depende de quatro delas. Migrar "os 4 contextos restantes" não fecha o `P0`, porque o `P0` não é
+sobre 4 contextos — é sobre a store inteira sair do ar.
+
+### 2. As telas não respeitam a fronteira de contexto
+
+Medido por leitura de `useMockDb` em cada arquivo:
+
+| Tela | Entidades que lê |
+|---|---|
+| `AdminDashboardPage` | clientes, documentos, eventosComunicacao, jornadas, leads, pagamentos, reunioes — **7** |
+| `AdminAgendaPage` | clientes, integracoes, leads, reunioes, transcricoes — 5 |
+| `ConfiguracoesPage` | contasAgenda, contasCanal, equipeAkros, integracoes — 4 |
+| `PortalLayout` | documentos, eventosComunicacao, pagamentos, reunioes — 4 |
+
+`AdminDashboardPage` é nó terminal: só migra quando **todas as sete** forem reais. Nenhuma story
+"de contexto" a alcança, porque ela não pertence a um contexto — ela cruza sete.
+
+E a ligação é por id, não por import: `crm.clientes.id` é uuid e `mocks` fala `"cliente-carlos"`.
+Enquanto uma ponta for real e a outra mock, o join simplesmente não casa. É por isso que ligar o
+`di.ts` de uma entidade isolada produz **estado partido**, verificado ao vivo com `leads`.
+
+### Decomposição correta
+
+Não é por bounded context. É por **onda**, ordenada por dependência de id:
+
+```
+Onda 0 — tabelas que faltam (bloqueia tudo)
+  crm.propostas · configuracoes.integracoes · configuracoes.contas_agenda
+  configuracoes.contas_canal · configuracoes.equipe
+
+Onda 1 — entidades-folha, que ninguém referencia por id
+  programas · integracoes · contas_* · equipe · transcricoes
+
+Onda 2 — entidades ancoradas em cliente_id
+  jornadas · documentos · pagamentos · reunioes · conversas · eventos · propostas
+  (a ponte de id só pode cair quando TODAS estiverem reais)
+
+Onda 3 — telas que cruzam contexto
+  AdminDashboardPage · AdminAgendaPage · PortalLayout · Cliente360 · OperacaoPage
+
+Onda 4 — desligar a store e deletar MAPA_ID_REAL_PARA_MOCK
+```
+
+Dentro de cada onda a regra continua sendo a do achado anterior: **adapter + hooks + telas na
+mesma entrega**, nunca o `di.ts` sozinho.
