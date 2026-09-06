@@ -128,4 +128,12 @@ export const TETOS = {
   "sessao-refresh": { teto: 30, janelaSegundos: 60 },
   "sessao-logout": { teto: 30, janelaSegundos: 60 },
   "telemetria-erro": { teto: 60, janelaSegundos: 60, falharFechado: false },
+  // Formulário público: 5 por hora e folga larga para um visitante de verdade (que envia uma vez)
+  // e barreira estreita para script de spam. `fail-closed` implícito — sem limitador, formulário
+  // público é canal aberto de escrita no CRM.
+  "lead-capturar": { teto: 5, janelaSegundos: 3600 },
+  // Painel administrativo: poucas gravações, mas sempre fail-closed pois troca chaves e webhook.
+  "integracoes-ia-salvar": { teto: 10, janelaSegundos: 3600 },
+  // Evolution pode concentrar tráfego em um IP; teto protege Vault/LLM sem bloquear uso normal.
+  "evolution-webhook": { teto: 120, janelaSegundos: 60 },
 } as const;

@@ -428,6 +428,16 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
+# Admin é validado dentro da função (Auth + role + CSRF); gateway aberto permite OPTIONS/CORS.
+[functions.integracoes-ia-salvar]
+enabled = true
+verify_jwt = false
+
+# Evolution não envia JWT Supabase. O capability token por conta vai no header x-akros-webhook.
+[functions.evolution-webhook]
+enabled = true
+verify_jwt = false
+
 # pg-delta is the schema diff engine for db diff / db pull / db remote commit.
 # Set enabled = false to fall back to the legacy migra engine.
 [experimental.pgdelta]
