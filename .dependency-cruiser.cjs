@@ -62,6 +62,24 @@ module.exports = {
       to: { path: "^apps/web/src/features/site" },
     },
     {
+      // E15-S02 — dieta do chunk de entrada (AC-1/AC-2). O esqueleto que carrega no primeiro
+      // paint (main → App → router/rota → layouts → bootstrap de sessão/i18n) não pode importar
+      // a camada de dado: `src/mocks/`, adapters `Supabase*` (arrastam `@supabase/supabase-js`,
+      // ~220 kB) nem o container (`app/di`, `app/real-repositories`). O container importa tudo
+      // estaticamente POR DESIGN — o que o mantém fora do entry é que todo consumidor dele é
+      // lazy. Uma única importação estática aqui recoloca mocks+supabase-js no caminho crítico.
+      name: "entrada-nao-puxa-mocks-nem-supabase",
+      severity: "error",
+      comment:
+        "chunk de entrada em dieta: main/App/router/layouts/bootstrap não importam mocks/, adapters Supabase* nem app/di|real-repositories (E15-S02)",
+      from: {
+        path: "^apps/web/src/(main\\.tsx|app/(App|router|rota|sessao-service)|shared/layout/(Public|Portal|Admin)Layout|shared/i18n/config|features/sessao/(application/hooks|interfaces/RequireRole))",
+      },
+      to: {
+        path: "^apps/web/src/(mocks/|app/(di|real-repositories)|.*/infrastructure/Supabase)",
+      },
+    },
+    {
       name: "sem-dependencia-circular",
       severity: "error",
       comment: "Ciclo entre módulos é acoplamento escondido",

@@ -295,7 +295,7 @@ context**, um de cada vez — mesmo padrão do E06 (S01 fixa o modelo, S02+ repl
 | Story | Título | Descrição | Owner | Status | Spec | Concluída | Commit |
 |-------|--------|-----------|-------|--------|------|-----------|--------|
 | E15-S01 | Resiliência de módulo | Três camadas de isolamento: `React.lazy` por rota, `ErrorBoundary` por rota abaixo do shell, retry no `import()` dinâmico. AC que fecha a story: teste provando que um `throw` no admin não impede o site de renderizar. Chunk de entrada de 850,74 kB → 596,25 kB em 68 chunks. **Arquitetural** | @claude-code | 🟩 | ✅ | 2026-08-31 | `e890fc2` |
-| E15-S02 | Container assíncrono (dieta do chunk de entrada) | Tirar `src/mocks/` e `supabase-js` do chunk de entrada — hoje `app/di.ts` importa todo adapter estaticamente (`SPEC_DEVIATION` registrada em E15-S01). Encolhe sozinho conforme E13-S09+ substitui mock por adapter real; avaliar se ainda vale depois disso. | — | ⬜ | ⏳ | — | — |
+| E15-S02 | Container assíncrono (dieta do chunk de entrada) | **Avaliação concluída em 2026-09-06: objetivo já atingido como efeito colateral de E13-S11/E15-S01.** Entry (`index-*.js`, 312 kB) importa estaticamente só `vendor-react` (103 kB) + `vendor-i18n` (56 kB); supabase-js (222 kB), `mocks/store` (62 kB) e o `di.ts` estão em chunks lazy. Story virou formalização: spec tier pequeno, regra `entrada-nao-puxa-mocks-nem-supabase` no depcruise (não dispara no estado atual) + teste de violação proposital, SPEC_DEVIATION de E15-S01 removida. Container assíncrono descartado — manteria o desenho ADR-0002 por menos nada. | — | 🟩 | ✅ | 2026-09-06 | — |
 
 ## E16 — Operação
 

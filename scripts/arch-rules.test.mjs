@@ -122,3 +122,21 @@ test("falha quando domain/ importa TIPO de outra camada", () => {
   assert.equal(r.ok, false);
   assert.match(r.output, /domain-nao-importa-camadas/);
 });
+
+// E15-S02 AC-2: a dieta do chunk de entrada é gate, não promessa. O container (`app/di`) importa
+// todos os adapters estaticamente POR DESIGN; o que o mantém fora do entry é que todo consumidor
+// é lazy. Uma importação estática a partir de `main`/`App`/`router`/layouts recoloca mocks/ e
+// supabase-js no caminho crítico — a regra tem que FALHAR nesse caso.
+test("falha quando o entry importa o container de di estaticamente", () => {
+  const r = run(
+    fixture({
+      "apps/web/src/main.tsx":
+        'import { App } from "./app/App";\nconsole.log(App);\n',
+      "apps/web/src/app/App.tsx":
+        'import { container } from "./di";\nexport const App = () => container;\n',
+      "apps/web/src/app/di.ts": "export const container = { leads: 1 };\n",
+    }),
+  );
+  assert.equal(r.ok, false);
+  assert.match(r.output, /entrada-nao-puxa-mocks-nem-supabase/);
+});
