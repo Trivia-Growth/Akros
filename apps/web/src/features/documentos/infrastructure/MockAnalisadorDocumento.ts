@@ -144,13 +144,28 @@ export class MockAnalisadorDocumento implements AnalisadorDocumentoPort {
     documentoId: string;
     tipoEsperado: TipoDocumento;
     objetivoRequisito: string;
+    skillAnalise?: string;
+    arquivoReferenciaId?: string;
   }): Promise<AnaliseDocumento> {
     const documento = useMockDb.getState().documentos.find((d) => d.id === input.documentoId);
     if (!documento) throw new Error(`Documento ${input.documentoId} não encontrado`);
 
     const parecer = construirParecer(documento, input.tipoEsperado);
+    // E06-S05/AC-4 — com skill configurada o mock CITA a configuração no parecer (para o admin
+    // ver na demo que ela está sendo lida). O "defeito" continua vindo da fixture; a comparação
+    // real contra o arquivo de referência é trabalho do adapter LLM (fora desta rodada).
+    const citacoes: string[] = [];
+    if (input.skillAnalise?.trim()) {
+      citacoes.push(`Skill do requisito aplicada nesta análise: "${input.skillAnalise.trim()}".`);
+    }
+    if (input.arquivoReferenciaId) {
+      citacoes.push(
+        "Documento-modelo de referência anexado a este requisito foi considerado na elaboração do parecer.",
+      );
+    }
     const analise: AnaliseDocumento = {
       ...parecer,
+      sugestoes: [...parecer.sugestoes, ...citacoes],
       documentoId: input.documentoId,
       analisadoEm: new Date().toISOString(),
       motor: MOTOR,

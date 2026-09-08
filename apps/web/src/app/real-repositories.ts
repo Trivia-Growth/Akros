@@ -36,7 +36,10 @@ import { SupabaseJornadaConsulta } from "@/features/jornada/infrastructure/Supab
 import { SupabaseOperacaoAdminConsulta } from "@/features/jornada/infrastructure/SupabaseOperacaoAdminConsulta";
 import type { PagamentosConsulta } from "@/features/pagamentos/application/ports";
 import { SupabasePagamentosConsulta } from "@/features/pagamentos/infrastructure/SupabasePagamentosConsulta";
-import type { ProgramaRepository } from "@/features/programas/application/ports";
+import type {
+  ProgramaRepository,
+  RequisitoDocumentoRepository,
+} from "@/features/programas/application/ports";
 import { SupabaseProgramaRepository } from "@/features/programas/infrastructure/SupabaseProgramaRepository";
 import { isDemoMode } from "@/shared/lib/env";
 
@@ -44,6 +47,8 @@ let clientesReais: ClienteRepository | undefined;
 let clientesDemo: ClienteRepository | undefined;
 let programasReais: ProgramaRepository | undefined;
 let programasDemo: ProgramaRepository | undefined;
+let requisitosReais: RequisitoDocumentoRepository | undefined;
+let requisitosDemo: RequisitoDocumentoRepository | undefined;
 let configuracoesReais: ConfiguracoesConsulta | undefined;
 let agendaReal: AgendaConsulta | undefined;
 let jornadaReal: JornadaConsulta | undefined;
@@ -147,4 +152,24 @@ export async function obterRepositorioProgramas(): Promise<ProgramaRepository> {
   );
   if (!programasDemo) programasDemo = new MockProgramaRepository();
   return programasDemo;
+}
+
+/** E06-S05/ADR-0013 — escrita de RequisitoDocumento. Fora do demo grava no `programas` real
+ * (UPDATE admin, 0015); no demo, no useMockDb. */
+export async function obterRepositorioRequisitos(): Promise<RequisitoDocumentoRepository> {
+  if (!isDemoMode) {
+    if (!requisitosReais) {
+      const { SupabaseRequisitoDocumentoRepository } = await import(
+        "@/features/programas/infrastructure/SupabaseRequisitoDocumentoRepository"
+      );
+      requisitosReais = new SupabaseRequisitoDocumentoRepository();
+    }
+    return requisitosReais;
+  }
+
+  const { MockRequisitoDocumentoRepository } = await import(
+    "@/features/programas/infrastructure/MockRequisitoDocumentoRepository"
+  );
+  if (!requisitosDemo) requisitosDemo = new MockRequisitoDocumentoRepository();
+  return requisitosDemo;
 }

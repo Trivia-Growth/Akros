@@ -1,4 +1,5 @@
 import { useClientesSupabase } from "@/features/crm/application/useClientesSupabase";
+import { useSessaoAtual } from "@/features/sessao/application/hooks";
 import { Badge, Button, Card, Input, Modal, Select, Textarea, toast } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
 import {
@@ -14,8 +15,10 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { useProgramasReais } from "../application/hooks";
+import { useProgramasReais, useRequisitoDocumentoRepo } from "../application/hooks";
+import { validarRequisitoDocumento } from "../application/validacao";
 import type {
+  ArquivoReferencia,
   EmissorDocumento,
   EtapaTemplate,
   FaseTemplate,
@@ -35,6 +38,7 @@ const EMISSORES: EmissorDocumento[] = [
 export function ProgramasPage() {
   const { programas, carregando, erro, duplicar, salvar } = useProgramasReais();
   const { clientes } = useClientesSupabase();
+  const sessao = useSessaoAtual();
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
 
@@ -198,11 +202,15 @@ export function ProgramasPage() {
                         ))}
                       </div>
                       {selecionado.documentosExigidos.some(
-                        (requisito) => requisito.faseTemplateId === fase.id,
+                        (requisito) =>
+                          requisito.faseTemplateId === fase.id && requisito.ativo !== false,
                       ) && (
                         <div className="mt-3 flex flex-wrap gap-2 border-t border-dashed border-border pt-3">
                           {selecionado.documentosExigidos
-                            .filter((requisito) => requisito.faseTemplateId === fase.id)
+                            .filter(
+                              (requisito) =>
+                                requisito.faseTemplateId === fase.id && requisito.ativo !== false,
+                            )
                             .map((requisito) => (
                               <span
                                 key={requisito.id}
@@ -247,6 +255,7 @@ export function ProgramasPage() {
       {editorOpen && (
         <ProgramaEditor
           programa={selecionado}
+          autor={sessao?.usuario.email ?? "admin"}
           onClose={() => setEditorOpen(false)}
           onSalvar={salvar}
         />
@@ -273,14 +282,17 @@ function EstadoCatalogo({ mensagem }: { mensagem: string }) {
 
 function ProgramaEditor({
   programa,
+  autor,
   onClose,
   onSalvar,
 }: {
   programa: Programa;
+  autor: string;
   onClose: () => void;
   onSalvar: (programa: Programa) => Promise<void>;
 }) {
   const [draft, setDraft] = useState<Programa>(() => structuredClone(programa));
+  const requisitosRepo = useRequisitoDocumentoRepo();
 
   function atualizarFase(indice: number, patch: Partial<FaseTemplate>) {
     setDraft((atual) => ({
@@ -401,6 +413,38 @@ function ProgramaEditor({
     }));
   }
 
+  /** E06-S05 AC-2 — remoção só é oferecida quando nenhum Documento de cliente aponta para o
+   * requisito; com vínculos, oferece "desativar" (preserva o histórico dos casos em andamento). */
+  async function tentarRemoverRequisito(requisitoId: string) {
+    if (!requisitosRepo) {
+      removerRequisito(requisitoId);
+      return;
+    }
+    try {
+      const vinculados = await requisitosRepo.contarDocumentosVinculados(requisitoId);
+      if (vinculados === 0) {
+        removerRequisito(requisitoId);
+        return;
+      }
+      const desativar = window.confirm(
+        `Este requisito tem ${vinculados} documento(s) de cliente vinculado(s) e não pode ser removido. Desativá-lo? Requisitos desativados deixam de ser exigidos em novos casos, mas o histórico dos casos em andamento é preservado.`,
+      );
+      if (desativar) atualizarRequisito(requisitoId, { ativo: false });
+    } catch {
+      toast.error("Não foi possível verificar os vínculos deste requisito. Tente novamente.");
+    }
+  }
+
+  /** E06-S05 AC-6 — o upload grava o histórico de trocas no repositório (quem/quando) e o
+   * retorno entra no draft para ser persistido junto com o restante da configuração. */
+  async function anexarArquivoReferencia(
+    requisitoId: string,
+    arquivo: File,
+  ): Promise<ArquivoReferencia> {
+    if (!requisitosRepo) throw new Error("Repositório de requisitos indisponível.");
+    return requisitosRepo.salvarArquivoReferencia(requisitoId, arquivo, autor);
+  }
+
   async function salvar() {
     const limpo = {
       ...draft,
@@ -412,14 +456,12 @@ function ProgramaEditor({
       toast.error("Informe nome e código do programa.");
       return;
     }
-    const requisitoSemSkill = limpo.documentosExigidos.find(
-      (requisito) => requisito.analiseIA?.habilitada && !requisito.analiseIA.skill.trim(),
-    );
-    if (requisitoSemSkill) {
-      toast.error(
-        `"${requisitoSemSkill.titulo}" tem análise por IA ligada mas sem instrução (skill). Preencha ou desligue a análise.`,
-      );
-      return;
+    for (const requisito of limpo.documentosExigidos) {
+      const invalido = validarRequisitoDocumento(requisito);
+      if (invalido) {
+        toast.error(invalido);
+        return;
+      }
     }
     try {
       await onSalvar(limpo);
@@ -562,8 +604,12 @@ function ProgramaEditor({
                       <RequisitoEditor
                         key={requisito.id}
                         requisito={requisito}
+                        persistido={programa.documentosExigidos.some(
+                          (existente) => existente.id === requisito.id,
+                        )}
                         onChange={(patch) => atualizarRequisito(requisito.id, patch)}
-                        onRemover={() => removerRequisito(requisito.id)}
+                        onRemover={() => void tentarRemoverRequisito(requisito.id)}
+                        onAnexar={anexarArquivoReferencia}
                       />
                     ))}
                   <Button
@@ -597,22 +643,31 @@ function ProgramaEditor({
 
 function RequisitoEditor({
   requisito,
+  persistido,
   onChange,
   onRemover,
+  onAnexar,
 }: {
   requisito: RequisitoDocumento;
+  /** false para requisito ainda não salvo (id local do draft) — upload só após salvar. */
+  persistido: boolean;
   onChange: (patch: Partial<RequisitoDocumento>) => void;
   onRemover: () => void;
+  onAnexar: (requisitoId: string, arquivo: File) => Promise<ArquivoReferencia>;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [anexando, setAnexando] = useState(false);
   const analiseIA = requisito.analiseIA;
   const habilitada = analiseIA?.habilitada ?? false;
+  const desativado = requisito.ativo === false;
+  const historico = requisito.historicoArquivosReferencia ?? [];
 
   function alternarAnaliseIA() {
     onChange({
       analiseIA: {
         habilitada: !habilitada,
         skill: analiseIA?.skill ?? "",
+        arquivoReferenciaId: analiseIA?.arquivoReferenciaId,
         arquivoReferenciaNome: analiseIA?.arquivoReferenciaNome,
       },
     });
@@ -623,26 +678,52 @@ function RequisitoEditor({
       analiseIA: {
         habilitada: true,
         skill,
+        arquivoReferenciaId: analiseIA?.arquivoReferenciaId,
         arquivoReferenciaNome: analiseIA?.arquivoReferenciaNome,
       },
     });
   }
 
-  function anexarArquivo(file: File | undefined) {
+  /** E06-S05 AC-6 — o upload passa pelo repositório (grava o histórico quem/quando) e o
+   * retorno entra no draft; o arquivo anterior migra para o histórico em vez de sumir.
+   * Binário não persiste — só metadado, mesma regra do upload do cliente (E02-S03). */
+  async function anexarArquivo(file: File | undefined) {
     if (!file) return;
-    // Mock: só o metadado (nome) é guardado — sem persistência de binário, mesma regra do
-    // upload de documento do cliente (E02-S03).
-    onChange({
-      analiseIA: {
-        habilitada: true,
-        skill: analiseIA?.skill ?? "",
-        arquivoReferenciaNome: file.name,
-      },
-    });
+    setAnexando(true);
+    try {
+      const referencia = await onAnexar(requisito.id, file);
+      const anterior: ArquivoReferencia[] = analiseIA?.arquivoReferenciaId
+        ? [
+            {
+              id: analiseIA.arquivoReferenciaId,
+              requisitoId: requisito.id,
+              nomeArquivo: analiseIA.arquivoReferenciaNome ?? "(sem nome registrado)",
+              tamanhoBytes: 0,
+              enviadoEm: "",
+              enviadoPor: "(legado — anterior ao histórico)",
+            },
+          ]
+        : [];
+      onChange({
+        analiseIA: {
+          habilitada: true,
+          skill: analiseIA?.skill ?? "",
+          arquivoReferenciaId: referencia.id,
+          arquivoReferenciaNome: referencia.nomeArquivo,
+        },
+        historicoArquivosReferencia: [...anterior, ...historico],
+      });
+      toast.success(`Arquivo de referência "${referencia.nomeArquivo}" registrado.`);
+    } catch {
+      toast.error("Não foi possível registrar o arquivo de referência.");
+    } finally {
+      setAnexando(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   return (
-    <div className="rounded-lg border border-border bg-white p-3">
+    <div className={cn("rounded-lg border border-border bg-white p-3", desativado && "opacity-70")}>
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_11rem_auto]">
         <Input
           value={requisito.titulo}
@@ -675,6 +756,20 @@ function RequisitoEditor({
           <X className="h-4 w-4" aria-hidden />
         </Button>
       </div>
+      {desativado && (
+        <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-border bg-cream-50 px-2.5 py-1.5">
+          <span className="text-xs font-medium text-ink-soft">
+            Desativado — não é exigido em novos casos; histórico preservado nos casos em andamento.
+          </span>
+          <button
+            type="button"
+            className="text-xs font-semibold text-gold-700 hover:text-gold-800"
+            onClick={() => onChange({ ativo: true })}
+          >
+            Reativar
+          </button>
+        </div>
+      )}
       <Textarea
         className="mt-2"
         rows={1}
@@ -731,9 +826,18 @@ function RequisitoEditor({
             <div>
               <p className="text-sm font-medium text-ink">Arquivo de referência (opcional)</p>
               <div className="mt-1.5 flex items-center gap-2">
-                <Button size="sm" variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={!persistido || anexando}
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <Paperclip className="h-3.5 w-3.5" aria-hidden />
-                  {analiseIA?.arquivoReferenciaNome ? "Trocar arquivo" : "Anexar arquivo"}
+                  {anexando
+                    ? "Registrando…"
+                    : analiseIA?.arquivoReferenciaNome
+                      ? "Trocar arquivo"
+                      : "Anexar arquivo"}
                 </Button>
                 {analiseIA?.arquivoReferenciaNome && (
                   <span className="truncate text-xs text-ink-soft">
@@ -745,10 +849,39 @@ function RequisitoEditor({
                   type="file"
                   className="hidden"
                   accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                  onChange={(event) => anexarArquivo(event.target.files?.[0])}
+                  onChange={(event) => void anexarArquivo(event.target.files?.[0])}
                 />
               </div>
+              {!persistido && (
+                <p className="mt-1 text-xs text-ink-muted">
+                  Salve o programa para anexar o arquivo de referência.
+                </p>
+              )}
             </div>
+          </div>
+        )}
+
+        {historico.length > 0 && (
+          <div className="mt-3 border-t border-dashed border-gold-200 pt-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-label text-ink-muted">
+              Histórico de arquivos de referência
+            </p>
+            <ul className="mt-1.5 flex flex-col gap-1">
+              {historico.map((entrada) => (
+                <li key={entrada.id} className="flex items-baseline gap-2 text-xs text-ink-soft">
+                  <Paperclip
+                    className="h-3 w-3 shrink-0 translate-y-0.5 text-ink-muted"
+                    aria-hidden
+                  />
+                  <span className="min-w-0 truncate">{entrada.nomeArquivo}</span>
+                  <span className="shrink-0 text-ink-muted">
+                    {entrada.enviadoPor}
+                    {entrada.enviadoEm &&
+                      ` · ${new Date(entrada.enviadoEm).toLocaleString("pt-BR")}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>

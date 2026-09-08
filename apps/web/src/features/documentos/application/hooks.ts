@@ -24,10 +24,12 @@ export function useSolicitacoesAssinatura(documentoIds: string[]): SolicitacaoAs
   );
 }
 
-/** E06-S01 — resolve o requisito do catálogo do programa que originou o documento. */
+/** E06-S01 — resolve o requisito do catálogo do programa que originou o documento. E06-S05: lê
+ * os programas do store (edições do admin em demo) e cai no catálogo estático fora dele. */
 export function requisitoDoDocumento(documento: Documento): RequisitoDocumento | undefined {
   if (!documento.requisitoId) return undefined;
-  for (const programa of catalogoProgramas) {
+  const fontes = useMockDb.getState().programas;
+  for (const programa of fontes.length ? fontes : catalogoProgramas) {
     const requisito = programa.documentosExigidos.find((r) => r.id === documento.requisitoId);
     if (requisito) return requisito;
   }
@@ -75,10 +77,16 @@ export function useCaminhoArquivoDrive(documento: Documento): string | null {
 export async function enviarEAnalisarDocumento(documento: Documento, urlMock: string) {
   await container.documentos.registrarEnvio(documento.id, urlMock);
   const requisito = requisitoDoDocumento(documento);
+  // E06-S05/AC-4 — a config de IA do requisito entra no parecer (skill/referência); o status do
+  // documento continua só mudando por decisão humana (invariante ADR-0005, E07-S01 AC-3).
   const analise = await container.analiseDocumento.analisar({
     documentoId: documento.id,
     tipoEsperado: (requisito?.tipo as TipoDocumento | undefined) ?? documento.tipo,
     objetivoRequisito: requisito?.objetivo ?? "",
+    skillAnalise: requisito?.analiseIA?.habilitada ? requisito.analiseIA.skill : undefined,
+    arquivoReferenciaId: requisito?.analiseIA?.habilitada
+      ? requisito.analiseIA.arquivoReferenciaId
+      : undefined,
   });
   useMockDb.getState().salvarAnaliseDocumento(documento.id, analise);
   return analise;

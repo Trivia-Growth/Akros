@@ -37,11 +37,15 @@ export interface AssinaturaService {
   assinar(id: string, nomeAssinante: string): Promise<void>;
 }
 
-/** E07-S01 / ADR-0005 — porta de análise de documento por IA. O parecer nunca decide status. */
+/** E07-S01 / ADR-0005 — porta de análise de documento por IA. O parecer nunca decide status.
+ * E06-S05/ADR-0013 — skill e arquivo de referência do requisito entram como opcionais: mudam o
+ * conteúdo do parecer, nunca o Documento.status. */
 export interface AnalisadorDocumentoPort {
   analisar(input: {
     documentoId: string;
     tipoEsperado: TipoDocumento;
     objetivoRequisito: string;
+    skillAnalise?: string;
+    arquivoReferenciaId?: string;
   }): Promise<AnaliseDocumento>;
 }

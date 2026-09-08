@@ -1,6 +1,30 @@
-import { obterRepositorioProgramas } from "@/app/real-repositories";
+import { obterRepositorioProgramas, obterRepositorioRequisitos } from "@/app/real-repositories";
 import { useCallback, useEffect, useState } from "react";
 import type { Programa } from "../domain/types";
+import type { RequisitoDocumentoRepository } from "./ports";
+
+/** E06-S05/ADR-0013 — repositório de RequisitoDocumento, resolvido preguiçosamente
+ * (demo/real). `null` enquanto resolve ou se falhar; a UI cai no comportamento de
+ * draft nesse interim. */
+export function useRequisitoDocumentoRepo(): RequisitoDocumentoRepository | null {
+  const [repo, setRepo] = useState<RequisitoDocumentoRepository | null>(null);
+
+  useEffect(() => {
+    let ativo = true;
+    obterRepositorioRequisitos()
+      .then((resolvido) => {
+        if (ativo) setRepo(resolvido);
+      })
+      .catch(() => {
+        if (ativo) setRepo(null);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  return repo;
+}
 
 export function useProgramasReais(): {
   programas: Programa[];
