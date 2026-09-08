@@ -12,12 +12,12 @@ alwaysApply: false
 - **Story ativa:** nenhuma — `E06-S05` concluída e commitada nesta data (ver histórico abaixo);
   as stories restantes estão bloqueadas (deploy DevOps: E13-S12/E16-S01) ou aguardam decisão de
   produto/arquitetura (E10-S02+, E14-S02, dívida do ADR-0004 abaixo).
-- **Dívida nova — escopo do ADR-0004 (escalar para @architect):** um `ProgramaEditor` que edita
-  fases e salva o `Programa` inteiro **já existia em HEAD** antes de E06-S05, e a migration `0015`
-  já liberava INSERT admin em `programas` — ou seja, a invariante "admin só lê o catálogo" do
-  ADR-0004 já não valia na prática, sem ADR que a suspendesse. ADR-0013 autoriza formalmente só
-  `RequisitoDocumento`; decidir: ratificar a escrita de Programa inteiro com ADR novo ou remover
-  o editor pré-existente.
+- **Dívida do ADR-0004 — RESOLVIDA em 2026-09-08 pelo ADR-0014:** a zona cinzenta (editor de
+  Programa inteiro pré-existente + INSERT admin de `0015`, sem ADR) foi ratificada pelo dono do
+  produto — **admin edita o Programa inteiro**; a salvaguarda é o congelamento por
+  `programaVersao` dos casos instanciados (ADR-0004 continua valendo pelo mecanismo de versão,
+  não pela imutabilidade da UI). Pagamentos recorrentes/multi-meio/faturas (E10-S02+) **fora de
+  escopo por decisão** até nova orientação.
 - **Gates:** 163 unitários (+8 de E06-S05), biome, `arch:check`, build e `audit:esteira` verdes.
 - **Próximo passo:** DevOps dá push nos lotes acumulados (E13 + E00-S06 + E15-S02 + E06-S05),
   aplica `0016` e deploya as functions; decisões pendentes com o Bruno: escopo do ADR-0004

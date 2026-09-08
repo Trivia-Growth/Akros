@@ -119,7 +119,7 @@ Decisões tomadas com o cliente nesta rodada:
 | E06-S02 | Programa Visto Religioso | R/EB-4 com documentos institucionais da igreja — prova de que o 2º fluxo entra sem código | @claude-code | 🟩 | ✅ | 2026-08-06 | ~`8b679c3` |
 | E06-S03 | Abertura de caso com programa | Escolha do programa na conversão do lead; jornada instanciada do template | @claude-code | 🟩 | ✅ | 2026-08-06 | ~`8b679c3` |
 | E06-S04 | Catálogo de programas | Visão somente-leitura no admin, com comparação lado a lado | @claude-code | 🟩 | ✅ | 2026-08-06 | ~`8b679c3` |
-| E06-S05 | Editor de etapas + análise IA por skill/referência | **Concluída em 2026-09-08.** ADR-0013 autorizou a exceção pontual ao ADR-0004 (só `RequisitoDocumento` editável; Programa/FaseTemplate imutáveis pela UI). CRUD de requisito com remoção bloqueada por vínculo (oferece desativar), validação de skill obrigatória na aplicação, histórico de troca do arquivo de referência; `AnalisadorDocumentoPort` estendido com `skillAnalise?`/`arquivoReferenciaId?` e mock cita a configuração no parecer — invariante do ADR-0005 provada intacta com skill ligada (testes escritos antes do código). AC-7 desviada: feature `programas` segue PT literal (SPEC_DEVIATION prévia). **Achado fora do escopo:** editor de Programa inteiro já existia em HEAD e `0015` já liberava INSERT admin — a só-leitura do ADR-0004 já não valia na prática; dívida a decidir por @architect. **Arquitetural** | — | 🟩 | ✅ | 2026-09-08 | — |
+| E06-S05 | Editor de etapas + análise IA por skill/referência | **Concluída em 2026-09-08.** ADR-0013 autorizou a exceção pontual ao ADR-0004 (só `RequisitoDocumento` editável; Programa/FaseTemplate imutáveis pela UI). CRUD de requisito com remoção bloqueada por vínculo (oferece desativar), validação de skill obrigatória na aplicação, histórico de troca do arquivo de referência; `AnalisadorDocumentoPort` estendido com `skillAnalise?`/`arquivoReferenciaId?` e mock cita a configuração no parecer — invariante do ADR-0005 provada intacta com skill ligada (testes escritos antes do código). AC-7 desviada: feature `programas` segue PT literal (SPEC_DEVIATION prévia). **Achado fora do escopo resolvido pelo ADR-0014 (2026-09-08):** o dono do produto ratificou — admin edita o Programa inteiro; salvaguarda = congelamento por `programaVersao` dos casos instanciados. **Arquitetural** | — | 🟩 | ✅ | 2026-09-08 | — |
 
 ## E07 — IA de análise de documentos · ADR-0005
 
@@ -153,9 +153,9 @@ Decisões tomadas com o cliente nesta rodada:
 | Story | Título | Descrição | Owner | Status | Spec | Concluída | Commit |
 |-------|--------|-----------|-------|--------|------|-----------|--------|
 | E10-S01 | Pagamento por transferência | Sem gateway: dados de recebimento (fictícios), upload de comprovante, conciliação manual pela equipe | @claude-code | 🟩 | ✅ | 2026-08-06 | ~`8b679c3` |
-| E10-S02 | Cartão salvo + recorrência | Cobrança recorrente automática | — | ⬜ | ⏳ | — | — |
-| E10-S03 | Multi-meio (QuickBooks / Wise) | Integração real com os sistemas que a Akros já usa | — | ⬜ | ⏳ | — | — |
-| E10-S04 | Faturas e recibos | Documento fiscal no portal | — | ⬜ | ⏳ | — | — |
+| E10-S02 | Cartão salvo + recorrência | Cobrança recorrente automática **Fora de escopo por decisão do Bruno em 2026-09-08** — depende de provedor de pagamento real; retoma quando houver orientação. | — | ⬜ | ⏳ | — | — |
+| E10-S03 | Multi-meio (QuickBooks / Wise) | Integração real com os sistemas que a Akros já usa **Fora de escopo por decisão do Bruno em 2026-09-08** — depende de provedor de pagamento real; retoma quando houver orientação. | — | ⬜ | ⏳ | — | — |
+| E10-S04 | Faturas e recibos | Documento fiscal no portal **Fora de escopo por decisão do Bruno em 2026-09-08** — depende de provedor de pagamento real; retoma quando houver orientação. | — | ⬜ | ⏳ | — | — |
 
 > **Decisão do cliente (06/08/2026): sem gateway.** A Akros recebe por transferência bancária/Pix
 > (BRL) ou transferência internacional (USD) — não por cartão. E10-S01 cobre esse fluxo completo
@@ -308,7 +308,7 @@ context**, um de cada vez — mesmo padrão do E06 (S01 fixa o modelo, S02+ repl
 | Story | Título | Descrição | Owner | Status | Spec | Concluída | Commit |
 |-------|--------|-----------|-------|--------|------|-----------|--------|
 | E14-S01 | Rate limiting nas Edge Functions | Fecha **SD-01 (P0)**. Contador em `seguranca.rate_limit` (Edge Function não tem memória entre invocações); chave `sha256(ip + segredo + rota)` porque IP é dado pessoal sob LGPD; `fail-closed` na sessão, `fail-open` documentado só na telemetria. Gate novo: função pública sem teto declarado falha o `check-edge-functions`. **Arquitetural** | — | ⬜ | ✅ | — | — |
-| E14-S02 | Cofre de credenciais (Vault) | Fecha **SD-05**. `refresh_token` em Supabase Vault, `access_token` cifrado, nada exposto na UI de `/admin/configuracoes`. | — | ⬜ | ⏳ | — | — |
+| E14-S02 | Cofre de credenciais (Vault) | **Fechada por E13-S12 (2026-09-08), sem código novo.** O cofre pedido para SD-05 já foi entregue pelo E13-S12: chaves Evolution/OpenRouter no Vault via RPC service-role, capability token em header, nada volta ao browser (ADR-0012). Integrações futuras seguem o mesmo padrão quando virarem reais. | — | 🟩 | ✅ | 2026-09-08 | — |
 
 ## E13 (continuação) — o que a medição de 31/08 revelou
 

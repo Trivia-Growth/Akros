@@ -90,11 +90,12 @@ persistido. **Desvio registrado (AC-7)**: a feature `programas` é PT literal de
 
 **Task 4** — `arch:check` verde; nenhuma tela nova edita `Programa.versao`/`sujeito`/`categoria`.
 
-**Achado fora do escopo (escalar para @architect):** um `ProgramaEditor` que edita fases e salva
+**Achado fora do escopo, resolvido em 2026-09-08:** um `ProgramaEditor` que edita fases e salva
 o `Programa` inteiro **já existia em HEAD** (prévio a esta story) e, com o INSERT admin liberado
-por `0015`, a escrita de programa inteiro já era possível fora do demo — ou seja, a invariante
-"só-leitura" do ADR-0004 já não valia na prática, sem ADR que a suspendesse. O ADR-0013 autoriza
-formalmente só `RequisitoDocumento`; o restante é dívida de arquitetura a decidir (ratificar com
-ADR novo ou remover o editor) — registrado no STATE.md.
+por `0015`, a escrita de programa inteiro já era possível fora do demo — a invariante
+"só-leitura" do ADR-0004 já não valia na prática, sem ADR que a suspendesse. O dono do produto
+decidiu em 2026-09-08: **admin edita o Programa inteiro**. Zona cinzenta fechada pelo
+**ADR-0014**, que estende a exceção do ADR-0013 a todo o catálogo mantendo o congelamento por
+`programaVersao` dos casos instanciados.
 
 163 testes unitários (+8), biome, arch, build e audit:esteira verdes.

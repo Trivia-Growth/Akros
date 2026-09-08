@@ -69,14 +69,17 @@ determinístico e local; nada sai da máquina.
 **Fecha em:** decisão registrada sobre provedor, retenção e opt-out de treino, antes do primeiro
 adapter real. Trilha `ia/` cumprida (`@prompt-engineer` + `@security`).
 
-### Credenciais de integração externa ainda sem cofre
+### Credenciais de integração externa ainda sem cofre — FECHADO (padrão Vault, E13-S12)
 Google Calendar, Microsoft Graph, Calendly, Meta Graph, OpenRouter, Whisper e Fireflies aparecem
 como formulário de credencial em `/admin/configuracoes`. Todas mockadas — nenhum token real é
 aceito ou persistido. Quando qualquer uma virar real, cai a exigência de
 `seguranca/os-grade.md` §Credenciais externas: `refresh_token` em Supabase Vault, `access_token`
 cifrado, nada exposto na UI. O **ADR-0007** já registrou essa preocupação ao aprovar a tool de
 agenda do agente.
-**Fecha em:** E14 (cofre de credenciais).
+**Fechado em:** E13-S12 entregou o padrão em 2026-09-05/08 (ADR-0012): chaves Evolution/OpenRouter
+vão ao Supabase Vault via RPC service-role, capability token autentica webhook por header, nada
+volta ao browser. Quando Google/Meta/Calendly/Whisper/Fireflies virarem reais, seguem o mesmo
+padrão — o roteiro está em `specs/E13-S12-integracao-evolution-openrouter/`.
 
 ## P2 — aceito, monitorar
 
