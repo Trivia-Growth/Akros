@@ -2,6 +2,7 @@
 name: DESIGN
 description: Contas de agenda conectadas (Google/Microsoft/Calendly) + tool de agendamento do agente de IA.
 story: E04-S07
+integracoes: [google, microsoft, calendly]
 alwaysApply: false
 ---
 
@@ -123,6 +124,24 @@ provedor da conta usada (`google`→`gmail`, `microsoft`→`outlook`, `calendly`
   marca inativa — decisão de implementação: **remove da lista**, mais simples e mais claro na UI).
 - `agendarReuniao` (já existe) ganha o campo `criadaPor` no input — sem quebrar chamadores atuais
   (campo opcional).
+
+## Modo degradado
+
+Hoje **não há chamada real** a Google Calendar, Microsoft Calendar ou Calendly — a tool só simula a
+consulta de disponibilidade (ver "Simulação da conversa"). Por isso o "modo degradado" de cada
+provedor hoje é o estado de configuração, não uma falha de rede:
+
+- **Google fora / não conectado:** sem `ContaAgendaConectada` ativa de provedor `google`, o card
+  "Ferramenta de agendamento" não a lista como opção; o agente nunca oferece essa conta.
+- **Microsoft fora / não conectado:** mesmo tratamento — ausência da conta ativa remove a opção,
+  não gera erro.
+- **Calendly fora / não conectado:** idem. Sem nenhuma conta conectada de nenhum provedor, o card
+  mostra estado vazio apontando para `/admin/configuracoes` e a ferramenta fica inativa por
+  completo — o agente não tenta agendar.
+
+Quando OAuth real e chamada às 3 APIs existirem (ver "Futuro" abaixo), este invariante exige suíte
+de contrato (invariante 2 de `specs/E00-S06-invariantes-padrao-os/`) e teste de degradação real
+(timeout, 401, rate limit) — hoje suspenso porque testaria o mock contra si mesmo.
 
 ## Futuro (fora desta rodada, registrado)
 OAuth real por provedor, refresh token real, chamada real às 3 APIs, reversão/cancelamento de

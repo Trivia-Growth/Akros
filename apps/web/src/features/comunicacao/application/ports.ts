@@ -1,5 +1,6 @@
 import type {
   Conversa,
+  EmailThread,
   EventoComunicacao,
   FonteConhecimento,
   Mensagem,
@@ -33,6 +34,28 @@ export interface TimelineRepository {
   listarPorCliente(clienteOuLeadId: string): Promise<EventoComunicacao[]>;
   registrar(evento: Omit<EventoComunicacao, "id">): Promise<EventoComunicacao>;
   resolverPendenciaDeCanal(eventoId: string): Promise<void>;
+}
+
+/** Leitura do histórico do cliente autenticado. RLS define o vínculo, não ids de fixtures. */
+export interface ComunicacaoConsulta {
+  carregarCliente(): Promise<EventoComunicacao[]>;
+}
+
+export interface ResumoAgenteIA {
+  id: string;
+  nome: string;
+  funcao: string;
+  ativo: boolean;
+}
+
+export interface ComunicacaoAdminConsulta {
+  carregarAdmin(): Promise<{
+    conversas: Conversa[];
+    emails: EmailThread[];
+    eventos: EventoComunicacao[];
+    agentes: ResumoAgenteIA[];
+    fontes: FonteConhecimento[];
+  }>;
 }
 
 export interface AgenteService {

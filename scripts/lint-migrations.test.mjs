@@ -12,11 +12,15 @@ import test from "node:test";
 const SCRIPT = resolve("scripts/lint-migrations.mjs");
 
 /** @param arquivos mapa nome-do-arquivo → SQL */
-function fixture(arquivos) {
+function fixture(arquivos, { schemasExpostos = ["public", "crm"] } = {}) {
   const root = mkdtempSync(join(tmpdir(), "lint-migrations-"));
   const dir = join(root, "supabase", "migrations");
   mkdirSync(dir, { recursive: true });
   for (const [nome, sql] of Object.entries(arquivos)) writeFileSync(join(dir, nome), sql);
+  writeFileSync(
+    join(root, "supabase", "config.toml"),
+    `[api]\nschemas = [${schemasExpostos.map((x) => `"${x}"`).join(", ")}]\n`,
+  );
   return root;
 }
 
@@ -96,4 +100,32 @@ test("falha para duas migrations com o mesmo prefixo numérico", () => {
   );
   assert.equal(r.ok, false);
   assert.match(r.output, /usado em 2 migrations/);
+});
+
+// Nasce de um quase-apagão real: `seguranca` foi criado por migration e ficou fora de
+// `[api] schemas`. O rate limit chama `seguranca.consumir_cota` via PostgREST — toda chamada
+// devolvia PGRST106 e, com `fail-closed` na sessão, ninguém conseguiria logar. Só apareceu ao
+// testar contra o projeto real.
+test("falha quando migration cria schema que nao esta exposto no PostgREST", () => {
+  const r = run(
+    fixture({ "0001_E14-S01_novo.sql": "CREATE SCHEMA IF NOT EXISTS seguranca;\n" }),
+  );
+  assert.equal(r.ok, false);
+  assert.match(r.output, /nao esta em \[api\] schemas/);
+});
+
+test("schema exposto nao acusa", () => {
+  const r = run(
+    fixture({ "0001_E14-S01_novo.sql": "CREATE SCHEMA IF NOT EXISTS seguranca;\n" }, {
+      schemasExpostos: ["public", "crm", "seguranca"],
+    }),
+  );
+  assert.equal(r.ok, true);
+});
+
+// AC-2 (E00-S06): zero migrations varridas é falha do gate (caminho quebrado), nunca "OK em 0".
+test("falha quando não há nenhuma migration (coleção vazia)", () => {
+  const r = run(fixture({}));
+  assert.equal(r.ok, false);
+  assert.match(r.output, /nenhuma migration encontrada/);
 });

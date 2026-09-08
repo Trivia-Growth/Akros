@@ -10,7 +10,7 @@ enabled = true
 port = 54321
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` and `graphql_public` schemas are included by default.
-schemas = ["public", "graphql_public", "crm", "jornada", "documentos", "pagamentos", "agenda", "programas", "comunicacao", "audit", "lgpd"]
+schemas = ["public", "graphql_public", "crm", "jornada", "documentos", "pagamentos", "agenda", "programas", "comunicacao", "audit", "lgpd", "seguranca", "configuracoes"]
 # Extra schemas to add to the search_path of every request.
 extra_search_path = ["public", "extensions"]
 # The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
@@ -406,6 +406,11 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 # ADR-0008 (sessão) — três funções sem JWT de entrada (não existe token antes do login; o
 # refresh/logout leem o próprio cookie/token da requisição, não um Bearer do gateway).
+[functions.lead-capturar]
+# Anônima por natureza: quem envia o formulário de /contatos é visitante, não usuário. A escrita
+# acontece com service_role dentro da function, nunca com o token de quem chama.
+verify_jwt = false
+
 [functions.telemetria-erro]
 # Anônima de propósito: erro de cliente acontece também com o usuário deslogado, no site
 # institucional. Exigir JWT perderia exatamente os crashes mais visíveis para quem não é cliente.
@@ -420,6 +425,16 @@ enabled = true
 verify_jwt = false
 
 [functions.sessao-logout]
+enabled = true
+verify_jwt = false
+
+# Admin é validado dentro da função (Auth + role + CSRF); gateway aberto permite OPTIONS/CORS.
+[functions.integracoes-ia-salvar]
+enabled = true
+verify_jwt = false
+
+# Evolution não envia JWT Supabase. O capability token por conta vai no header x-akros-webhook.
+[functions.evolution-webhook]
 enabled = true
 verify_jwt = false
 

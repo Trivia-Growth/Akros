@@ -1,5 +1,13 @@
 import type { DadosRecebimento, Pagamento } from "../domain/types";
 
+/** Leitura dos pagamentos do cliente e instruções de recebimento permitidas por RLS. */
+export interface PagamentosConsulta {
+  carregarCliente(): Promise<{
+    pagamentos: Pagamento[];
+    dadosRecebimento: DadosRecebimento[];
+  }>;
+}
+
 export interface PagamentoRepository {
   listarPorCliente(clienteId: string): Promise<Pagamento[]>;
   criar(input: Omit<Pagamento, "id" | "status">): Promise<Pagamento>;

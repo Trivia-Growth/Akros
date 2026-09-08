@@ -36,12 +36,16 @@ pre-push:
       run: pnpm run audit:esteira
     fidelidade:
       run: pnpm run eval:spec
+    gate-coverage:
+      run: pnpm run check:gate-coverage # invariante 1 (E00-S06): todo scripts/*.mjs tem .test.mjs par
     mermaid:
-      run: node scripts/validate-mermaid.mjs
+      run: pnpm run validate:mermaid
     migrations:
       run: pnpm run lint:migrations # RLS-GRANT (custom) + Squawk se instalado
     edge-functions:
       run: pnpm run check:edge-functions # função órfã / functions.invoke sem função declarada (E00-S11)
+    degraded-mode:
+      run: pnpm run check:degraded-mode # invariante 4 (E00-S06): integração externa declara modo degradado
     lint:
       run: pnpm exec biome check .
     typecheck:

@@ -19,7 +19,7 @@ describe("ProgramasPage (E06-S04) — smoke test de render", () => {
   it("renderiza os dois programas do catálogo sem loop infinito", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     renderWithRouter(<ProgramasPage />, ["/admin/programas"]);
-    await waitFor(() => screen.getAllByRole("heading", { level: 1 }));
+    await waitFor(() => expect(screen.getAllByText("EB-2 NIW").length).toBeGreaterThan(0));
     expect(screen.getAllByText("EB-2 NIW").length).toBeGreaterThan(0);
     expect(screen.getByText("Visto Religioso (R / EB-4)")).toBeTruthy();
     expect(errorSpy).not.toHaveBeenCalledWith(expect.stringContaining("Maximum update depth"));
@@ -39,6 +39,7 @@ describe("rodada2-programas — acessibilidade", () => {
 
   it("ProgramasPage não tem violação grave de acessibilidade", async () => {
     const { container } = renderWithRouter(<ProgramasPage />, ["/admin/programas"]);
+    await screen.findByText("Visto Religioso (R / EB-4)");
     await esperarSemViolacoesGraves(container);
   });
 });

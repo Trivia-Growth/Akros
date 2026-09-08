@@ -15,25 +15,27 @@ por tempo indeterminado, monitorar.
 
 ## P0 — bloqueia produção
 
-### Frontend ainda não fala com o schema real (RLS só provado no banco)
-`crm`/`jornada`/`documentos`/`pagamentos`/`agenda`/`programas`/`comunicacao` têm RLS real,
-provado via PostgREST (E13-S01..S05) — mas a UI ainda lê 100% de `useMockDb` (E12-S01). O
-isolamento por `cliente_id` só existe no banco; a aplicação em si não o exercita ainda.
-**Fecha em:** `specs/E13-S09-adapters-supabase-restantes/` (E13-S08 migrou só `clientes`; os outros 4 contextos e a deleção do mapa de id estão especificados lá).
+Nenhum P0 aberto. Os dois últimos fecharam em 2026-09-05 com E13-S11 (Task 5) e foram movidos
+para o histórico abaixo.
 
-### Store global única carrega dado de todas as personas na memória do browser
-Mesmo autenticado como um cliente só (E12-S02), `useMockDb` mantém as 5 personas mockadas
-inteiras na memória do JS da aba — um `console.log(useMockDb.getState())` no DevTools expõe tudo.
-**Aceitável hoje** porque o dado é 100% fictício (sem PII real). **Bloqueia** subir qualquer dado
-real de cliente antes de existir filtragem de estado no frontend equivalente à RLS do banco.
-**Fecha em:** `specs/E13-S09-adapters-supabase-restantes/` AC-3 — a store deixa de ser **carregada** fora do modo demo. Filtrar não resolve: quando o filtro roda, o dado já está na memória.
+### Fechados em 2026-09-05 — E13-S11 (Task 5, corte demo)
 
-### Edge Functions sem rate limiting
-`grep -rn "rate\|limit" supabase/functions/` não devolve nada. `sessao-login` aceita tentativa
-ilimitada de senha: força bruta e enumeração de usuário sem custo. `seguranca/os-grade.md` pede
-rate limit `fail-closed` em função pública e a `Definition-of-Done.md` §4 lista como obrigatório.
-Superfície reduzida hoje (2 usuários seed), o que diminui o alcance, não o risco.
-**Fecha em:** `specs/E14-S01-rate-limit-edge-functions/` — contador em `seguranca.rate_limit`, chave hasheada (IP é dado pessoal), `fail-closed` no caminho de sessão. Especificada em 2026-08-31.
+**1. Frontend ainda não fala com o schema real (RLS só provado no banco).**
+Medido em 2026-08-31: 8 telas liam `useMockDb` mesmo com `clientes` migrado (E13-S08) — dashboard
+mostrava personas fictícias enquanto `/admin/clientes` mostrava os reais. **Fechamento:** as ondas
+de E13-S11 migraram Programas, Configurações, Agenda, transcrições, Jornada, Documentos,
+Pagamentos, Mensagens, Propostas, Comunicação, Dashboards, Perfil, Operação, Cliente 360 e Fila de
+revisão para adapters reais com RLS por `auth.uid()`; as 4 rotas que restavam em mock
+(`/admin/leads`, `/admin/aprovacoes`, `/admin/pagamentos`, `/admin/reativacao`) foram **ocultadas
+fora do modo demo** (redirect ao dashboard, itens fora do menu) — decisão consciente de 05/09.
+Migrá-las exige mutações que seguem sem RPC/Edge Function de transição/auditoria e vira story
+própria.
+
+**2. Store global única carrega dado de todas as personas na memória do browser.**
+`useMockDb` mantinha as 5 personas inteiras na memória da aba, expostas num `console.log` do
+DevTools. **Fechamento:** fora do demo nenhuma rota carrega mais a store (as 4 restantes foram
+ocultadas acima) e o e2e serial prova que a sessão real não baixa `mocks/store`. Filtragem nunca
+seria solução — quando o filtro roda, o dado já está na memória; a saída foi não carregar.
 
 ## P1 — corrigir antes de dado real de cliente
 
@@ -42,11 +44,11 @@ Titular/banco/conta são **fictícios de propósito** (E10-S01, ROADMAP pergunta
 Substituir pelos dados reais da Akros é decisão consciente, não técnica — feita quando a Akros
 aprovar uso fora de demo.
 
-### `crm.leads` não existe — eventos/threads de lead ficam sem dono
+### Eventos/threads de lead ainda não apontam para `crm.leads`
 `comunicacao.eventos.cliente_id` e `email_threads.cliente_id` são nullable pra cobrir o caso de
 lead ainda não convertido (E13-S05/design.md). Hoje isso só significa "invisível pra qualquer
-cliente" (correto). Quando `crm.leads` existir, decidir se leads precisam de RLS própria (hoje
-não logam, só staff acessa via admin).
+cliente" (correto). E13-S09 aplicou tabela, RLS admin-only, captura pública e conversão atômica no
+projeto real em 2026-09-04. A ligação das threads/eventos entra nas ondas de E13-S11.
 
 ### Retenção de dado de lead perdido (LGPD)
 ROADMAP pergunta aberta nº 6: base legal e prazo de guarda pra lead descartado/inativo (E11-S02/
@@ -67,14 +69,17 @@ determinístico e local; nada sai da máquina.
 **Fecha em:** decisão registrada sobre provedor, retenção e opt-out de treino, antes do primeiro
 adapter real. Trilha `ia/` cumprida (`@prompt-engineer` + `@security`).
 
-### Credenciais de integração externa ainda sem cofre
+### Credenciais de integração externa ainda sem cofre — FECHADO (padrão Vault, E13-S12)
 Google Calendar, Microsoft Graph, Calendly, Meta Graph, OpenRouter, Whisper e Fireflies aparecem
 como formulário de credencial em `/admin/configuracoes`. Todas mockadas — nenhum token real é
 aceito ou persistido. Quando qualquer uma virar real, cai a exigência de
 `seguranca/os-grade.md` §Credenciais externas: `refresh_token` em Supabase Vault, `access_token`
 cifrado, nada exposto na UI. O **ADR-0007** já registrou essa preocupação ao aprovar a tool de
 agenda do agente.
-**Fecha em:** E14 (cofre de credenciais).
+**Fechado em:** E13-S12 entregou o padrão em 2026-09-05/08 (ADR-0012): chaves Evolution/OpenRouter
+vão ao Supabase Vault via RPC service-role, capability token autentica webhook por header, nada
+volta ao browser. Quando Google/Meta/Calendly/Whisper/Fireflies virarem reais, seguem o mesmo
+padrão — o roteiro está em `specs/E13-S12-integracao-evolution-openrouter/`.
 
 ## P2 — aceito, monitorar
 

@@ -8,28 +8,66 @@ alwaysApply: false
 
 ## Agora
 
-- **Data:** 2026-08-31
-- **Story ativa:** nenhuma em implementação. **E13 fechado** (S01–S08), **E15-S01 fechado**
-  (resiliência de módulo) e **E00-S06 em andamento** (invariantes da esteira — 3 dos 4 aplicados).
-- **PR #3 mergeado** em 2026-08-31 (`31066f9`, merge commit para preservar os SHAs por story do
-  ROADMAP). `main` passou de 28/08 para hoje: recebeu E12-S02 → E13-S08 **e** a esteira nova, e
-  a CI rodou verde sobre ela.
-- **Próximo passo:** `E13-S09` — migrar `jornada`/`documentos`/`pagamentos`/`comunicacao` para
-  Supabase real, criar `crm.leads` + `criarClienteAPartirDeLead`, e então as 6 telas admin que
-  ficaram mock. Ao fechar, **deletar** (não substituir) o `MAPA_ID_REAL_PARA_MOCK` em
-  `SupabaseClienteRepository`.
+- **Data:** 2026-09-08
+- **Story ativa:** nenhuma — `E06-S05` concluída e commitada nesta data (ver histórico abaixo);
+  as stories restantes estão bloqueadas (deploy DevOps: E13-S12/E16-S01) ou aguardam decisão de
+  produto/arquitetura (E10-S02+, E14-S02, dívida do ADR-0004 abaixo).
+- **Dívida do ADR-0004 — RESOLVIDA em 2026-09-08 pelo ADR-0014:** a zona cinzenta (editor de
+  Programa inteiro pré-existente + INSERT admin de `0015`, sem ADR) foi ratificada pelo dono do
+  produto — **admin edita o Programa inteiro**; a salvaguarda é o congelamento por
+  `programaVersao` dos casos instanciados (ADR-0004 continua valendo pelo mecanismo de versão,
+  não pela imutabilidade da UI). Pagamentos recorrentes/multi-meio/faturas (E10-S02+) **fora de
+  escopo por decisão** até nova orientação.
+- **Gates:** 163 unitários (+8 de E06-S05), biome, `arch:check`, build e `audit:esteira` verdes.
+- **Próximo passo:** DevOps dá push nos lotes acumulados (E13 + E00-S06 + E15-S02 + E06-S05),
+  aplica `0016` e deploya as functions; decisões pendentes com o Bruno: escopo do ADR-0004
+  (acima), E10-S02+ (provedor de pagamento real), E14-S02 (ratificar cofre entregue por E13-S12
+  como SD-05 fechado).
+
+## Histórico
+
+- **2026-09-08 — E06-S05 concluída (🟩).** ADR-0013 escrito e aceito (exceção pontual ao ADR-0004,
+  escopo mínimo: só `RequisitoDocumento` editável). CRUD de requisito com remoção bloqueada por
+  vínculo (oferece desativar), skill obrigatória validada na aplicação, histórico de troca do
+  arquivo de referência; `AnalisadorDocumentoPort` ganhou `skillAnalise?`/`arquivoReferenciaId?`
+  opcionais e o mock cita a configuração no parecer — invariante do ADR-0005 provada intacta com
+  skill ligada (testes antes do código). Desvio AC-7 registrado: feature `programas` segue PT
+  literal (SPEC_DEVIATION prévia). 163 testes, gates verdes.
+- **2026-09-06 — E00-S06 concluída (🟩)** e **E15-S02 concluída (🟩, formalização)**. Detalhes nos
+  commits `edb54d3`/`d6fe787` (E00-S06) e `a41b8c6` (E15-S02).
+
+- **2026-09-06/05 — histórico anterior:**
+- **Story anterior:** `E13-S12` 🟨 (aguardando rollout DevOps, sem mudança nesta sessão). Lote
+  E13-S09/S10/S11/S12 commitado em 5 commits locais (5a0acf8..f8a1c34); push/PR é passo do
+  @devops. **P0 do SECURITY_DEBT fechado:** as 4 rotas admin que ainda liam mock (`/admin/leads`,
+  `/admin/aprovacoes`, `/admin/pagamentos`, `/admin/reativacao`) existem só no modo demo — fora
+  dele redirecionam ao dashboard e somem do menu (`demoOnly`). Sessão real não carrega
+  `useMockDb` nem `mocks/store`; e2e AC-7 prova pelo caminho do usuário. Migração real dessas 4
+  telas vira story própria (depende de RPC/Edge Function de transição/auditoria).
+- **Gates:** 80/80 `test:gates` (scripts/), `arch:check`, `eval:spec` e `audit:esteira` verdes
+  após as mudanças de E00-S06. E13-S12: 155 unitários, build, `arch:check`, biome, migration lint
+  e `deno check` verdes no lote. Playwright serial com AC-7 novo — total 11/11.
+- **Próximo passo:** DevOps aplica `0016` e deploya
+  `integracoes-ia-salvar`/`evolution-webhook` (e dá push nos lotes E13 + E00-S06 + abre PR); então
+  administrador configura chaves só em `/admin/configuracoes` e ativa agente. Depois: story de
+  migração das 4 telas ocultadas.
 
 ### Bloqueios abertos
 
-1. **`P0` em `docs/SECURITY_DEBT.md`** bloqueiam produção: rate limiting nas Edge Functions,
-   CSP/HSTS, e o frontend que ainda lê mock fora de `clientes`.
-2. **Job `e2e` desligado na CI** (`vars.E2E_HABILITADO`). Ele autentica contra o Supabase de
-   produção; ligar exige decidir sobre usuários de teste em ambiente separado. Enquanto isso a
-   matriz de autorização só roda na máquina de quem lembra.
-3. **Dívida nomeada no baseline:** 307 AC sem task e 75 artefatos ausentes em 69 specs
+1. **E2E só local:** autentica contra Supabase real; não roda na CI por decisão registrada no
+   `lefthook.yml`. Auth-matrix 7/7 em 2026-09-05.
+2. **Dívida nomeada no baseline:** 307 AC sem task e 75 artefatos ausentes em 69 specs
    (ADR-0011). Não é para regularizar em massa — encolhe quando a story antiga for tocada.
-4. **E16-S01 não implementada** (CSP, sink de erro). O deploy preview do Netlify, que era o AC-1,
-   já funcionava — descoberto ao abrir o primeiro PR.
+3. **E16-S01 permanece 🟨:** CSP/telemetria escritas; faltam verificação no preview, deploy da
+   function e exercício real do runbook de rollback.
+4. **Mutações de processo bloqueadas:** RLS histórico permite UPDATE próprio em Jornada,
+   Documento e Pagamento, mas não valida todas as transições; `comunicacao.eventos` não concede
+   INSERT ao navegador; `crm.propostas` não valida seu ciclo de vida. Não habilitar UI até
+   Storage/RPC/Edge Function aplicar transição, validação e auditoria. É o que segura as 4 telas
+   ocultadas (kanban de leads, aprovações, conciliação, reativação).
+5. **Rollout E13-S12:** código/migration estão commitados e testados, mas nenhuma key/instância
+   foi configurada e functions ainda precisam do deploy do DevOps. Agente permanece sem saída
+   externa.
 
 ### Decisões recentes
 
@@ -45,6 +83,8 @@ alwaysApply: false
   novos). Rode `git pull` lá antes de tocar qualquer coisa, ou remova o worktree.
 - **E15-S01.** 68 chunks, entrada de 850,74 kB para 596,25 kB, `ErrorBoundary` por rota. Um
   `throw` no admin não derruba mais o site.
+- **ADR-0012 — Vault + capability header.** BYOK passa por Edge Function admin/CSRF, segredo fica
+  no Vault e Evolution autentica webhook por token de 256 bits em header; URL não contém segredo.
 
 ## Histórico
 

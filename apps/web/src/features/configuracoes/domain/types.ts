@@ -105,4 +105,18 @@ export interface ContaCanalConectada {
   identificador: string;
   ativa: boolean;
   conectadoEm: string;
+  /** Metadados operacionais, sem API key nem token do webhook. */
+  evolution?: { baseUrl: string; instancia: string; credenciaisConfiguradas: boolean };
+}
+
+/** Configuração de atendimento exibível ao admin. Chave OpenRouter fica somente no Vault. */
+export interface AgenteIAIntegracao {
+  id: string;
+  nome: string;
+  funcao: string;
+  alma: string;
+  saudacao: string;
+  mensagemHandoff: string;
+  modelo: string;
+  ativo: boolean;
 }

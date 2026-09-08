@@ -14,6 +14,7 @@ export class HttpError extends Error {
 
 export const unauthorized = (msg = "Não autorizado") => new HttpError(401, msg);
 export const badRequest = (msg: string) => new HttpError(400, msg);
+export const forbidden = (msg = "Sem permissão") => new HttpError(403, msg);
 
 function getSupabaseSecretKeyValues(): string[] {
   const legacyServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -54,6 +55,22 @@ export async function requireAuth(req: Request): Promise<{ userId: string }> {
   );
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw unauthorized("Token inválido");
+  return { userId: data.user.id };
+}
+
+/** Checa papel no usuário validado pelo Auth; nunca confia em claim enviado no body. */
+export async function requireAdmin(req: Request): Promise<{ userId: string }> {
+  const token = req.headers.get("Authorization")?.replace("Bearer ", "");
+  if (!token) throw unauthorized("Token ausente");
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    { global: { headers: { Authorization: `Bearer ${token}` } } },
+  );
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw unauthorized("Token inválido");
+  if (data.user.app_metadata?.role !== "admin") throw forbidden("Apenas administradores configuram integrações");
   return { userId: data.user.id };
 }
 

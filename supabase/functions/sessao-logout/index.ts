@@ -5,6 +5,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { deleteCookie } from "https://deno.land/std@0.224.0/http/cookie.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { TETOS, checarLimite, resposta429 } from "../_shared/rate-limit.ts";
 import { requireCsrfHeader } from "../_shared/csrf.ts";
 import { HttpError } from "../_shared/auth.ts";
 
@@ -14,6 +15,11 @@ const REFRESH_COOKIE = "akros_refresh_token";
 serve(async (req) => {
   const cors = corsHeaders(req.headers.get("Origin"));
   if (req.method === "OPTIONS") return new Response(null, { headers: cors, status: 204 });
+
+  // E14-S01 — teto por origem antes de qualquer trabalho. `falharFechado` implícito: limitador
+  // indisponível NEGA (ver `_shared/rate-limit.ts`).
+  const limite = await checarLimite({ req, rota: "sessao-logout", ...TETOS["sessao-logout"] });
+  if (!limite.permitido) return resposta429(limite.reiniciaEm, cors);
 
   const reqId = crypto.randomUUID().slice(0, 8);
   console.log(

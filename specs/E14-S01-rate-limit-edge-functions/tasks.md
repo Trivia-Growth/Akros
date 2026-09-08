@@ -40,3 +40,41 @@ Evento com rota, janela e teto — **sem IP em claro**, coerente com AC-4.
 `checarLimite`. Teste do próprio gate provando que ele falha (invariante 1 de E00-S06).
 
 **Gate:** `pnpm run check:edge-functions` falha para uma função nova sem rate limit.
+
+
+---
+
+## Resultado (2026-08-31)
+
+| Task | Gate | Resultado |
+|---|---|---|
+| 1 — Schema `seguranca.rate_limit` | `lint:migrations` | ✅ `0010_E14-S01_schema_seguranca.sql` — RLS FORCE, GRANT só para `service_role`, função `consumir_cota` com `UPSERT` atômico e expurgo oportunista |
+| 2 — `_shared/rate-limit.ts` | `deno check` + `db-tests` | ✅ helper + `supabase/tests/01-rate-limit_test.sql` (teto, chave isolada, virada de janela, expurgo) |
+| 3 — Aplicar nas 4 funções | `deno check` | ✅ `fail-closed` nas 3 de sessão, `fail-open` documentado em `telemetria-erro` |
+| 4 — Log estruturado de excesso | revisão | ✅ evento `rate-limit-excedido` com rota, teto e janela — **sem IP**, coerente com o hash da chave |
+| 5 — Gate de função sem teto | `check:edge-functions` | ✅ + 2 casos de teste provando que ele falha |
+
+**Story fica 🟨.** Falta o que não dá para fazer daqui:
+
+```bash
+# 1. Segredo da chave (sem ele o hash usa string vazia — funciona, mas o IP fica reconstruível
+#    por força bruta sobre o espaço de endereços, que é pequeno)
+supabase secrets set RATE_LIMIT_SECRET="$(openssl rand -hex 32)"
+
+# 2. Aplicar a migration
+supabase db push
+
+# 3. Deploy das funções (as 4 mudaram)
+supabase functions deploy sessao-login sessao-refresh sessao-logout telemetria-erro
+```
+
+**Verificação depois do deploy:** 11 tentativas de login errado seguidas do mesmo IP devem devolver
+`429` com `Retry-After` na 11ª. Antes disso, o `P0` continua aberto na prática — o código está no
+repositório, não em produção.
+
+### Nota sobre AC-2 e concorrência
+Duas sessões simultâneas não são simuláveis dentro de um script `psql`. A atomicidade vem do
+`INSERT ... ON CONFLICT DO UPDATE`, resolvido pelo Postgres com bloqueio de linha. O teste garante
+o comportamento sequencial e a persistência; **não** garante que ninguém troque a implementação por
+um `SELECT` seguido de `UPDATE`, que passaria neste teste e falharia em produção. A defesa contra
+isso é a revisão do SQL. Registrado para não virar falsa sensação de cobertura.

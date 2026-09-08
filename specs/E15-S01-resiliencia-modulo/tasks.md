@@ -60,6 +60,9 @@ uma importação cruzada de propósito (invariante 1 de `specs/E00-S06-invariant
 **Divergências registradas, não silenciadas:**
 - `SPEC_DEVIATION` em `app/di.ts` — a camada de dado (mocks + `supabase-js`) continua no chunk de
   entrada. Separar exigiria container assíncrono; fora do escopo de contenção de falha.
+  **Fechada em E15-S02 (2026-09-06):** o impacto no bundle desapareceu como efeito colateral de
+  E13-S11 (todos os consumidores do container viraram lazy) e virou gate
+  (`entrada-nao-puxa-mocks-nem-supabase` em `.dependency-cruiser.cjs`). A marcação saiu do `di.ts`.
 - AC-6 refinado de "frente não importa frente" para "site não se mistura com o resto", com o
   motivo escrito na `spec.md`.
 

@@ -8,9 +8,13 @@ alwaysApply: false
 # tasks.md — E12-S03 Playwright + matriz de autorização
 
 ## Task 1 — Instalar e configurar Playwright
-`apps/web`: devDependency `@playwright/test`, `playwright.config.ts` — `webServer` reaproveita
-`pnpm dev` na porta 5173 (`reuseExistingServer: true`, `env: { VITE_DEMO_MODE: "false" }`),
-`baseURL` = `http://localhost:5173`. Diretório de specs: `apps/web/e2e/`.
+`apps/web`: devDependency `@playwright/test`, `playwright.config.ts` — `webServer` sobe `pnpm dev`
+na porta dedicada 4173 (`strictPort`, `reuseExistingServer: false`,
+`env: { VITE_DEMO_MODE: "false" }`), `baseURL` = `http://localhost:4173`. Diretório de specs:
+`apps/web/e2e/`.
+
+> Corrigido em 2026-09-04: reutilizar 5173 aceitou um Vite de outro repositório e a matriz testou
+> uma página `Not Found`. Colisão agora falha cedo em vez de produzir resultado falso.
 
 **Gate:** `pnpm exec playwright install --with-deps chromium` roda sem erro.
 
@@ -26,9 +30,8 @@ seed)", ...)`.
 
 **Gate:** relatório do Playwright mostra 1 fixme, não conta como falha.
 
-## Task 4 — Documentar que e2e não entra no pre-push
-Comentário em `playwright.config.ts` e nota em `lefthook.yml` (não mexe no arquivo, só confirma
-que `pnpm exec playwright test` não está listado em `pre-push` — mesma categoria de `db-tests`
-com Docker, que também fica de fora por depender de infra externa).
+## Task 4 — Documentar execução local no pre-push
+Comentário em `playwright.config.ts` e nota em `lefthook.yml`: Playwright roda no `pre-push`
+local, usando credenciais gitignored, mas não na CI para não autenticar em produção por PR.
 
-**Gate:** revisão — `pnpm run ci:local` continua sem chamar Playwright.
+**Gate:** revisão — `pnpm run ci:local` chama Playwright; workflow CI não chama.

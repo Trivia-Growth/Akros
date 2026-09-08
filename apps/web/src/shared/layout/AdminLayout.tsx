@@ -1,6 +1,4 @@
-import { DemoBar } from "@/features/demo/interfaces/DemoBar";
 import { logout } from "@/features/sessao/application/hooks";
-import { useMockDb } from "@/mocks/store";
 import { LanguageSwitcher } from "@/shared/i18n/LanguageSwitcher";
 import { isDemoMode } from "@/shared/lib/env";
 import { NotificationCenter } from "@/shared/ui";
@@ -23,11 +21,19 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: {
+  to: string;
+  icon: typeof LayoutDashboard;
+  label: string;
+  end?: boolean;
+  /** E13-S11 Task 5 (AC-4): rota ainda mock — some da navegação fora do modo demo. */
+  demoOnly?: boolean;
+  descricao: string;
+}[] = [
   {
     to: "/admin",
     icon: LayoutDashboard,
@@ -39,12 +45,14 @@ const NAV_ITEMS = [
     to: "/admin/leads",
     icon: KanbanSquare,
     label: "Leads (Kanban)",
+    demoOnly: true,
     descricao: "Funil comercial: arraste leads entre estágios até fechar como cliente.",
   },
   {
     to: "/admin/aprovacoes",
     icon: CheckCircle2,
     label: "Aprovações",
+    demoOnly: true,
     descricao: "Gate humano de agendamento. Nada vai para a agenda sem aprovação.",
   },
   {
@@ -69,6 +77,7 @@ const NAV_ITEMS = [
     to: "/admin/pagamentos",
     icon: Wallet,
     label: "Conciliação",
+    demoOnly: true,
     descricao: "Concilia comprovantes de transferência enviados pelos clientes.",
   },
   {
@@ -87,6 +96,7 @@ const NAV_ITEMS = [
     to: "/admin/reativacao",
     icon: RotateCcw,
     label: "Reativação",
+    demoOnly: true,
     descricao: "Base de leads descartados/inativos, segmentada por objeção.",
   },
   {
@@ -108,6 +118,11 @@ const NAV_ITEMS = [
     descricao: "Integrações externas, contas de agenda e de canal (WhatsApp/Instagram).",
   },
 ];
+
+const AdminDemoNotifications = lazy(() => import("./AdminDemoNotifications"));
+const DemoBar = lazy(() =>
+  import("@/features/demo/interfaces/DemoBar").then((modulo) => ({ default: modulo.DemoBar })),
+);
 
 function SidebarContent({
   onNavigate,
@@ -141,7 +156,7 @@ function SidebarContent({
         Operação
       </p>
       <nav className="mt-3 flex flex-1 flex-col gap-1" aria-label="Navegação do admin">
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.filter((item) => isDemoMode || !item.demoOnly).map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -174,44 +189,6 @@ function SidebarContent({
 export function AdminLayout() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const leads = useMockDb((s) => s.leads);
-  const documentos = useMockDb((s) => s.documentos);
-  const pagamentos = useMockDb((s) => s.pagamentos);
-  const notificacoes = [
-    ...leads
-      .filter((lead) => lead.gateAgendamento?.status === "pendente")
-      .slice(0, 2)
-      .map((lead) => ({
-        id: `gate-${lead.id}`,
-        title: "Aprovação de agenda pendente",
-        description: lead.nome,
-        href: "/admin/aprovacoes",
-        tone: "gold" as const,
-      })),
-    ...documentos
-      .filter((documento) => documento.status === "em_analise")
-      .slice(0, 2)
-      .map((documento) => ({
-        id: `revisao-${documento.id}`,
-        title: "Documento aguardando revisão",
-        description: documento.nome,
-        href: "/admin/documentos",
-        tone: "navy" as const,
-      })),
-    ...pagamentos
-      .filter((pagamento) =>
-        ["em_conferencia", "divergente", "atrasado"].includes(pagamento.status),
-      )
-      .slice(0, 1)
-      .map((pagamento) => ({
-        id: `financeiro-${pagamento.id}`,
-        title:
-          pagamento.status === "divergente" ? "Pagamento com divergência" : "Conciliação pendente",
-        description: pagamento.descricao,
-        href: "/admin/pagamentos",
-        tone: pagamento.status === "divergente" ? ("danger" as const) : ("gold" as const),
-      })),
-  ];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -255,7 +232,13 @@ export function AdminLayout() {
             </div>
             <div className="ml-auto flex items-center gap-3">
               <LanguageSwitcher />
-              <NotificationCenter items={notificacoes} label="Fila de atenção" />
+              {isDemoMode ? (
+                <Suspense fallback={<NotificationCenter items={[]} label="Fila de atenção" />}>
+                  <AdminDemoNotifications />
+                </Suspense>
+              ) : (
+                <NotificationCenter items={[]} label="Fila de atenção" />
+              )}
               {!isDemoMode && (
                 <button
                   type="button"
@@ -274,7 +257,11 @@ export function AdminLayout() {
         </div>
       </div>
 
-      <DemoBar />
+      {isDemoMode && (
+        <Suspense fallback={null}>
+          <DemoBar />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -5,6 +5,19 @@ import type {
   TipoDocumento,
 } from "../domain/types";
 
+/** Leitura de documentos e assinaturas já limitada por RLS ao cliente autenticado. */
+export interface DocumentosConsulta {
+  carregarCliente(): Promise<{
+    documentos: Documento[];
+    solicitacoes: SolicitacaoAssinatura[];
+  }>;
+}
+
+/** Fila de revisão admin: todos documentos e nomes autorizados por RLS, sem mutação browser. */
+export interface DocumentosAdminConsulta {
+  carregarAdmin(): Promise<{ documentos: Documento[]; nomesClientes: Record<string, string> }>;
+}
+
 export interface DocumentoRepository {
   listarPorCliente(clienteId: string): Promise<Documento[]>;
   obter(id: string): Promise<Documento | null>;
@@ -24,11 +37,15 @@ export interface AssinaturaService {
   assinar(id: string, nomeAssinante: string): Promise<void>;
 }
 
-/** E07-S01 / ADR-0005 — porta de análise de documento por IA. O parecer nunca decide status. */
+/** E07-S01 / ADR-0005 — porta de análise de documento por IA. O parecer nunca decide status.
+ * E06-S05/ADR-0013 — skill e arquivo de referência do requisito entram como opcionais: mudam o
+ * conteúdo do parecer, nunca o Documento.status. */
 export interface AnalisadorDocumentoPort {
   analisar(input: {
     documentoId: string;
     tipoEsperado: TipoDocumento;
     objetivoRequisito: string;
+    skillAnalise?: string;
+    arquivoReferenciaId?: string;
   }): Promise<AnaliseDocumento>;
 }

@@ -45,6 +45,12 @@ inteiro.
 
 ## O que ainda está no chunk de entrada, e por quê
 
+> **Fechado em E15-S02 (2026-09-06):** o problema abaixo deixou de existir como efeito colateral
+> de E13-S11/E15-S01 — todos os consumidores do container viraram lazy, então `src/mocks/` e
+> `@supabase/supabase-js` saíram do caminho estático do entry. Virou gate
+> (`entrada-nao-puxa-mocks-nem-supabase` em `.dependency-cruiser.cjs`) e a `SPEC_DEVIATION` saiu
+> do `di.ts`. Registro histórico mantido abaixo.
+
 `app/di.ts` importa todos os adapters de forma estática, o que arrasta `src/mocks/` (cerca de
 3.900 linhas de fixture) e o `@supabase/supabase-js` junto. Está registrado como
 `SPEC_DEVIATION` no próprio `di.ts`.

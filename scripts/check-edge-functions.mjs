@@ -72,6 +72,19 @@ function findInvokeCalls(files) {
 }
 
 const folders = listFunctionFolders();
+
+// AC-2 (E00-S06): gate que varre coleção vazia não passa verde. Zero pastas de função é caminho
+// quebrado, não "sem funções" — a mesma classe de bug do filtro de specs que passou meses verde
+// avaliando nada (auditoria de 2026-08-30, ver eval-spec-fidelity.mjs).
+if (folders.length === 0) {
+  console.error(
+    "\n✗ check-edge-functions: nenhuma pasta de função encontrada em supabase/functions/ " +
+      "(fora da allowlist _shared/_template/_examples).\n" +
+      "  Isso é falha do gate, não ausência de funções — verifique o caminho.\n",
+  );
+  process.exit(1);
+}
+
 const tomlText = existsSync(CONFIG_TOML) ? readFileSync(CONFIG_TOML, "utf8") : "";
 const declared = parseDeclaredFunctions(tomlText);
 
@@ -81,6 +94,27 @@ for (const name of folders) {
     errors.push(
       `Função órfã: supabase/functions/${name}/ existe mas não está declarada em ` +
         `supabase/config.toml ([functions.${name}]) — não será deployada pela GitHub Integration.`,
+    );
+  }
+}
+
+// E14-S01 AC-6: toda função pública precisa declarar teto de rate limit.
+// `seguranca/os-grade.md` pede rate limit fail-closed em função pública, e a regra sobreviveu
+// meses sem gate: `grep -rn "rate\\|limit" supabase/functions/` não devolvia nada. Regra sem gate
+// é convenção, e convenção não sobrevive à décima função.
+const SEM_RATE_LIMIT_OK = new Set([
+  // Nenhuma exceção hoje. Para abrir uma, escreva aqui o motivo — não basta acrescentar o nome.
+]);
+for (const name of folders) {
+  if (SEM_RATE_LIMIT_OK.has(name)) continue;
+  const entrada = join(FUNCTIONS_DIR, name, "index.ts");
+  if (!existsSync(entrada)) continue;
+  const texto = readFileSync(entrada, "utf8");
+  if (!/\bcheckarLimite\b|\bchecarLimite\b/.test(texto)) {
+    errors.push(
+      `Função sem rate limit: supabase/functions/${name}/index.ts não chama ` +
+        "`checarLimite` (E14-S01 AC-6, fecha SD-01). Use `_shared/rate-limit.ts` e declare o teto " +
+        "em `TETOS`, ou registre a exceção com motivo em SEM_RATE_LIMIT_OK.",
     );
   }
 }

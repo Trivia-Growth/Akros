@@ -21,6 +21,13 @@
   to     = "https://mhxopadkizktsenohnbm.supabase.co/functions/v1/telemetria-erro"
   status = 200
 
+# Captação de lead (E13-S09 AC-7). First-party pelo mesmo motivo dos outros dois: mantém a
+# chamada compatível com `connect-src 'self'` da CSP.
+[[redirects]]
+  from   = "/api/leads"
+  to     = "https://mhxopadkizktsenohnbm.supabase.co/functions/v1/lead-capturar"
+  status = 200
+
 # SPA: todas as rotas servem index.html
 [[redirects]]
   from   = "/*"

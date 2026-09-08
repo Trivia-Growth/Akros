@@ -264,16 +264,6 @@
       "AC-4",
       "AC-5"
     ],
-    "E06-S05-editor-etapas-analise-ia": [
-      "AC-1",
-      "AC-2",
-      "AC-3",
-      "AC-4",
-      "AC-5",
-      "AC-6",
-      "AC-7",
-      "AC-8"
-    ],
     "E07-S01-porta-analise-ia": [
       "AC-1",
       "AC-2",
@@ -556,9 +546,6 @@
       "tasks.md"
     ],
     "E06-S04-catalogo-programas": [
-      "tasks.md"
-    ],
-    "E06-S05-editor-etapas-analise-ia": [
       "tasks.md"
     ],
     "E07-S01-porta-analise-ia": [

@@ -178,13 +178,20 @@ jobs:
             echo "── $f"
             psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"
           done
-      # As asserções de RLS por pgTAP ainda não existem (nenhum `*_test.sql` em supabase/tests/).
-      # Quando o primeiro chegar, troque a imagem por uma que traga a extensão pgTAP e rode
-      # `pg_prove` aqui — a policy de isolamento por `cliente_id` é o que precisa de asserção.
-      - name: pgTAP (aguarda o primeiro teste)
+      # Testes de banco em SQL puro (`ASSERT` do plpgsql). Sem pgTAP de propósito: a extensão não
+      # existe na imagem `postgres:17` e trocar por uma do Supabase amarraria o job a uma tag
+      # específica. Com `ON_ERROR_STOP=1`, uma asserção falha derruba o job — que é o efeito que
+      # importa.
+      - name: Testes de banco
+        env:
+          PGPASSWORD: postgres
         run: |
-          if compgen -G "supabase/tests/*_test.sql" > /dev/null; then
-            echo "::error::Existem testes pgTAP mas o job ainda não os executa — ajuste este step."
+          set -euo pipefail
+          if ! compgen -G "supabase/tests/*_test.sql" > /dev/null; then
+            echo "::error::Nenhum teste de banco encontrado — o gate estaria passando sem avaliar nada."
             exit 1
           fi
-          echo "Nenhum teste pgTAP ainda. Migrations aplicaram limpo."
+          for f in supabase/tests/*_test.sql; do
+            echo "── $f"
+            psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"
+          done

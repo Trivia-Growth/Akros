@@ -36,6 +36,17 @@ for (const dir of DIRS) {
   }
 }
 
+// AC-2 (E00-S06): zero migrations varridas é falha do gate (caminho/glob quebrado), nunca sucesso —
+// mesmo padrão de eval-spec-fidelity e audit-esteira, da auditoria de 2026-08-30.
+if (files.length === 0) {
+  console.error(
+    "\n✗ Convenções de migration: nenhuma migration encontrada em db/migrations/ nem " +
+      "supabase/migrations/.\n" +
+      "  Isso é falha do gate, não repositório limpo — verifique os caminhos.\n",
+  );
+  process.exit(1);
+}
+
 // Estado cumulativo (todas as migrations combinadas) — é contra isso que os GRANTs são checados,
 // não arquivo a arquivo (ver comentário acima).
 const combinedSql = files.map((f) => stripComments(readFileSync(f, "utf8")).toLowerCase()).join("\n");
@@ -197,7 +208,44 @@ function checkRlsForce() {
   }
 }
 
+// ── Schema criado precisa estar exposto no PostgREST (sempre, bloqueante) ────
+// Nasce de um quase-apagao em 2026-08-31: `0010` criou o schema `seguranca` e o rate limit
+// chama `seguranca.consumir_cota` via PostgREST. Como `seguranca` nao estava em `[api] schemas`
+// do config.toml, TODA chamada devolvia PGRST106 — e, com `fail-closed` nas funcoes de sessao,
+// isso significaria ninguem conseguir logar. So apareceu ao testar contra o projeto real.
+//
+// O `config.toml` e a fonte de verdade do repositorio; o valor remoto e ajustado pela Management
+// API. Este gate garante que ninguem crie schema novo e esqueca da lista.
+function checkSchemasExpostos() {
+  const configPath = join(ROOT, "supabase", "config.toml");
+  if (!existsSync(configPath)) return;
+  const config = readFileSync(configPath, "utf8");
+  const linha = config.match(/^schemas\s*=\s*\[([^\]]*)\]/m);
+  if (!linha) return;
+  const expostos = new Set([...linha[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]));
+
+  const criados = new Map(); // schema -> arquivo que o criou
+  for (const f of files) {
+    const sql = stripComments(readFileSync(f, "utf8")).toLowerCase();
+    for (const m of sql.matchAll(/create\s+schema\s+(?:if\s+not\s+exists\s+)?([a-z_][a-z0-9_]*)/g)) {
+      if (!criados.has(m[1])) criados.set(m[1], basename(f));
+    }
+  }
+  for (const [schema, arquivo] of criados) {
+    if (!expostos.has(schema)) {
+      err(
+        arquivo,
+        `schema '${schema}' e criado por migration mas nao esta em [api] schemas do ` +
+          "supabase/config.toml — chamada via PostgREST devolve PGRST106 (Invalid schema). " +
+          "Se for deliberado (schema que nenhuma function acessa pela API), adicione mesmo assim " +
+          "ou registre a excecao aqui com o motivo.",
+      );
+    }
+  }
+}
+
 for (const f of files) checkConventions(f);
+checkSchemasExpostos();
 checkRlsForce();
 checkSequence();
 

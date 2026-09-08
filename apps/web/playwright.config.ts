@@ -18,23 +18,34 @@ loadEnvLocal(".env.test.local");
  * E12-S03 — matriz de autorização executável. Roda contra `pnpm dev` real (não mock de rede):
  * as 3 Edge Functions de sessão (ADR-0008) são chamadas de verdade contra o projeto Supabase.
  *
- * Fora do `pre-push`/CI de propósito (mesma categoria de `db-tests` com Docker no lefthook.yml):
- * depende de rede externa ao commit. Rodar manualmente com `pnpm exec playwright test`.
+ * Roda no `pre-push` local, mas não na CI: depende de credenciais locais e rede externa.
+ * Usa porta dedicada e nunca reaproveita servidor existente — em 2026-09-04 o gate aceitou um
+ * Vite de outro projeto na 5173 e testou uma página `Not Found` por dois minutos.
  */
+const E2E_PORT = 4173;
+const E2E_URL = `http://localhost:${E2E_PORT}`;
+
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: false, // login/logout real no mesmo projeto Supabase — evita corrida de sessão
+  // `fullyParallel: false` serializa testes dentro de cada arquivo, mas arquivos ainda usam os
+  // workers padrão. Sessões de teste compartilham as mesmas personas e um logout concorrente
+  // revoga token de outro arquivo; limite de login também é global por origem.
+  workers: 1,
+  fullyParallel: false,
   retries: 0,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: E2E_URL,
+    // Asserções de produto usam cópia pt-BR; sem locale explícito o Chromium usa en-US e troca
+    // apenas textos i18n como o cumprimento do dashboard, tornando a matriz não determinística.
+    locale: "pt-BR",
     trace: "retain-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "pnpm dev",
-    url: "http://localhost:5173",
-    reuseExistingServer: true,
+    command: `pnpm dev --host 127.0.0.1 --port ${E2E_PORT} --strictPort`,
+    url: E2E_URL,
+    reuseExistingServer: false,
     env: { VITE_DEMO_MODE: "false" },
     timeout: 30_000,
   },

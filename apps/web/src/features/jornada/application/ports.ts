@@ -1,4 +1,10 @@
+import type { ResponsavelEtapa } from "@/features/programas/domain/types";
 import type { Jornada } from "../domain/types";
+
+/** Leitura do agregado já limitado por RLS ao cliente autenticado. */
+export interface JornadaConsulta {
+  carregarCliente(): Promise<Jornada | null>;
+}
 
 export interface JornadaRepository {
   obterPorCliente(clienteId: string): Promise<Jornada | null>;
@@ -19,4 +25,23 @@ export interface JornadaRepository {
  */
 export interface ProgressoRepository {
   calcularPercentual(clienteId: string): Promise<number>;
+}
+
+/** Visão administrativa transversal. Agrega somente linhas já autorizadas por RLS. */
+export interface OperacaoAdminConsulta {
+  carregarAdmin(): Promise<{
+    gargalos: {
+      titulo: string;
+      responsavel: ResponsavelEtapa;
+      mediaDias: number;
+      casos: number;
+    }[];
+    alertas: {
+      clienteId: string;
+      clienteNome: string;
+      tipo: "inatividade" | "etapa_travada";
+      dias: number;
+      etapaTitulo?: string;
+    }[];
+  }>;
 }

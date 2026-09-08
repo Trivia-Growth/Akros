@@ -1,9 +1,9 @@
-import { DemoBar } from "@/features/demo/interfaces/DemoBar";
 import { LanguageSwitcher } from "@/shared/i18n/LanguageSwitcher";
+import { isDemoMode } from "@/shared/lib/env";
 import { Button } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet } from "react-router-dom";
 
@@ -16,6 +16,10 @@ const NAV_ITEMS = [
   { to: "/blog", key: "blog" as const },
   { to: "/contatos", key: "contact" as const },
 ];
+
+const DemoBar = lazy(() =>
+  import("@/features/demo/interfaces/DemoBar").then((modulo) => ({ default: modulo.DemoBar })),
+);
 
 export function PublicLayout() {
   const { t } = useTranslation();
@@ -142,7 +146,11 @@ export function PublicLayout() {
         </div>
       </footer>
 
-      <DemoBar />
+      {isDemoMode && (
+        <Suspense fallback={null}>
+          <DemoBar />
+        </Suspense>
+      )}
     </div>
   );
 }
