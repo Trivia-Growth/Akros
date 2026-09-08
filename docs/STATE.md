@@ -8,33 +8,35 @@ alwaysApply: false
 
 ## Agora
 
-- **Data:** 2026-09-06
-- **E00-S06 concluída e commitada em 2026-09-06** (trabalho de duas sessões na mesma árvore,
-  consolidado num commit só). Os 3 invariantes adotados
-  integralmente (1, 3, 5→metade-4) fecham: AC-1 (`check-gate-coverage.mjs` novo, 11/11 scripts
-  com teste par — faltavam `check-story`, `nova-story`, `prepare-hooks`, `remind-impeccable`),
-  AC-2 (guarda de coleção vazia em `check-edge-functions`/`lint-migrations`/`validate-mermaid`,
-  já estava em `eval-spec-fidelity`/`audit-esteira`), AC-3 (regra `frente-nao-importa-frente` já
-  existia), AC-4 (teste de não-propagação já existia em `E15-S01`), AC-5
-  (`check-degraded-mode.mjs` novo: design.md da story de origem declara `integracoes:` no
-  frontmatter e precisa de seção "Modo degradado" por slug — retrofit completo, 10 integrações
-  em 6 design.md: `E04-S07` google/microsoft/calendly, `E13-S12` evolution/openrouter, e
-  design.md mínimos criados para `E04-S01` whatsapp, `E04-S04` fireflies, `E04-S06` instagram e
-  `E04-S15` openrouter/whisper). Todos os 5 AC verdes por comando, não por inspeção. Achados de
-  bug ao escrever os testes, corrigidos no mesmo lote:
-  - `check-degraded-mode.mjs` reportava a mensagem genérica de "zero integrações" mesmo quando o
-    erro real era um `integracoes:` malformado — ordem dos guards trocada.
-  - `nova-story.mjs` procurava heading `### E0N —` (o real é `## E0N —`) e um schema de tabela de
-    6 colunas que não existe mais no ROADMAP (real são 8) — nunca inseria a linha certa. Ganhou
-    também modo `--epico/--story/--descricao/--owner/--tier/--root` não-interativo:
-    `rl.question()` encadeado trava para sempre com stdin não-TTY (achado ao tentar testar).
-  - `remind-impeccable.mjs` media "achei tasks.md" pelo exit code de `find` (sempre 0 mesmo sem
-    match) — trocado por leitura direta de `specs/*/tasks.md` via `isSpecDir`.
-  - `check-story.mjs` ganhou override de root (`argv[2]`) só para teste isolado.
-  Novos comandos wireados no `pre-push`: `gate-coverage` e `degraded-mode` (ao lado de `esteira`
-  e `edge-functions`, como o `design.md` pedia); `mermaid` passou a rodar seu teste antes do gate
-  (`pnpm run validate:mermaid`, mesmo padrão dos outros). Commitada em 2026-09-06 como
-  `feat(E00-S06)`; push continua sendo passo do @devops.
+- **Data:** 2026-09-08
+- **Story ativa:** nenhuma — `E06-S05` concluída e commitada nesta data (ver histórico abaixo);
+  as stories restantes estão bloqueadas (deploy DevOps: E13-S12/E16-S01) ou aguardam decisão de
+  produto/arquitetura (E10-S02+, E14-S02, dívida do ADR-0004 abaixo).
+- **Dívida nova — escopo do ADR-0004 (escalar para @architect):** um `ProgramaEditor` que edita
+  fases e salva o `Programa` inteiro **já existia em HEAD** antes de E06-S05, e a migration `0015`
+  já liberava INSERT admin em `programas` — ou seja, a invariante "admin só lê o catálogo" do
+  ADR-0004 já não valia na prática, sem ADR que a suspendesse. ADR-0013 autoriza formalmente só
+  `RequisitoDocumento`; decidir: ratificar a escrita de Programa inteiro com ADR novo ou remover
+  o editor pré-existente.
+- **Gates:** 163 unitários (+8 de E06-S05), biome, `arch:check`, build e `audit:esteira` verdes.
+- **Próximo passo:** DevOps dá push nos lotes acumulados (E13 + E00-S06 + E15-S02 + E06-S05),
+  aplica `0016` e deploya as functions; decisões pendentes com o Bruno: escopo do ADR-0004
+  (acima), E10-S02+ (provedor de pagamento real), E14-S02 (ratificar cofre entregue por E13-S12
+  como SD-05 fechado).
+
+## Histórico
+
+- **2026-09-08 — E06-S05 concluída (🟩).** ADR-0013 escrito e aceito (exceção pontual ao ADR-0004,
+  escopo mínimo: só `RequisitoDocumento` editável). CRUD de requisito com remoção bloqueada por
+  vínculo (oferece desativar), skill obrigatória validada na aplicação, histórico de troca do
+  arquivo de referência; `AnalisadorDocumentoPort` ganhou `skillAnalise?`/`arquivoReferenciaId?`
+  opcionais e o mock cita a configuração no parecer — invariante do ADR-0005 provada intacta com
+  skill ligada (testes antes do código). Desvio AC-7 registrado: feature `programas` segue PT
+  literal (SPEC_DEVIATION prévia). 163 testes, gates verdes.
+- **2026-09-06 — E00-S06 concluída (🟩)** e **E15-S02 concluída (🟩, formalização)**. Detalhes nos
+  commits `edb54d3`/`d6fe787` (E00-S06) e `a41b8c6` (E15-S02).
+
+- **2026-09-06/05 — histórico anterior:**
 - **Story anterior:** `E13-S12` 🟨 (aguardando rollout DevOps, sem mudança nesta sessão). Lote
   E13-S09/S10/S11/S12 commitado em 5 commits locais (5a0acf8..f8a1c34); push/PR é passo do
   @devops. **P0 do SECURITY_DEBT fechado:** as 4 rotas admin que ainda liam mock (`/admin/leads`,
