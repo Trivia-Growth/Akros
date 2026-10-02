@@ -55,7 +55,8 @@ Formato: `[ID] [US] descrição — gate`. AC = Acceptance Scenario de `spec.md`
 
 ## Phase 5: Rollout (@devops / dono) — fora do repositório, com confirmação explícita
 
-- [ ] T-17 Aplicar `0016` no Supabase real (Management API ou CLI), conferir com
-      `supabase_migrations.schema_migrations`
-- [ ] T-18 Deploy das 4 functions e `CORS_ALLOWED_ORIGINS` com o domínio de produção
+- [x] T-17 Aplicar `0016` no Supabase real (2026-10-02, após ensaio em transação revertida que achou o
+      3º bug: REVOKE no Vault), registrada em `supabase_migrations.schema_migrations`
+- [x] T-18 Deploy das 4 functions e `CORS_ALLOWED_ORIGINS` com o domínio de produção (2026-10-02;
+      sondadas: 405/401/404 conforme o esperado; CORS aceita `imigrationakros.netlify.app`)
 - [ ] T-19 Teste real ponta a ponta por canal (US1-1, US2-3, US3-2) e registro do resultado

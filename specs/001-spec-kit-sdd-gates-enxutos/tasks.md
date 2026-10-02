@@ -35,7 +35,7 @@ Formato: `[ID] [US] descrição — gate`. Cada gate é um comando.
 
 ## Phase 4: Fora do repositório (@devops)
 
-- [ ] T-09 Trocar **uma vez** os required checks da `main` pelo agregador `ci` (os 12 nomes antigos
+- [x] T-09 (2026-10-02, PR #7) Trocar **uma vez** os required checks da `main` pelo agregador `ci` (os 12 nomes antigos
       saem). Depois disso, mudar jobs da CI não exige mexer na proteção:
       ```bash
       gh api -X PATCH repos/Trivia-Growth/Akros/branches/main/protection/required_status_checks \
