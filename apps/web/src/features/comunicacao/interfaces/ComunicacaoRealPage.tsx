@@ -2,6 +2,7 @@ import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
 import { Badge, Card, Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui";
 import { CircleAlert, LockKeyhole, Mail, MessageCircle, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { useComunicacaoAdminSupabase } from "../application/useComunicacaoAdminSupabase";
 
 /** Admin real: todas as coleções vêm do Supabase; envio e configuração aguardam fluxos seguros. */
@@ -23,8 +24,17 @@ export function ComunicacaoRealPage() {
       <Card className="flex gap-3 border-gold-200 bg-gold-50/45 text-sm text-ink-soft">
         <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-gold-700" aria-hidden />
         <p>
-          Responder, enviar mídia, transcrever áudio e alterar agentes aguardam canais, arquivos e
-          funções seguras. Esta tela não grava comunicação diretamente pelo navegador.
+          Responder, enviar mídia e transcrever áudio aguardam funções seguras. Esta tela não grava
+          comunicação diretamente pelo navegador. Para configurar canais (Evolution, WhatsApp
+          oficial, Instagram) e agentes, use{" "}
+          <Link
+            to="/admin/configuracoes"
+            className="font-medium text-navy underline underline-offset-2"
+            data-testid="atalho-configuracoes"
+          >
+            Configurações
+          </Link>
+          .
         </p>
       </Card>
 
@@ -124,23 +134,44 @@ function ListaAgentes({
   agentes,
 }: { agentes: ReturnType<typeof useComunicacaoAdminSupabase>["agentes"] }) {
   if (agentes.length === 0)
-    return <Card className="text-sm text-ink-muted">Nenhum agente real configurado ainda.</Card>;
+    return (
+      <Card className="text-sm text-ink-muted">
+        Nenhum agente real configurado ainda. <LinkConfigurarAgente />
+      </Card>
+    );
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {agentes.map((agente) => (
-        <Card key={agente.id} className="flex items-start gap-3">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold-700" aria-hidden />
-          <div>
-            <p className="text-sm font-medium text-navy">{agente.nome}</p>
-            <p className="mt-1 text-xs text-ink-muted">{agente.funcao}</p>
-            <Badge className="mt-2" variant={agente.ativo ? "success" : "neutral"}>
-              {agente.ativo ? "Ativo" : "Inativo"}
-            </Badge>
-          </div>
-        </Card>
-      ))}
+    <div className="flex flex-col gap-3">
+      <p className="text-sm text-ink-soft">
+        Aqui só se vê o estado dos agentes. <LinkConfigurarAgente />
+      </p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {agentes.map((agente) => (
+          <Card key={agente.id} className="flex items-start gap-3">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold-700" aria-hidden />
+            <div>
+              <p className="text-sm font-medium text-navy">{agente.nome}</p>
+              <p className="mt-1 text-xs text-ink-muted">{agente.funcao}</p>
+              <Badge className="mt-2" variant={agente.ativo ? "success" : "neutral"}>
+                {agente.ativo ? "Ativo" : "Inativo"}
+              </Badge>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
+  );
+}
+
+function LinkConfigurarAgente() {
+  return (
+    <Link
+      to="/admin/configuracoes"
+      className="font-medium text-navy underline underline-offset-2"
+      data-testid="atalho-configurar-agente"
+    >
+      Configurar canal e agente em Configurações
+    </Link>
   );
 }
 
