@@ -1,22 +1,17 @@
-# CI — espelho do `pre-push` do lefthook.yml, um job por gate.
+# CI — três jobs (ADR-0016). Antes eram 13, um por gate, cada um reinstalando dependências.
 #
-# Divisão deliberada (pedido de 2026-08-30): a análise pesada roda LOCAL no `pre-push`; a CI é a
-# pós-validação. O que a torna barata:
-#   • `concurrency` cancela o run anterior do mesmo ref — push em sequência não empilha pipeline;
-#   • `turbo run --affected` pula build/typecheck/lint do que não mudou;
-#   • cache do store do pnpm compartilhado entre os 13 jobs.
-# O custo real não está no número de jobs (rodam em paralelo, o relógio é o do job mais lento) —
-# está em re-run. Por isso: cancelamento agressivo e nenhuma etapa que não seja gate.
+#   • qualidade  — o que prova que o código está correto: Biome, typecheck, arquitetura, testes, build.
+#   • seguranca  — o que impede regressão de segurança: segredo no histórico, migration sem RLS
+#                  FORCE/GRANT, Edge Function pública sem rate limit.
+#   • db-tests   — migrations aplicam do zero + testes SQL.
 #
-# Regra: se um gate NÃO está no `pre-push` do lefthook.yml, ele não entra aqui — exceto os dois
-# marcados "SÓ NA CI", que existem justamente porque não dá para rodá-los no commit.
+# Mantém o custo baixo com `concurrency` (push em sequência cancela o run anterior), `--affected`
+# no turbo e cache do store do pnpm. O `e2e` (Playwright contra o Supabase real) NÃO roda aqui:
+# autentica em produção e custaria minutos em todo PR; rode `pnpm e2e` antes de mexer em auth, RLS
+# ou sessão.
 #
-# O `e2e` (Playwright) é a exceção na direção contrária: roda SEMPRE no `pre-push` e NUNCA aqui.
-# Ele sobe browser e autentica contra o Supabase real; na CI isso custa minutos em todo push e
-# faz cada PR abrir sessão em produção. Na máquina de quem está desenvolvendo o custo é ~13s e as
-# credenciais já estão lá. Decisão de 2026-08-31.
-# Único comando do `pre-push` deixado de fora: `remind-impeccable` — é lembrete de processo para
-# humano, não gate (não falha, não verifica nada).
+# Regra: gate novo só entra com o teste do próprio gate e a saída de outro de custo equivalente
+# (ver constituição, "Gates e fluxo").
 
 name: CI
 
@@ -33,106 +28,35 @@ permissions:
   contents: read
 
 jobs:
-  # ── Espelho do pre-push ────────────────────────────────────────────────────
-  esteira:
-    name: esteira
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - run: pnpm run audit:esteira
-
-  fidelidade:
-    name: fidelidade
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - run: pnpm run eval:spec
-
-  mermaid:
-    name: mermaid
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - run: node scripts/validate-mermaid.mjs
-
-  migrations:
-    name: migrations
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      # Local o Squawk é best-effort (só roda se instalado); aqui ele está sempre presente via
-      # devDependency `squawk-cli`, então este job é o único lugar onde o lint de migration é
-      # de fato completo.
-      - run: pnpm run lint:migrations
-
-  edge-functions:
-    name: edge-functions
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - run: pnpm run check:edge-functions
-
-  lint:
-    name: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - run: pnpm exec biome check .
-
-  typecheck:
-    name: typecheck
+  qualidade:
+    name: qualidade
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 } # `--affected` compara com o merge-base; precisa do histórico
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run typecheck --affected
-
-  arquitetura:
-    name: arquitetura
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - run: pnpm run arch:check
-
-  build:
-    name: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run build --affected
-
-  testes:
-    name: testes
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
+      - name: Lint (Biome)
+        run: pnpm exec biome check .
+      - name: Typecheck
+        run: pnpm exec turbo run typecheck --affected
+      - name: Arquitetura (dependency-cruiser)
+        run: pnpm run arch:check
       # `VITE_DEMO_MODE=true` reproduz o que `.env.test.local` faz na máquina do dev: os smoke de
       # render assumem modo demo. Sem isso a suíte quebra por ambiente, não por regressão.
-      - run: pnpm test
+      - name: Testes
+        run: pnpm test
         env:
           VITE_DEMO_MODE: "true"
+      - name: Build
+        run: pnpm exec turbo run build --affected
 
-  # ── SÓ NA CI ───────────────────────────────────────────────────────────────
-  # Dois gates que o commit não consegue provar: um depende de binário externo que pode não estar
-  # instalado, outro de um banco limpo. Eram o buraco antes deste arquivo existir.
-
-  gitleaks:
-    name: gitleaks
+  seguranca:
+    name: seguranca
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 } # varre o histórico do PR, não só o snapshot
+        with: { fetch-depth: 0 } # gitleaks varre o histórico do PR, não só o snapshot
+      - uses: ./.github/actions/setup
       # Binário direto em vez da action do marketplace: a action pede licença para organização, e
       # um gate de segredo não pode depender de licenciamento para rodar.
       - name: Instalar gitleaks
@@ -141,8 +65,15 @@ jobs:
             https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz
           tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
           sudo install /tmp/gitleaks /usr/local/bin/gitleaks
-      # Sem `skip`, ao contrário do pre-push: aqui é bloqueante (ver SD-07 em docs/SECURITY_DEBT.md).
-      - run: gitleaks detect --source . --no-banner --redact --exit-code 1
+      # Bloqueante aqui, ao contrário do pre-push local (ver SD-07 em docs/SECURITY_DEBT.md).
+      - name: Segredos (gitleaks)
+        run: gitleaks detect --source . --no-banner --redact --exit-code 1
+      # RLS FORCE em toda tabela, CREATE POLICY com GRANT, Squawk (lock/breaking change).
+      - name: Migrations (RLS + Squawk)
+        run: pnpm run lint:migrations
+      # Função pública sem `checarLimite`, função órfã, `functions.invoke` sem função declarada.
+      - name: Edge Functions (rate limit e contrato)
+        run: pnpm run check:edge-functions
 
   db-tests:
     name: db-tests
@@ -157,9 +88,8 @@ jobs:
         ports: ["5432:5432"]
     steps:
       - uses: actions/checkout@v4
-      # Hoje este job prova UMA coisa, e ela é real: todas as migrations aplicam do zero, na
-      # ordem, sem erro. É o único lugar onde isso é verificado — `lint:migrations` lê o SQL,
-      # não executa.
+      # Prova que todas as migrations aplicam do zero, na ordem, sem erro — único lugar onde isso é
+      # verificado (`lint:migrations` lê o SQL, não executa).
       # As migrations dependem de primitivas que o Supabase provisiona antes da primeira delas
       # (auth.uid(), auth.jwt(), auth.users e os roles anon/authenticated/service_role). O shim
       # declara exatamente essas — migration nova que use outra faz este job quebrar, que é o
@@ -179,9 +109,7 @@ jobs:
             psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"
           done
       # Testes de banco em SQL puro (`ASSERT` do plpgsql). Sem pgTAP de propósito: a extensão não
-      # existe na imagem `postgres:17` e trocar por uma do Supabase amarraria o job a uma tag
-      # específica. Com `ON_ERROR_STOP=1`, uma asserção falha derruba o job — que é o efeito que
-      # importa.
+      # existe na imagem `postgres:17`. Com `ON_ERROR_STOP=1`, asserção falha derruba o job.
       - name: Testes de banco
         env:
           PGPASSWORD: postgres
