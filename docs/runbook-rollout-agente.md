@@ -56,6 +56,18 @@ Conferir `GET /functions/v1/<f>` de cada uma: 405 (webhooks e salvar) em vez de 
 - Site no modo real (achado A-01): no Netlify, `VITE_DEMO_MODE=false`, `VITE_SUPABASE_URL`,
   `VITE_SUPABASE_ANON_KEY`, e novo build. Sem isso a tela de Configurações nem aparece com dados reais.
 
+## 3b. Antes de conectar canal: Playground (E13-S14)
+
+1. Configurações → "Configurar agente e canal", **sem** marcar "Conectar um canal agora": chave
+   OpenRouter, modelo, orientação e tom. Salvar.
+2. Comunicação → aba Agente IA → Playground. Teste as sugestões e o seu próprio vocabulário de
+   cliente. Mensagens com "advogado", "pagamento", "boleto", "contrato", "senha", "humano" vão direto
+   para o encaminhamento (a IA nem é chamada).
+3. O agente só conhece o texto de **Orientação e tom** (até 16 mil caracteres) e a conversa. O que ele
+   errar por falta de informação (preços, prazos, serviços, tom, o que prometer ou não), coloque na
+   orientação e teste de novo. Base de conhecimento ainda não é consultada.
+4. Só depois conecte o canal (seção 4) e ligue o agente.
+
 ## 4. Configurar pela tela (administrador)
 
 Admin → Configurações → "Configurar canal e agente". As chaves são digitadas só aqui.

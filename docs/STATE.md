@@ -26,6 +26,9 @@ alwaysApply: false
   "Configurar canal e agente", Evolution, OpenRouter e Meta pela UI; (3) teste ponta a ponta por canal
   (`docs/runbook-rollout-agente.md`, seção 5) e só então ligar o agente. Evolution, Meta e OpenRouter
   reais ainda não foram exercitados.
+- **Playground (E13-S14, PR em andamento):** o admin salva o agente sem canal e o testa em
+  Comunicação → Agente IA antes de conectar WhatsApp. O agente só conhece "Orientação e tom"; consultar a
+  base de conhecimento é a próxima lacuna de produto.
 - **Próximo passo de produto:** E12-S04 (convite de Bruno e Natália) e as policies de RLS do cliente (A-02).
 - **Avaliação de 2026-10-01** (`docs/qa/caderno-de-teste-fase-real.md`, no checkout principal,
   ainda sem commit) mostrou que a parte real não está alcançável em produção e tem furos de RLS;
