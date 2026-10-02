@@ -82,7 +82,8 @@ a **mesma** definição:
 | segredos | `gitleaks` (só se instalado; na CI é bloqueante) |
 | mensagem de commit | commitlint — Conventional Commits com o ID da story |
 
-**CI** (`.github/workflows/ci.yml`, 3 jobs):
+**CI** (`.github/workflows/ci.yml`, 3 jobs de gate + o agregador `ci`, que é o único check obrigatório
+na `main` — jobs podem mudar sem tocar na proteção de branch):
 
 | Job | Conteúdo | O que impede |
 |---|---|---|

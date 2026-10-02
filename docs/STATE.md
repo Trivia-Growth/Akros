@@ -15,8 +15,8 @@ alwaysApply: false
 - **Decisões:** ADR-0015 (Spec Kit; 91 specs anteriores congeladas) e ADR-0016 (CI 13→3 jobs,
   pre-push 14→4 comandos; e2e vira `pnpm e2e` sob demanda). Skills `/nova-feature`, `/clarificar`,
   `/validar`, `/auditar` removidas.
-- **Próximo passo:** `/revisao-adversarial` sobre o corte (T-12); `@devops` trocar os required
-  checks da `main` (T-09, comando em `tasks.md`) e só então abrir o PR.
+- **Próximo passo:** `/revisao-adversarial` sobre o corte (T-12); `@devops` trocar, uma vez, os
+  required checks da `main` pelo agregador `ci` (T-09, comando em `tasks.md`) e só então abrir o PR.
 - **Avaliação de 2026-10-01** (`docs/qa/caderno-de-teste-fase-real.md`, no checkout principal,
   ainda sem commit) mostrou que a parte real não está alcançável em produção e tem furos de RLS;
   viram stories próprias (fora do escopo de E00-S07): site Netlify em modo demo (A-01), RLS de

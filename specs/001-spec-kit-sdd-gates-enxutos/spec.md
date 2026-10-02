@@ -63,7 +63,7 @@ segurança, banco e arquitetura em 3 jobs.
 
 1. **Given** `lefthook.yml`, **When** se lista `pre-push`, **Then** há exatamente: lint, typecheck,
    testes e gitleaks (este com `skip` se o binário não existir).
-2. **Given** `ci.yml`, **When** se lista os jobs, **Then** são `qualidade`, `seguranca` e `db-tests`.
+2. **Given** `ci.yml`, **When** se lista os jobs, **Then** são `qualidade`, `seguranca`, `db-tests` e o agregador `ci`, que falha se qualquer um dos três falhar ou for pulado.
 3. **Given** o job `seguranca`, **When** se lê seus passos, **Then** contém gitleaks bloqueante,
    `lint:migrations` e `check:edge-functions`.
 4. **Given** o job `qualidade`, **When** se lê seus passos, **Then** contém Biome, typecheck,
@@ -98,7 +98,8 @@ Remover gates e skills não deixa comando, hook ou doc apontando para o que sumi
 ### Edge Cases
 
 - A proteção de branch da `main` exige 12 checks com nomes antigos; sem ajuste, o PR não é
-  mergeável. Tratado em `tasks.md` (T-09), fora do repositório.
+  mergeável. Tratado em `tasks.md` (T-09), fora do repositório, **uma única vez**: o check
+  obrigatório passa a ser o agregador `ci`, e jobs podem mudar depois sem tocar na proteção.
 - Upgrade do Spec Kit pode sobrescrever templates; mudanças em `.specify/templates/` precisam ser
   revisadas no diff.
 - Perda de cobertura: e2e sai do pre-push (ADR-0016); fica `pnpm e2e` sob demanda.
@@ -111,7 +112,7 @@ Remover gates e skills não deixa comando, hook ou doc apontando para o que sumi
 - **FR-002**: A constituição MUST refletir os princípios de `CLAUDE.md` sem placeholders.
 - **FR-003**: Specs `specs/E*` e `specs/_examples` MUST permanecer byte a byte iguais.
 - **FR-004**: O pre-push MUST conter apenas lint, typecheck, testes e gitleaks.
-- **FR-005**: A CI MUST ter os jobs `qualidade`, `seguranca` e `db-tests`, preservando todo gate de
+- **FR-005**: A CI MUST ter os jobs `qualidade`, `seguranca` e `db-tests` mais o agregador `ci` (único check obrigatório), preservando todo gate de
   segurança, banco e arquitetura existente.
 - **FR-006**: Scripts e skills removidos MUST NOT ter referência viva.
 - **FR-007**: `README.md`, `CLAUDE.md`, `AGENTS.md`, `Definition-of-Done.md` e `NOVO-PROJETO.md`
