@@ -18,9 +18,9 @@ Legenda de status: ⬜ aberto · 🟨 em andamento (story) · 🟩 fechado.
 |---|---|---|---|
 | A-01 | Site Netlify (produção e preview) roda em modo demo: `VITE_DEMO_MODE=false` e `VITE_SUPABASE_*` não definidos; lead do site vai para o mock | — | ⬜ (decisão de 2026-10-01: flag de demo mantida; trocar a variável no Netlify é ação de @devops) |
 | A-02 | Cliente logado altera, pela API, o próprio pagamento (`pago`), etapa (`concluida`), documento (`aprovado`) e `case_manager`/`programa_id`/`deleted_at` do cadastro | — | ⬜ |
-| A-03 | Migration `0016` não aplica no Supabase real (guarda do Vault usa assinatura de 3 argumentos; real tem 4/5) | — | ⬜ |
-| A-04 | `0016`: regex `'\\D'` não normaliza telefone; WhatsApp nunca vincula ao cliente | — | ⬜ |
-| A-05 | Edge Functions `integracoes-ia-salvar` e `evolution-webhook` sem deploy (404); `CORS_ALLOWED_ORIGINS` só tem `localhost:5173` | — | ⬜ |
+| A-03 | Migration `0016` não aplica no Supabase real (guarda do Vault usa assinatura de 3 argumentos; real tem 4/5) | E13-S13 | 🟨 corrigido e testado com as assinaturas reais; falta aplicar (runbook) |
+| A-04 | `0016`: regex `'\\D'` não normaliza telefone; WhatsApp nunca vincula ao cliente | E13-S13 | 🟨 corrigido e testado; falta aplicar |
+| A-05 | Edge Functions `integracoes-ia-salvar` e `evolution-webhook` sem deploy (404); `CORS_ALLOWED_ORIGINS` só tem `localhost:5173` | E13-S13 | 🟨 código pronto (agora 4 functions); falta deploy e CORS (runbook) |
 
 ## P1 — antes de cliente real
 
@@ -44,7 +44,7 @@ Legenda de status: ⬜ aberto · 🟨 em andamento (story) · 🟩 fechado.
 | A-16 | Programa R/EB-4 só existe no mock; `crm.clientes.programa_id` sem FK | ⬜ |
 | A-17 | Valores fixos: `case_manager='Natalia Luz'` na RPC de conversão; `origem` do formulário | ⬜ |
 | A-18 | `sessao-logout` com escopo global; `telemetria-erro` mede 16 KiB em caracteres | ⬜ |
-| A-19 | Payloads da Evolution API não verificados contra a versão instalada | ⬜ |
+| A-19 | Payloads da Evolution API não verificados contra a versão instalada | 🟨 trocados para o formato v2 validado no projeto Atendimento; falta provar na instância real |
 
 ## Decisões que moldam a ordem (2026-10-01)
 

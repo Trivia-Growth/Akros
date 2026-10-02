@@ -15,8 +15,14 @@ alwaysApply: false
 - **Decisões:** ADR-0015 (Spec Kit; 91 specs anteriores congeladas) e ADR-0016 (CI 13→3 jobs,
   pre-push 14→4 comandos; e2e vira `pnpm e2e` sob demanda). Skills `/nova-feature`, `/clarificar`,
   `/validar`, `/auditar` removidas.
-- **Próximo passo:** `/revisao-adversarial` sobre o corte (T-12); `@devops` trocar, uma vez, os
-  required checks da `main` pelo agregador `ci` (T-09, comando em `tasks.md`) e só então abrir o PR.
+- **Agente multicanal (E13-S13, branch `feat/E13-S13-agente-multicanal`, empilhada em E12-S04 e
+  E00-S07):** código, testes e documentação prontos; **nada foi aplicado em produção**. Falta o
+  rollout de `docs/runbook-rollout-agente.md` (migration `0016`, 4 Edge Functions, CORS, variáveis do
+  Netlify) e o teste com Evolution, Meta e OpenRouter reais. Referências usadas: `Atendimento`
+  (Evolution v2 e webhooks Meta) e `heziomos` (envio Meta).
+- **Próximo passo:** `@devops` trocar, uma vez, os required checks da `main` pelo agregador `ci`
+  (T-09 de E00-S07) e abrir os PRs na ordem E00-S07 → E12-S04 → E13-S13; em paralelo, rollout do agente
+  com a confirmação do dono.
 - **Avaliação de 2026-10-01** (`docs/qa/caderno-de-teste-fase-real.md`, no checkout principal,
   ainda sem commit) mostrou que a parte real não está alcançável em produção e tem furos de RLS;
   viram stories próprias (fora do escopo de E00-S07): site Netlify em modo demo (A-01), RLS de
