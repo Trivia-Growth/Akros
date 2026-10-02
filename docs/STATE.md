@@ -8,21 +8,21 @@ alwaysApply: false
 
 ## Agora
 
-- **Data:** 2026-09-08
-- **Story ativa:** nenhuma — `E06-S05` concluída e commitada nesta data (ver histórico abaixo);
-  as stories restantes estão bloqueadas (deploy DevOps: E13-S12/E16-S01) ou aguardam decisão de
-  produto/arquitetura (E10-S02+, E14-S02, dívida do ADR-0004 abaixo).
-- **Dívida do ADR-0004 — RESOLVIDA em 2026-09-08 pelo ADR-0014:** a zona cinzenta (editor de
-  Programa inteiro pré-existente + INSERT admin de `0015`, sem ADR) foi ratificada pelo dono do
-  produto — **admin edita o Programa inteiro**; a salvaguarda é o congelamento por
-  `programaVersao` dos casos instanciados (ADR-0004 continua valendo pelo mecanismo de versão,
-  não pela imutabilidade da UI). Pagamentos recorrentes/multi-meio/faturas (E10-S02+) **fora de
-  escopo por decisão** até nova orientação.
-- **Gates:** 163 unitários (+8 de E06-S05), biome, `arch:check`, build e `audit:esteira` verdes.
-- **Próximo passo:** DevOps dá push nos lotes acumulados (E13 + E00-S06 + E15-S02 + E06-S05),
-  aplica `0016` e deploya as functions; decisões pendentes com o Bruno: escopo do ADR-0004
-  (acima), E10-S02+ (provedor de pagamento real), E14-S02 (ratificar cofre entregue por E13-S12
-  como SD-05 fechado).
+- **Data:** 2026-10-01
+- **Story ativa:** `E00-S07` 🟨 — Spec Kit como SDD + gates enxutos, na branch
+  `chore/E00-S07-spec-kit-sdd` (worktree `~/GitHub/Akros-sdd`). Implementada e verificada
+  localmente; **não commitada nem enviada**. Spec em `specs/001-spec-kit-sdd-gates-enxutos/`.
+- **Decisões:** ADR-0015 (Spec Kit; 91 specs anteriores congeladas) e ADR-0016 (CI 13→3 jobs,
+  pre-push 14→4 comandos; e2e vira `pnpm e2e` sob demanda). Skills `/nova-feature`, `/clarificar`,
+  `/validar`, `/auditar` removidas.
+- **Próximo passo:** `/revisao-adversarial` sobre o corte (T-12); `@devops` trocar os required
+  checks da `main` (T-09, comando em `tasks.md`) e só então abrir o PR.
+- **Avaliação de 2026-10-01** (`docs/qa/caderno-de-teste-fase-real.md`, no checkout principal,
+  ainda sem commit) mostrou que a parte real não está alcançável em produção e tem furos de RLS;
+  viram stories próprias (fora do escopo de E00-S07): site Netlify em modo demo (A-01), RLS de
+  UPDATE do cliente (A-02), migration `0016` (A-03/A-04), renovação de token (A-06).
+- **Atenção — checkout principal quebrado:** `~/GitHub/Akros` está sem commits e com 1.638 arquivos
+  staged mas ausentes do disco. O trabalho vive em worktrees a partir de `origin/main`.
 
 ## Histórico
 

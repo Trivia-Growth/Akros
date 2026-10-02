@@ -13,6 +13,7 @@ alwaysApply: false
 | Período | Arquivo | O que tem |
 |---------|---------|-----------|
 | 2026-08 | `docs/state-historico/2026-08.md` | Rodadas 1 e 2 (E00–E11, 47 stories mockadas), épico E12 (auth real via Supabase, ADR-0008/0009, matriz Playwright) e épico E13 (10 schemas reais com RLS, `audit.*` append-only, primeiro adapter Supabase no frontend). |
+| 2026-09 | `docs/state-historico/2026-09.md` | Estado "Agora" de 08/09 (E06-S05 concluída, ADR-0014, bloqueios de deploy DevOps) arquivado ao abrir a E00-S07. |
 
 ## Como buscar
 `grep -rn "termo" docs/state-historico/` acha rápido sem abrir cada arquivo. Puxe o arquivo do mês

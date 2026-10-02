@@ -29,6 +29,7 @@ test:e2e` falha com mensagem explícita, não em silêncio.
 | O que **não** fazer / quando parar e perguntar | `ANTI-PADROES.md` |
 | Quando uma feature está pronta | `Definition-of-Done.md` |
 | Quem produz cada artefato | `AGENTS.md` |
+| Princípios inegociáveis (barra do `/speckit-plan`) | `.specify/memory/constitution.md` |
 | O que está sendo feito agora | `docs/STATE.md` |
 | Épicos, stories e status | `docs/epics/ROADMAP.md` |
 | Decisões difíceis de reverter | `docs/adr/` |
@@ -36,66 +37,80 @@ test:e2e` falha com mensagem explícita, não em silêncio.
 | Como reverter um deploy ou migration | `docs/runbook-rollback.md` |
 | Como começar um projeto novo com este padrão | `docs/NOVO-PROJETO.md` |
 
-## Ciclo de uma story
+## Ciclo de uma story (spec-kit)
+
+O SDD roda no **[GitHub Spec Kit](https://github.com/github/spec-kit)** (ADR-0015). Os comandos
+são skills do Claude Code, invocadas uma a uma no chat, com revisão humana entre elas:
 
 ```
-@pm/@analyst → product.md + spec.md      (AC em Given/When/Then, "fora de escopo" vinculante)
-@architect   → design.md + ADR           (só em tier arquitetural)
-@sm          → tasks.md                  (cada task cobre um AC e tem gate executável)
-@dev         → implementa                (1 commit por task, git local apenas)
-@qa          → /validar + /revisao-adversarial
-@devops      → PR, merge, push           (ÚNICO com essa autoridade)
+/speckit-specify     → specs/NNN-<slug>/spec.md     (o quê e por quê, Given/When/Then)
+/speckit-clarify     → afia ambiguidade antes de planejar (opcional, recomendado)
+/speckit-plan        → plan.md + research/data-model/contracts (confere a constituição)
+/speckit-tasks       → tasks.md                     (tasks por user story, com gate)
+/speckit-analyze     → consistência spec × plan × tasks (opcional)
+/speckit-implement   → implementa task a task
+/speckit-converge    → repete implement→converge até "Converged"
+/revisao-adversarial → tenta quebrar cada AC antes do PASS
+@devops              → PR, merge, push                (ÚNICO com essa autoridade)
 ```
+
+A constituição (`.specify/memory/constitution.md`) é a barra que o `/speckit-plan` confere:
+segurança OS-grade, regra de dependência, spec como fonte da verdade, rastreabilidade por story.
+Feature trivial (≤3 arquivos, sem decisão) dispensa o ciclo.
 
 Antes de codar, marque o owner da story em `docs/epics/ROADMAP.md` — várias sessões trabalham em
-paralelo neste repositório.
+paralelo neste repositório. O ID da story (`E0N-S0N`) vai no cabeçalho da `spec.md`, nos commits
+(`feat(E0N-S0N): …`) e nas migrations. As 91 specs anteriores (`specs/E0N-S0N-*/`) ficam
+**congeladas no lugar** como referência; não são reescritas nem verificadas por gate.
 
-Story nova: `pnpm run nova-story` (interativo — registra no ROADMAP e cria `specs/E0N-S0N-<nome>/`).
+Setup do spec-kit em outra máquina: `uv tool install specify-cli` (o `.specify/` e as skills já
+estão versionados; `specify init` só é preciso para atualizar a versão).
 
 ## Gates — o que a máquina verifica
 
-`pnpm run ci:local` (= `lefthook run pre-push`) roda tudo em paralelo. Hook e comando manual são
-a **mesma** definição, então não podem divergir.
+Poucos, e todos pegam defeito real (ADR-0016). Gate novo só entra com o teste do próprio gate e a
+saída de outro de custo equivalente.
 
-| Gate | Comando | O que impede |
+**Local** — `pnpm run ci:local` (= `lefthook run pre-push`), em paralelo; hook e comando manual são
+a **mesma** definição:
+
+| Gate | Comando |
+|---|---|
+| lint | `pnpm exec biome check .` (no commit, só nos arquivos staged) |
+| typecheck | `pnpm typecheck` |
+| testes | `pnpm test` — regressão + acessibilidade (axe-core nos smoke tests) |
+| segredos | `gitleaks` (só se instalado; na CI é bloqueante) |
+| mensagem de commit | commitlint — Conventional Commits com o ID da story |
+
+**CI** (`.github/workflows/ci.yml`, 3 jobs):
+
+| Job | Conteúdo | O que impede |
 |---|---|---|
-| esteira | `pnpm run audit:esteira` | frontmatter, link quebrado, caminho `docs/*.md` ou `pnpm run` citado que não existe, feature sem `spec.md` |
-| fidelidade | `pnpm run eval:spec` | AC sem task; dívida herdada fica nomeada em `specs/_debt-baseline.json` e só encolhe |
-| migrations | `pnpm run lint:migrations` | `DROP` sem reverso, `CREATE POLICY` sem `GRANT`, tabela sem **RLS FORCE**, prefixo numérico duplicado |
-| edge-functions | `pnpm run check:edge-functions` | função órfã, `invoke` de função que não existe |
-| arquitetura | `pnpm run arch:check` | `domain/` importando framework ou camada de fora; ciclo entre módulos |
-| lint / typecheck / build | `pnpm lint`, `pnpm typecheck`, `pnpm build` | — |
-| testes | `pnpm test` | regressão + acessibilidade (axe-core em toda tela de smoke test) |
-| mermaid | `node scripts/validate-mermaid.mjs` | diagrama que não renderiza |
+| `qualidade` | Biome, typecheck, `pnpm run arch:check`, testes, build | regressão; `domain/` importando framework ou camada de fora; ciclo entre módulos |
+| `seguranca` | gitleaks, `pnpm run lint:migrations`, `pnpm run check:edge-functions` | segredo no histórico; tabela sem **RLS FORCE**, `CREATE POLICY` sem `GRANT`, `DROP` sem reverso; Edge Function pública sem rate limit, função órfã |
+| `db-tests` | migrations aplicadas do zero em Postgres 17 + `supabase/tests/*_test.sql` | migration que não aplica; regressão de RLS/RPC coberta por teste SQL |
+
+**Sob demanda:** `pnpm e2e` (Playwright, matriz de autorização) abre browser real autenticando no
+Supabase real. Roda só local — na CI custaria minutos em todo PR e abriria sessão em produção. É
+obrigatório antes de mexer em auth, RLS ou sessão. Precisa de `apps/web/.env.test.local` e do
+chromium (`pnpm --filter @akros/web exec playwright install chromium`).
 
 Todo gate em `scripts/` tem `<nome>.test.mjs` ao lado provando que ele **falha** quando deve —
-gate que nunca foi visto vermelho não é gate (ver `specs/E00-S06-invariantes-padrao-os/`).
-Rode `pnpm run test:gates` para verificar os gates em si (30 testes hoje). Ainda sem teste:
-`check-story`, `validate-mermaid`, `nova-story`, `prepare-hooks`, `remind-impeccable`.
-
-O `pre-push` roda ainda o **e2e** (Playwright, matriz de autorização): browser real autenticando
-contra o Supabase real, ~13s. Ele roda **só aqui, nunca na CI** — lá custaria minutos em todo push
-e abriria sessão em produção a cada PR. Precisa de `apps/web/.env.test.local` e do chromium
-instalado (`pnpm --filter @akros/web exec playwright install chromium`).
-
-Na CI (`.github/workflows/ci.yml`), um job por gate, mais dois que só existem lá: `gitleaks`
-bloqueante e `db-tests` (migrations aplicadas do zero em Postgres limpo).
+gate que nunca foi visto vermelho não é gate. `pnpm run test:gates` roda esses testes.
 
 ## Skills
 
 | Skill | Uso | Agente |
 |---|---|---|
-| `/nova-feature` | abre feature: tier → spec → tasks | `@sm` + `@dev` |
-| `/clarificar` | entrevista para afiar spec ambígua | `@pm` |
-| `/validar` | roda os gates e checa a DoD | `@qa` |
+| `/speckit-*` | ciclo SDD (specify, clarify, plan, tasks, analyze, implement, converge, checklist) | `@pm`, `@architect`, `@sm`, `@dev` |
 | `/revisao-adversarial` | tenta **quebrar** cada AC antes do PASS | `@qa` + `@security` |
-| `/revisar-pr` | conformidade SDD no PR | `@qa` |
-| `/auditar` | integridade da esteira | `@architect` |
+| `/revisar-pr` | conformidade com a constituição e a spec no PR | `@qa` |
 | `/handoff` | pausa/retoma via `docs/STATE.md` | qualquer |
 | `impeccable` | design de UI (carregada pela própria skill) | `@ux-design-expert` |
 
 Os 15 agentes ficam em `.claude/commands/TRIVIAIOX/agents/` (Claude Code) e `.codex/agents/`
-(Codex). Autoridade de comando em `AGENTS.md` — resumo: só `@devops` faz push, PR e merge.
+(Codex) e funcionam como papéis de trabalho. Autoridade de comando em `AGENTS.md` — resumo: só
+`@devops` faz push, PR e merge.
 
 ## Estrutura
 
@@ -103,8 +118,10 @@ Os 15 agentes ficam em `.claude/commands/TRIVIAIOX/agents/` (Claude Code) e `.co
 CLAUDE.md · AGENTS.md · ANTI-PADROES.md · Definition-of-Done.md   ← contrato do agente
 docs/            PROJECT, ARCHITECTURE, glossary, STATE, SECURITY_DEBT,
                  runbook-rollback, adr/, epics/ROADMAP, state-historico/
-specs/           E0N-S0N-<nome>/ com product · design · spec · tasks (+ evidence/)
-                 _examples/ = referência completa · _debt-baseline.json = dívida nomeada
+specs/           NNN-<slug>/ (spec-kit: spec · plan · tasks) para o que é novo;
+                 E0N-S0N-<nome>/ = 91 specs anteriores, congeladas; _examples/ = referência
+.specify/        spec-kit: constituição (memory/), templates, scripts
+
 apps/web/src/    features/<dominio>/{domain,application,infrastructure,interfaces}
                  shared/{ui,layout,lib,i18n,contracts}
 supabase/        functions/{_template,_shared,sessao-*} · migrations/NNNN_E0N-S0N_*.sql

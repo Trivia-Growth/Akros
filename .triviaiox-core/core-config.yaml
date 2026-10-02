@@ -392,14 +392,12 @@ boundary:
 technicalPreferences:
   methodology: spec-driven-development
   artifacts:
-    location: specs/NNNN-<slug>/
-    canonical: [product.md, domain.md, design.md, spec.md, tasks.md]
+    location: specs/NNN-<slug>/
+    canonical: [spec.md, plan.md, tasks.md]
     adr: docs/adr/
     reference_example: specs/_examples/
   story_is_view_of: tasks.md
   gates:
-    audit: "node scripts/audit-esteira.mjs"
-    fidelity: "node scripts/eval-spec-fidelity.mjs"
     tests: "pnpm test"
     typecheck: "pnpm typecheck"
     lint: "pnpm lint"
