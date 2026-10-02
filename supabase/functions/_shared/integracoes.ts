@@ -1,28 +1,14 @@
 // Helpers de integração: valores de Vault só vivem dentro de Edge Functions com service_role.
+// As formas dos segredos e os helpers puros estão em `segredos.ts` (reexportados aqui).
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { HttpError, getSupabaseServiceKey } from "./auth.ts";
 
-export interface SegredoEvolution {
-  apiKey: string;
-  webhookToken: string;
-}
-
-export interface SegredoOpenRouter {
-  apiKey: string;
-}
+export * from "./segredos.ts";
 
 export function clienteServico(): SupabaseClient {
   const url = Deno.env.get("SUPABASE_URL") ?? "";
   if (!url) throw new HttpError(500, "Ambiente Supabase incompleto");
   return createClient(url, getSupabaseServiceKey());
-}
-
-export function escopoEvolution(contaId: string): string {
-  return `evolution:${contaId}`;
-}
-
-export function escopoOpenRouter(agenteId: string): string {
-  return `openrouter:${agenteId}`;
 }
 
 export async function obterSegredo<T>(supabase: SupabaseClient, escopo: string): Promise<T | null> {
@@ -48,13 +34,4 @@ export async function salvarSegredo(
     p_valor: JSON.stringify(segredo),
   });
   if (error) throw new HttpError(500, "Não foi possível salvar configuração segura");
-}
-
-export function tokenAleatorio(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-}
-
-export function urlSemBarraFinal(valor: string): string {
-  return valor.replace(/\/+$/, "");
 }

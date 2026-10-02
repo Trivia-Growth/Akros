@@ -1,60 +1,32 @@
-// integracoes-ia-salvar — E13-S12. Único caminho de escrita de chaves pelo painel admin.
+// integracoes-ia-salvar — E13-S12/E13-S13. Único caminho de escrita de chaves pelo painel admin.
+// Configura UMA conta de canal (Evolution, WhatsApp oficial ou Instagram) e o agente que a atende.
+// Nenhuma chave volta na resposta: só identificadores, estado e o endereço do webhook (público).
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { HttpError, badRequest, requireAdmin } from "../_shared/auth.ts";
+import { registrarWebhookEvolution } from "../_shared/canais/evolution.ts";
+import { ErroProvedor } from "../_shared/canais/tipos.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { requireCsrfHeader } from "../_shared/csrf.ts";
 import {
   clienteServico,
   escopoEvolution,
+  escopoMetaInstagram,
+  escopoMetaWhatsApp,
   escopoOpenRouter,
   obterSegredo,
   salvarSegredo,
   tokenAleatorio,
   urlSemBarraFinal,
   type SegredoEvolution,
+  type SegredoMeta,
   type SegredoOpenRouter,
 } from "../_shared/integracoes.ts";
+import { EntradaSchema, urlWebhook, type Canal } from "../_shared/integracoes-schema.ts";
 import { TETOS, checarLimite, resposta429 } from "../_shared/rate-limit.ts";
 
 const FN = "integracoes-ia-salvar";
 const MAX_BYTES = 24 * 1024;
-const uuid = z.string().uuid();
-const texto = (min: number, max: number) => z.string().trim().min(min).max(max);
-
-const InputSchema = z
-  .object({
-    evolution: z
-      .object({
-        contaId: uuid.optional(),
-        nomeExibicao: texto(2, 120),
-        identificador: texto(8, 30),
-        baseUrl: z
-          .string()
-          .trim()
-          .url()
-          .max(300)
-          .refine((valor) => new URL(valor).protocol === "https:", "Evolution precisa de HTTPS"),
-        instancia: z.string().trim().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/),
-        apiKey: z.string().trim().min(8).max(2048).optional(),
-        ativa: z.boolean(),
-      })
-      .strict(),
-    agente: z
-      .object({
-        agenteId: uuid.optional(),
-        nome: texto(2, 120),
-        funcao: texto(2, 160),
-        alma: texto(20, 6000),
-        saudacao: texto(2, 1000),
-        mensagemHandoff: texto(2, 1000),
-        modelo: texto(2, 160),
-        apiKeyOpenRouter: z.string().trim().min(8).max(2048).optional(),
-        ativo: z.boolean(),
-      })
-      .strict(),
-  })
-  .strict();
 
 interface LinhaConta {
   id: string;
@@ -75,85 +47,81 @@ serve(async (req) => {
     const { userId } = await requireAdmin(req);
     const bruto = await req.text();
     if (new TextEncoder().encode(bruto).byteLength > MAX_BYTES) throw new HttpError(413, "Dados excedem limite");
-    const entrada = InputSchema.parse(JSON.parse(bruto));
+    const { canal, agente } = EntradaSchema.parse(JSON.parse(bruto));
     const supabase = clienteServico();
+    const urlProjeto = Deno.env.get("SUPABASE_URL");
+    if (!urlProjeto) throw new HttpError(500, "Ambiente Supabase incompleto");
 
-    const contaId = entrada.evolution.contaId ?? crypto.randomUUID();
+    const contaId = canal.contaId ?? crypto.randomUUID();
     const { data: contaExistente, error: erroConta } = await supabase
       .schema("configuracoes")
       .from("contas_canal")
       .select("id,provedor")
       .eq("id", contaId)
+      .is("deleted_at", null)
       .maybeSingle<LinhaConta>();
     if (erroConta) throw new HttpError(500, "Não foi possível validar conta de canal");
-    if (contaExistente && contaExistente.provedor !== "evolution") {
-      throw badRequest("Conta selecionada não pertence à Evolution");
+    if (contaExistente && contaExistente.provedor !== canal.provedor) {
+      throw badRequest("Conta selecionada pertence a outro tipo de canal");
     }
 
-    const segredoEvolutionAnterior = await obterSegredo<SegredoEvolution>(
-      supabase,
-      escopoEvolution(contaId),
-    );
-    const apiKeyEvolution = entrada.evolution.apiKey ?? segredoEvolutionAnterior?.apiKey;
-    if (!apiKeyEvolution) throw badRequest("Informe a chave da Evolution nesta primeira configuração");
-    const webhookToken = segredoEvolutionAnterior?.webhookToken ?? tokenAleatorio();
+    // 1) Segredos da conta: calcula tudo ANTES de gravar qualquer coisa, para uma entrada incompleta
+    //    recusar sem deixar conta pela metade.
+    const escopo = escopoDaConta(canal.provedor, contaId);
+    const segredoNovo = await montarSegredo(supabase, canal, escopo);
+    const webhookUrl = urlWebhook(urlProjeto, canal.provedor, contaId);
 
-    // Mantém canal inativo enquanto o webhook é instalado. Falha externa não habilita resposta.
+    // 2) Conta fica INATIVA e sem credenciais até tudo dar certo. Falha externa não liga resposta.
+    const publico = metadadosPublicos(canal);
+    const agora = new Date().toISOString();
     const valoresConta = {
       id: contaId,
-      provedor: "evolution" as const,
-      nome_exibicao: entrada.evolution.nomeExibicao,
-      identificador: entrada.evolution.identificador,
+      provedor: canal.provedor,
+      nome_exibicao: canal.nomeExibicao,
+      identificador: canal.identificador,
       ativa: false,
-      credenciais_configuradas: true,
-      metadados_publicos: {
-        baseUrl: urlSemBarraFinal(entrada.evolution.baseUrl),
-        instancia: entrada.evolution.instancia,
-      },
+      metadados_publicos: publico,
       updated_by: userId,
-      updated_at: new Date().toISOString(),
+      updated_at: agora,
     };
-    const contaQuery = contaExistente
+    const gravarConta = contaExistente
       ? supabase.schema("configuracoes").from("contas_canal").update(valoresConta).eq("id", contaId)
       : supabase.schema("configuracoes").from("contas_canal").insert({ ...valoresConta, created_by: userId });
-    const { error: erroSalvarConta } = await contaQuery;
+    const { error: erroSalvarConta } = await gravarConta;
     if (erroSalvarConta) throw new HttpError(500, "Não foi possível salvar conta de canal");
 
-    await salvarSegredo(supabase, escopoEvolution(contaId), {
-      apiKey: apiKeyEvolution,
-      webhookToken,
-    });
+    await salvarSegredo(supabase, escopo, segredoNovo.valor);
 
-    const urlProjeto = Deno.env.get("SUPABASE_URL");
-    if (!urlProjeto) throw new HttpError(500, "Ambiente Supabase incompleto");
-    const urlWebhook = `${urlSemBarraFinal(urlProjeto)}/functions/v1/evolution-webhook?conta=${contaId}`;
-    const respostaEvolution = await fetch(
-      `${urlSemBarraFinal(entrada.evolution.baseUrl)}/webhook/set/${encodeURIComponent(entrada.evolution.instancia)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", apikey: apiKeyEvolution },
-        body: JSON.stringify({
-          enabled: true,
-          url: urlWebhook,
-          events: ["MESSAGES_UPSERT"],
-          headers: { "x-akros-webhook": webhookToken },
-          base64: false,
-        }),
-        signal: AbortSignal.timeout(12_000),
-      },
-    );
-    if (!respostaEvolution.ok) throw new HttpError(502, "Não foi possível registrar webhook na Evolution");
+    // 3) Passo externo (só Evolution): a Meta o administrador registra no painel dela, com a URL e o
+    //    token de verificação. Falha aqui deixa a conta inativa e devolve o motivo ao admin.
+    if (canal.provedor === "evolution") {
+      try {
+        await registrarWebhookEvolution(fetch, {
+          baseUrl: canal.baseUrl,
+          apiKey: (segredoNovo.valor as unknown as SegredoEvolution).apiKey,
+          instancia: canal.instancia,
+          urlWebhook: webhookUrl,
+          token: (segredoNovo.valor as unknown as SegredoEvolution).webhookToken,
+        });
+      } catch (erro) {
+        const status = erro instanceof ErroProvedor ? erro.status : 0;
+        throw new HttpError(
+          502,
+          status === 401 || status === 403
+            ? "A Evolution recusou a chave. Confira a API key e a instância."
+            : "Não foi possível registrar o webhook na Evolution. Confira a URL, a instância e se ela está online.",
+        );
+      }
+    }
 
-    const agenteId = entrada.agente.agenteId ?? crypto.randomUUID();
-    const segredoOpenRouterAnterior = await obterSegredo<SegredoOpenRouter>(
-      supabase,
-      escopoOpenRouter(agenteId),
-    );
-    const apiKeyOpenRouter = entrada.agente.apiKeyOpenRouter ?? segredoOpenRouterAnterior?.apiKey;
+    // 4) Agente (chave OpenRouter no Vault, regra em tabela admin-only).
+    const agenteId = agente.agenteId ?? crypto.randomUUID();
+    const segredoIA = await obterSegredo<SegredoOpenRouter>(supabase, escopoOpenRouter(agenteId));
+    const apiKeyOpenRouter = agente.apiKeyOpenRouter ?? segredoIA?.apiKey;
     if (!apiKeyOpenRouter) throw badRequest("Informe a chave OpenRouter nesta primeira configuração");
     await salvarSegredo(supabase, escopoOpenRouter(agenteId), { apiKey: apiKeyOpenRouter });
 
-    const { data: agenteExistente, error: erroAgenteExistente } = entrada.agente.agenteId
+    const { data: agenteExistente, error: erroAgenteExistente } = agente.agenteId
       ? await supabase
           .schema("comunicacao")
           .from("regras_atendimento_ia")
@@ -168,19 +136,19 @@ serve(async (req) => {
 
     const regra = {
       id: agenteId,
-      ativo: entrada.agente.ativo,
-      nome_agente: entrada.agente.nome,
-      funcao: entrada.agente.funcao,
+      ativo: agente.ativo,
+      nome_agente: agente.nome,
+      funcao: agente.funcao,
       contas_canal_ids: [...new Set([...contasAtuais, contaId])],
-      alma: entrada.agente.alma,
-      saudacao: entrada.agente.saudacao,
+      alma: agente.alma,
+      saudacao: agente.saudacao,
       janelas_atendimento: [],
       topicos: [],
-      mensagem_handoff: entrada.agente.mensagemHandoff,
+      mensagem_handoff: agente.mensagemHandoff,
       base_conhecimento_ids: [],
       correcoes: [],
       memoria: { ativa: true, escopo: "por_conversa", retencao: "90 dias", campos: [] },
-      llm: { provedor: "openrouter", modelo: entrada.agente.modelo, apiKeyConfigurada: true },
+      llm: { provedor: "openrouter", modelo: agente.modelo, apiKeyConfigurada: true },
       updated_at: new Date().toISOString(),
     };
     const { error: erroAgente } = await supabase
@@ -189,21 +157,39 @@ serve(async (req) => {
       .upsert(regra, { onConflict: "id" });
     if (erroAgente) throw new HttpError(500, "Não foi possível salvar agente");
 
+    // 5) Só agora a conta passa a valer: credenciais confirmadas e estado pedido pelo admin.
     const { error: erroAtivarConta } = await supabase
       .schema("configuracoes")
       .from("contas_canal")
-      .update({ ativa: entrada.evolution.ativa, updated_by: userId, updated_at: new Date().toISOString() })
+      .update({
+        ativa: canal.ativa,
+        credenciais_configuradas: true,
+        updated_by: userId,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", contaId);
     if (erroAtivarConta) throw new HttpError(500, "Não foi possível concluir configuração do canal");
 
-    console.log(JSON.stringify({ ts: new Date().toISOString(), nivel: "info", fn: FN, reqId, contaId, agenteId }));
+    console.log(JSON.stringify({ ts: new Date().toISOString(), nivel: "info", fn: FN, reqId, contaId, agenteId, provedor: canal.provedor }));
     return new Response(
-      JSON.stringify({ contaId, agenteId, canalAtivo: entrada.evolution.ativa, agenteAtivo: entrada.agente.ativo }),
+      JSON.stringify({
+        contaId,
+        agenteId,
+        provedor: canal.provedor,
+        canalAtivo: canal.ativa,
+        agenteAtivo: agente.ativo,
+        // Público por desenho: é o que o administrador cola no painel da Meta (e a Evolution já recebeu).
+        webhookUrl,
+      }),
       { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
     );
   } catch (erro) {
     const status = erro instanceof HttpError ? erro.status : erro instanceof z.ZodError ? 400 : 500;
-    const detalhe = erro instanceof HttpError ? erro.message : erro instanceof z.ZodError ? "Dados inválidos" : "Não foi possível salvar integração";
+    const detalhe = erro instanceof HttpError
+      ? erro.message
+      : erro instanceof z.ZodError
+      ? "Dados inválidos"
+      : "Não foi possível salvar integração";
     console.warn(JSON.stringify({ ts: new Date().toISOString(), nivel: "warn", fn: FN, reqId, status }));
     return new Response(JSON.stringify({ erro: detalhe, reqId }), {
       status,
@@ -211,3 +197,44 @@ serve(async (req) => {
     });
   }
 });
+
+function escopoDaConta(provedor: Canal["provedor"], contaId: string): string {
+  return provedor === "evolution"
+    ? escopoEvolution(contaId)
+    : provedor === "whatsapp_oficial"
+    ? escopoMetaWhatsApp(contaId)
+    : escopoMetaInstagram(contaId);
+}
+
+function metadadosPublicos(canal: Canal): Record<string, string> {
+  if (canal.provedor === "evolution") {
+    return { baseUrl: urlSemBarraFinal(canal.baseUrl), instancia: canal.instancia };
+  }
+  if (canal.provedor === "whatsapp_oficial") {
+    return { phoneNumberId: canal.phoneNumberId, wabaId: canal.wabaId };
+  }
+  return { igAccountId: canal.igAccountId };
+}
+
+/** Junta o que veio no formulário com o que já está no Vault; campo em branco mantém o guardado. */
+async function montarSegredo(
+  supabase: ReturnType<typeof clienteServico>,
+  canal: Canal,
+  escopo: string,
+): Promise<{ valor: Record<string, string> }> {
+  if (canal.provedor === "evolution") {
+    const anterior = await obterSegredo<SegredoEvolution>(supabase, escopo);
+    const apiKey = canal.apiKey ?? anterior?.apiKey;
+    if (!apiKey) throw badRequest("Informe a chave da Evolution nesta primeira configuração");
+    // O token do webhook nasce uma vez e é reaproveitado: trocá-lo desligaria a Evolution já registrada.
+    return { valor: { apiKey, webhookToken: anterior?.webhookToken ?? tokenAleatorio() } };
+  }
+  const anterior = await obterSegredo<SegredoMeta>(supabase, escopo);
+  const accessToken = canal.accessToken ?? anterior?.accessToken;
+  const appSecret = canal.appSecret ?? anterior?.appSecret;
+  const verifyToken = canal.verifyToken ?? anterior?.verifyToken;
+  if (!accessToken || !appSecret || !verifyToken) {
+    throw badRequest("Informe o token de acesso, o App Secret e o token de verificação na primeira configuração");
+  }
+  return { valor: { accessToken, appSecret, verifyToken } };
+}

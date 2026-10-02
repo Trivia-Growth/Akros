@@ -51,6 +51,12 @@ jobs:
           VITE_DEMO_MODE: "true"
       - name: Build
         run: pnpm exec turbo run build --affected
+      # Adaptadores de canal, pipeline do agente e handlers dos webhooks (fetch injetado, sem rede).
+      # `DENO_NO_PACKAGE_JSON` impede o Deno de reescrever o package.json da raiz.
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+      - name: Testes das Edge Functions (Deno)
+        run: pnpm run test:functions
 
   seguranca:
     name: seguranca

@@ -438,6 +438,16 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
+# A Meta não envia JWT Supabase. GET de verificação por hub.verify_token e POST por assinatura HMAC
+# (X-Hub-Signature-256), ambos validados dentro da função, por conta (?conta=<uuid>).
+[functions.meta-whatsapp-webhook]
+enabled = true
+verify_jwt = false
+
+[functions.meta-instagram-webhook]
+enabled = true
+verify_jwt = false
+
 # pg-delta is the schema diff engine for db diff / db pull / db remote commit.
 # Set enabled = false to fall back to the legacy migra engine.
 [experimental.pgdelta]
