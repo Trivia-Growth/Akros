@@ -60,6 +60,41 @@ export function precisaDeHumano(texto: string): boolean {
   return PEDE_HUMANO.test(normalizado);
 }
 
+export type Decisao =
+  | { tipo: "handoff"; texto: string }
+  | { tipo: "sem_chave" }
+  | { tipo: "resposta"; texto: string; custo: number | null };
+
+/**
+ * O que o agente responde a uma mensagem. É a MESMA função na produção (`processarEntrada`) e no
+ * Playground do admin: o teste só vale se o comportamento testado for o que vai ao ar.
+ * `historico` já inclui a mensagem nova, como a conversa do banco (autor `cliente` | `agente_ia`).
+ */
+export async function decidirResposta(
+  deps: Pick<DepsAgente, "chaveOpenRouter" | "gerarResposta">,
+  regra: RegraAgente,
+  textoEntrada: string,
+  historico: unknown,
+  limiteSaida: number,
+): Promise<Decisao> {
+  if (precisaDeHumano(textoEntrada)) {
+    return { tipo: "handoff", texto: regra.mensagem_handoff.slice(0, limiteSaida) };
+  }
+  const chave = await deps.chaveOpenRouter(regra.id);
+  if (!chave) return { tipo: "sem_chave" };
+  const ia = await deps.gerarResposta(regra, chave, historico);
+  return { tipo: "resposta", texto: ia.texto.slice(0, limiteSaida), custo: ia.custo };
+}
+
+async function historicoSePreciso(
+  deps: DepsAgente,
+  conversaId: string,
+  texto: string,
+): Promise<unknown> {
+  // Mesma regra de `decidirResposta`: pedido que exige a equipe nem chega ao modelo.
+  return precisaDeHumano(texto) ? [] : await deps.historico(conversaId);
+}
+
 export async function processarEntrada(
   deps: DepsAgente,
   entrada: EntradaCanal,
@@ -90,22 +125,25 @@ export async function processarEntrada(
       return "ignorado";
     }
 
-    if (precisaDeHumano(entrada.texto)) {
-      const aviso = agente.mensagem_handoff.slice(0, opcoes.limiteSaida);
-      await deps.enviar(aviso);
-      await fechar("handoff", { textoSaida: aviso });
+    const decisao = await decidirResposta(
+      deps,
+      agente,
+      entrada.texto,
+      // O histórico só é lido se a decisão chegar à IA; o handoff e a falta de chave não precisam dele.
+      await historicoSePreciso(deps, conversaId, entrada.texto),
+      opcoes.limiteSaida,
+    );
+    if (decisao.tipo === "handoff") {
+      await deps.enviar(decisao.texto);
+      await fechar("handoff", { textoSaida: decisao.texto });
       return "handoff";
     }
-
-    const chave = await deps.chaveOpenRouter(agente.id);
-    if (!chave) {
+    if (decisao.tipo === "sem_chave") {
       await fechar("ignorado");
       return "ignorado";
     }
-    const ia = await deps.gerarResposta(agente, chave, await deps.historico(conversaId));
-    const resposta = ia.texto.slice(0, opcoes.limiteSaida);
-    await deps.enviar(resposta);
-    await fechar("respondido", { textoSaida: resposta, custo: ia.custo });
+    await deps.enviar(decisao.texto);
+    await fechar("respondido", { textoSaida: decisao.texto, custo: decisao.custo });
     return "respondido";
   } catch (erro) {
     // Nunca o corpo, o texto do cliente ou o erro do provedor: podem carregar PII ou credencial.

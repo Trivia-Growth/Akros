@@ -136,6 +136,8 @@ export const TETOS = {
   "integracoes-ia-salvar": { teto: 10, janelaSegundos: 3600 },
   // Evolution pode concentrar tráfego em um IP; teto protege Vault/LLM sem bloquear uso normal.
   "evolution-webhook": { teto: 120, janelaSegundos: 60 },
+  // Playground do admin: cada teste gasta crédito de LLM, então o teto é por hora, fail-closed.
+  "agente-playground": { teto: 120, janelaSegundos: 3600 },
   // A Meta entrega em rajada (um evento por mensagem) a partir de poucos IPs; teto largo para não
   // recusar tráfego legítimo, e fail-closed: sem limitador, endpoint público grava no banco.
   "meta-whatsapp-webhook": { teto: 600, janelaSegundos: 60 },

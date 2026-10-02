@@ -438,6 +438,12 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
+# Playground do agente: admin é validado dentro da função (Auth + role + CSRF); o gateway fica
+# aberto para o navegador conseguir o preflight CORS.
+[functions.agente-playground]
+enabled = true
+verify_jwt = false
+
 # A Meta não envia JWT Supabase. GET de verificação por hub.verify_token e POST por assinatura HMAC
 # (X-Hub-Signature-256), ambos validados dentro da função, por conta (?conta=<uuid>).
 [functions.meta-whatsapp-webhook]
