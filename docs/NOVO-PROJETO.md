@@ -66,7 +66,6 @@ docs/state-historico/INDEX.md
 ```
 apps/web/                      o app inteiro
 specs/E00-*  …  specs/E16-*    todas as stories
-specs/_debt-baseline.json      dívida herdada deste repositório
 docs/adr/0001-*  …  0010-*     decisões deste produto
 docs/state-historico/*.md      histórico de sessão
 netlify.toml                   contém o ref do projeto Supabase do Akros (hardcoded)
@@ -125,12 +124,14 @@ Antes da primeira feature, decida e registre em ADR:
 ## Passo 5 — Primeira story
 
 ```bash
-pnpm run nova-story
+uv tool install specify-cli     # uma vez por máquina
 ```
 
-Registra no ROADMAP e cria `specs/E0N-S0N-<nome>/` com `spec.md` e `tasks.md`. Depois, o ciclo do
-`AGENTS.md`: `@pm` escreve os AC, `@architect` só entra em tier arquitetural, `@sm` quebra em tasks
-com gate, `@dev` implementa, `@qa` roda `/validar` e `/revisao-adversarial`, `@devops` faz o push.
+O `.specify/` e as skills `speckit-*` já vêm versionados. Registre a story no ROADMAP e rode, no
+Claude Code, `/speckit-specify <descrição>` (cria `specs/001-<slug>/spec.md`), depois o ciclo do
+`README.md`: clarify → plan → tasks → analyze → implement ⇄ converge → `/revisao-adversarial`;
+`@devops` faz o push. Antes da primeira story, rode `/speckit-constitution` para trocar os
+princípios do Akros pelos do projeto novo (ou mantenha os que servirem).
 
 Regra que não se dobra: **task só está feita quando o gate dela passa por comando**. Inspeção
 visual não fecha task (`ANTI-PADROES.md`).
@@ -142,11 +143,9 @@ Honestidade sobre o estado de hoje. Nenhuma impede começar; todas custam tempo 
 1. **Não há repositório-template nem script de bootstrap.** O passo 1 é copiar e apagar à mão.
    O que resolveria: extrair este repositório para um template com `degit`, ou um
    `scripts/novo-projeto.mjs` que copia a lista acima e esvazia o resto.
-2. **`specs/_templates/` não existe.** O `nova-story.mjs` tem um molde embutido de fallback e
-   funciona sem ele — mas o molde embutido escreve AC como "Dado/Quando/Então", enquanto a
-   `Definition-of-Done.md` exige **Given/When/Then**, que é o formato de todas as specs reais.
-   Corrija o molde ou crie `specs/_templates/spec.template.md` antes da primeira story, senão o
-   desvio nasce na story 1.
+2. **Os templates do spec-kit estão em inglês** (`.specify/templates/`). As skills geram o
+   conteúdo no idioma em que você escreve a descrição; se quiser os cabeçalhos em PT-BR, ajuste os
+   templates ou use um preset do spec-kit.
 3. **`supabase/functions/_shared/auth.ts` tem resíduo de outro projeto.** A documentação de
    `requireServiceRole` cita funções `pcm-auvo-*` e a spec `E01-S09-integracao-auvo-fundacao`,
    que não existem aqui. O código está correto; o comentário mente. Limpe ao copiar.

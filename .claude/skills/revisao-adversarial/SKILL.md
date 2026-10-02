@@ -93,4 +93,4 @@ não há prova de que a correção corrigiu — e o bug volta na próxima refato
   se for segurança, ou vira story própria).
 - **FAIL** — algum achado reproduzido. Vira teste, volta ao `@dev`, não segue para PR.
 
-> Alimenta `/validar` (passo 7) e `/revisar-pr`. Só `@devops` faz merge/push.
+> Alimenta o `/speckit-converge` (a feature só converge com o relatório sem achado aberto) e o `/revisar-pr`. Só `@devops` faz merge/push.

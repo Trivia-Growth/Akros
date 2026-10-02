@@ -14,10 +14,10 @@ que ninguém pediu. Este documento existe para conter isso. Na dúvida entre faz
 - A `spec.md` está ambígua, contraditória ou silenciosa sobre um caso que você precisa decidir.
 - A tarefa exige uma **decisão difícil de reverter** (schema com dado em produção, troca de
   biblioteca central, nova integração externa, mudança de contrato de API público) e não há
-  `design.md`/ADR aprovado.
+  ADR aprovado.
 - Você ia implementar algo que está em **"Fora de escopo"** da spec.
 - A lista de passos atômicos passou de **~5 passos** ou surgiu dependência complexa inesperada
-  (o tier real é maior — crie `tasks.md` formal antes de continuar).
+  (a feature não é trivial — rode `/speckit-tasks` antes de continuar).
 - Você precisaria **inventar** uma API, comportamento ou regra de negócio que não está documentada
   e não conseguiu confirmar (ver "Verificação de conhecimento" no `CLAUDE.md`).
 - Vai mexer em arquivo de outra feature/domínio para "aproveitar a viagem".
@@ -27,8 +27,6 @@ que ninguém pediu. Este documento existe para conter isso. Na dúvida entre faz
 ### Cerimônia e artefatos
 - ❌ **Não crie ADR** para decisão trivial ou fácil de reverter. ADR é para decisão **durável e
   custosa de desfazer**.
-- ❌ **Não crie `design.md`** em tier trivial/pequeno. Ele é obrigatório só no **arquitetural**.
-- ❌ **Não crie `domain.md`** se a feature não introduz domínio novo — reutilize o glossário.
 - ❌ **Não promova para monorepo (OS)** "por precaução". Comece single-repo; promova só quando há
   fronteira de domínio real.
 

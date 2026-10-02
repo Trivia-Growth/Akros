@@ -1,69 +1,57 @@
 ---
 name: Definition of Done
-description: Gates executáveis que confirmam que uma feature está verdadeiramente completa.
+description: Checklist curto, com gates executáveis, que confirma que uma feature está completa (spec-kit + segurança + CI enxuta).
 ---
 
 # Definition of Done — Akros
 
 Uma feature **não está pronta** até passar em TODOS os gates abaixo. Não é "inspeção visual" — é comando executável.
 
-## 1. Spec & Tasks Integridade
+## 1. Spec e tasks (spec-kit)
 
-- [ ] `spec.md` existe e declara `tier` no frontmatter (`trivial` | `pequeno` | `arquitetural`)
-- [ ] AC (Acceptance Criteria) estão em formato Given/When/Then
-- [ ] **Os artefatos que o tier exige existem** (ADR-0011): `pequeno` → `tasks.md`;
-      `arquitetural` → `tasks.md` + `product.md` + `design.md`
-- [ ] **Todo AC é citado por alguma task.** Não é "1 task por AC" — uma task pode cobrir vários
-      AC quando são a mesma mudança (ADR-0011)
-- [ ] Cada task tem um **gate executável** (comando ou script)
-- [ ] Nenhum `SPEC_DEVIATION` pendente em tasks.md ou código
-- [ ] **SE tem UI:** impeccable checklist preenchido (ver seção 8 abaixo)
+- [ ] `specs/NNN-<slug>/` tem `spec.md`, `plan.md` e `tasks.md` (feature trivial dispensa — ADR-0015)
+- [ ] `spec.md` leva o ID da story (`E0N-S0N`) no cabeçalho; Acceptance Scenarios em Given/When/Then
+- [ ] `plan.md` passou o *Constitution Check* (`.specify/memory/constitution.md`)
+- [ ] Todo Acceptance Scenario tem task e teste; toda task tem gate executável
+      (`/speckit-analyze` não aponta lacuna aberta)
+- [ ] `/speckit-converge` reporta **Converged**
+- [ ] Nenhum `SPEC_DEVIATION` pendente em `tasks.md` ou no código
+- [ ] **SE tem UI:** impeccable checklist preenchido (ver seção 7 abaixo)
 
-## 2. Code & Tests
+## 2. Código e testes
 
-- [ ] Código segue padrão de arquitetura (domain → application → infrastructure)
-- [ ] Código tem **testes** que mapeiam ACs (testes verdes, não inspira confiança = falta cobertura)
-- [ ] TypeScript compila sem erros (`pnpm run typecheck`)
-- [ ] Linting passa (`pnpm run lint`)
-- [ ] Sem `TODO`, `FIXME`, `XXX` comments sem issue linkada
+- [ ] Código segue a arquitetura (`interfaces → application → domain ← infrastructure`; `pnpm run arch:check`)
+- [ ] Testes mapeiam os Acceptance Scenarios; typecheck e Biome verdes
+- [ ] Sem `TODO`, `FIXME`, `XXX` sem issue linkada
 
-## 3. Banco de Dados
+## 3. Banco e segurança (obrigatório)
 
-- [ ] Migrations criadas (formato: `NNNN_E0N-S0N_descricao.sql`)
-- [ ] RLS policies adicionadas/revisadas (se houver novo acesso)
-- [ ] Queries otimizadas (sem N+1, índices apropriados)
-- [ ] `db:migrate` roda sem erro local
+- [ ] Migration `NNNN_E0N-S0N_descricao.sql`, com reverso, aplicando do zero (`db-tests`)
+- [ ] **RLS FORCE** em toda tabela nova/modificada e GRANT explícito por papel
+      (`pnpm run lint:migrations`)
+- [ ] Policy de UPDATE do cliente não altera estado de processo (pagamento, etapa, documento);
+      transição por RPC/Edge Function com auditoria
+- [ ] Sem `service_role` no cliente; segredo no Vault, nunca em `.env.local` ou código
+- [ ] Edge Function pública com rate limit e entrada validada (`pnpm run check:edge-functions`)
+- [ ] Mexeu em auth, RLS ou sessão: `pnpm e2e` verde
 
-## 4. Security (Obrigatório)
-
-- [ ] RLS FORCE em toda tabela nova/modificada
-- [ ] Sem `service_role` exposto ao cliente
-- [ ] Secrets em Vault, não em .env.local ou código
-- [ ] Rate limiting em Edge Functions (se houver)
-- [ ] OWASP Top 10 checklist (XSS, SQLi, CSRF, etc) — `/security-review` verde
-
-## 5. CI/CD
+## 4. CI
 
 - [ ] `pnpm run ci:local` verde (= `lefthook run pre-push`)
-- [ ] `gh pr checks` verde no PR (sem checks pulados)
-- [ ] Build sucesso (`pnpm run build`)
+- [ ] `gh pr checks` verde no PR: `qualidade`, `seguranca`, `db-tests` (sem check pulado)
 
-## 6. Documentação & Rastreabilidade
+## 5. Documentação e rastreabilidade
 
-- [ ] Commits seguem padrão: `feat(E0N-S0N): descrição`
-- [ ] ADRs criados/atualizados (se mudança de arquitetura)
-- [ ] glossary.md atualizado com termos novos
-- [ ] docs/STATE.md atualizado com status final
-- [ ] docs/epics/ROADMAP.md marcado como ✅
+- [ ] Commits no padrão `feat(E0N-S0N): descrição`
+- [ ] ADR criado/atualizado se a decisão é difícil de reverter
+- [ ] `docs/glossary.md`, `docs/STATE.md` e `docs/epics/ROADMAP.md` atualizados
 
-## 7. Revisão Adversarial (QA Gate)
+## 6. Revisão adversarial (QA gate)
 
-- [ ] AC testadas **por comando** (não visualmente)
-- [ ] Borda cases tentadas: erro parcial, timeout, concorrência, abuso
-- [ ] Spec buraco encontrado? → ADR ou spec atualizada
-- [ ] `/revisao-adversarial` rodou e retornou verde
+- [ ] `/revisao-adversarial` rodou: borda, erro parcial, concorrência e abuso tentados
+- [ ] Achado reproduzido virou teste; buraco na spec virou ADR ou spec atualizada
 
-## 8. UI Polish — impeccable (OBRIGATÓRIO se feature tem UI)
+## 7. UI Polish — impeccable (OBRIGATÓRIO se feature tem UI)
 
 Se feature toca frontend (`apps/web/src/interfaces/` ou componentes), deve passar por impeccable.
 
@@ -110,7 +98,7 @@ Se feature toca frontend (`apps/web/src/interfaces/` ou componentes), deve passa
 
 ---
 
-## 9. DevOps / Merge
+## 8. DevOps / Merge
 
 - [ ] Branch atualizado com main (sem merge conflicts)
 - [ ] PR abre (título + descrição com AC ref)
@@ -123,10 +111,10 @@ Se feature toca frontend (`apps/web/src/interfaces/` ou componentes), deve passa
 
 ```bash
 # Spec & Tasks
-grep -r "SPEC_DEVIATION" specs/E*/
+grep -r "SPEC_DEVIATION" specs/ apps/ supabase/
 
 # Code
-pnpm run typecheck && pnpm run lint && pnpm run test
+pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run arch:check
 
 # CI/CD local
 pnpm run ci:local
