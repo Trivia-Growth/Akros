@@ -1,5 +1,5 @@
 name: Setup
-description: Node 22 + pnpm com cache do store, e dependências instaladas. Um lugar só — 13 jobs usam.
+description: Node 22 + pnpm com cache do store, e dependências instaladas. Um lugar só — os jobs da CI usam.
 
 runs:
   using: composite

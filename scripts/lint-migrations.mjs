@@ -37,7 +37,7 @@ for (const dir of DIRS) {
 }
 
 // AC-2 (E00-S06): zero migrations varridas é falha do gate (caminho/glob quebrado), nunca sucesso —
-// mesmo padrão de eval-spec-fidelity e audit-esteira, da auditoria de 2026-08-30.
+// da auditoria de 2026-08-30.
 if (files.length === 0) {
   console.error(
     "\n✗ Convenções de migration: nenhuma migration encontrada em db/migrations/ nem " +

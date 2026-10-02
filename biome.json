@@ -16,8 +16,8 @@
       ".triviaiox-core/**",
       ".codex/**",
       ".claude/**",
+      ".specify/**",
       "graphify-out/**",
-      "specs/_debt-baseline.json",
       "**/.impeccable/hook.cache.json",
       "**/.impeccable/config.local.json"
     ]

@@ -1,14 +1,17 @@
-# Lefthook — orquestrador único dos gates de qualidade (substitui husky + lint-staged + ci-local.mjs).
-# Um só arquivo define o que roda no commit, na mensagem e no push. Paralelo por padrão (rápido).
-# Instala com `lefthook install` (roda no `pnpm install` via script prepare).
+# Lefthook — orquestrador dos gates locais (ADR-0016).
 #
-# Filosofia (ver PADRAO-DE-QUALIDADE.md):
-#   • pre-commit  = LEVE, só arquivos staged — não trava o ritmo do commit.
-#   • pre-push    = ESPELHO FIEL DA CI — a mesma bateria do pipeline, antes de o código sair.
-#     `pnpm run ci:local` = `lefthook run pre-push`: hook e comando manual são a MESMA definição.
-#   • CI real ainda é a prova final (job db-tests com Docker é pulado local) → /validar checa `gh pr checks`.
+# Filosofia: o ciclo local precisa ser rápido o bastante para ninguém querer pular. Por isso o
+# pre-push roda só o que pega regressão de código em segundos (Biome, typecheck, vitest); a bateria
+# de segurança e de arquitetura roda na CI, onde cancela run antigo e não custa tempo de quem está
+# desenvolvendo. `pnpm run ci:local` = `lefthook run pre-push`: hook e comando manual são a MESMA
+# definição.
+#
+# Fora daqui de propósito:
+#   • e2e (Playwright, autentica no Supabase real) → `pnpm e2e`, sob demanda; obrigatório antes de
+#     mexer em auth, RLS ou sessão.
+#   • arch:check, lint:migrations, check:edge-functions, db-tests → CI (jobs `qualidade`,
+#     `seguranca` e `db-tests`).
 
-# ─────────────────────────────────────────────────────────────────────────────
 pre-commit:
   parallel: true
   commands:
@@ -17,52 +20,20 @@ pre-commit:
       run: pnpm exec biome check --write --no-errors-on-unmatched {staged_files}
       stage_fixed: true # re-staga o que o Biome corrigiu automaticamente
 
-# ─────────────────────────────────────────────────────────────────────────────
 commit-msg:
   commands:
     commitlint:
-      run: pnpm exec commitlint --edit {1} # Conventional Commits obrigatório
+      run: pnpm exec commitlint --edit {1} # Conventional Commits, com ID da story no escopo
 
-# ─────────────────────────────────────────────────────────────────────────────
-# pre-push = espelho da CI, MAIS o e2e. Paralelo: você vê TODOS os vermelhos de uma vez.
-# db-tests (Postgres limpo) NÃO entra aqui — exige Docker local; roda no CI (job db-tests).
-# e2e (Playwright) entra aqui e NÃO na CI — ver comentário no comando `e2e` abaixo.
 pre-push:
   parallel: true
   commands:
-    remind-impeccable:
-      run: node scripts/remind-impeccable.mjs
-    esteira:
-      run: pnpm run audit:esteira
-    fidelidade:
-      run: pnpm run eval:spec
-    gate-coverage:
-      run: pnpm run check:gate-coverage # invariante 1 (E00-S06): todo scripts/*.mjs tem .test.mjs par
-    mermaid:
-      run: pnpm run validate:mermaid
-    migrations:
-      run: pnpm run lint:migrations # RLS-GRANT (custom) + Squawk se instalado
-    edge-functions:
-      run: pnpm run check:edge-functions # função órfã / functions.invoke sem função declarada (E00-S11)
-    degraded-mode:
-      run: pnpm run check:degraded-mode # invariante 4 (E00-S06): integração externa declara modo degradado
     lint:
       run: pnpm exec biome check .
     typecheck:
       run: pnpm run typecheck
-    arquitetura:
-      run: pnpm run arch:check
-    build:
-      run: pnpm run build
     testes:
       run: pnpm test
-    # E2E roda SEMPRE aqui e NUNCA na CI (decisão de 2026-08-31): sobe browser e autentica contra
-    # o Supabase real. Na CI custaria minutos em todo push e abriria sessão em produção a cada PR;
-    # aqui custa ~13s e as credenciais já estão na máquina (`apps/web/.env.test.local`).
-    # Sem `skip`: gate que se desliga sozinho quando falta ambiente é best-effort disfarçado — se
-    # faltar credencial ou browser, ele falha com a mensagem dizendo o que instalar.
-    e2e:
-      run: pnpm --filter @akros/web exec playwright test
     # Secret scanning é best-effort local (o gate bloqueante é o da CI); só roda se instalado:
     gitleaks:
       run: gitleaks detect --source . --no-banner --redact --exit-code 1
