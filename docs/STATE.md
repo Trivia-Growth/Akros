@@ -15,14 +15,18 @@ alwaysApply: false
 - **Decisões:** ADR-0015 (Spec Kit; 91 specs anteriores congeladas) e ADR-0016 (CI 13→3 jobs,
   pre-push 14→4 comandos; e2e vira `pnpm e2e` sob demanda). Skills `/nova-feature`, `/clarificar`,
   `/validar`, `/auditar` removidas.
-- **Agente multicanal (E13-S13, branch `feat/E13-S13-agente-multicanal`, empilhada em E12-S04 e
-  E00-S07):** código, testes e documentação prontos; **nada foi aplicado em produção**. Falta o
-  rollout de `docs/runbook-rollout-agente.md` (migration `0016`, 4 Edge Functions, CORS, variáveis do
-  Netlify) e o teste com Evolution, Meta e OpenRouter reais. Referências usadas: `Atendimento`
-  (Evolution v2 e webhooks Meta) e `heziomos` (envio Meta).
-- **Próximo passo:** `@devops` trocar, uma vez, os required checks da `main` pelo agregador `ci`
-  (T-09 de E00-S07) e abrir os PRs na ordem E00-S07 → E12-S04 → E13-S13; em paralelo, rollout do agente
-  com a confirmação do dono.
+- **Entregue em 2026-10-02 (PR #7, rebase na `main`):** E00-S07 (Spec Kit, CI de 13 jobs para 3 + agregador
+  `ci`, único required check, já trocado na proteção da `main`), abertura da E12-S04 (docs) e E13-S13 (agente
+  multicanal). **Em produção:** migration `0016` aplicada, 4 Edge Functions no ar
+  (`integracoes-ia-salvar`, `evolution-webhook`, `meta-whatsapp-webhook`, `meta-instagram-webhook`) e
+  `CORS_ALLOWED_ORIGINS` com `https://imigrationakros.netlify.app`.
+- **Falta para o agente responder (nesta ordem):** (1) no Netlify, `VITE_DEMO_MODE=false`,
+  `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` e novo build (A-01; sem isso o site segue em demo e
+  a tela de Configurações não aparece com dados reais); (2) login do admin e, em Configurações →
+  "Configurar canal e agente", Evolution, OpenRouter e Meta pela UI; (3) teste ponta a ponta por canal
+  (`docs/runbook-rollout-agente.md`, seção 5) e só então ligar o agente. Evolution, Meta e OpenRouter
+  reais ainda não foram exercitados.
+- **Próximo passo de produto:** E12-S04 (convite de Bruno e Natália) e as policies de RLS do cliente (A-02).
 - **Avaliação de 2026-10-01** (`docs/qa/caderno-de-teste-fase-real.md`, no checkout principal,
   ainda sem commit) mostrou que a parte real não está alcançável em produção e tem furos de RLS;
   viram stories próprias (fora do escopo de E00-S07): site Netlify em modo demo (A-01), RLS de
