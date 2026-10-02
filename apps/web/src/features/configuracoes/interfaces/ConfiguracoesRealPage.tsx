@@ -16,6 +16,16 @@ import {
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { useConfiguracoesReais } from "../application/hooks";
+import {
+  AGENTE_INICIAL,
+  CANAL_INICIAL,
+  type FormularioAgente,
+  type FormularioCanal,
+  corpoDeSalvar,
+  gerarTokenVerificacao,
+  limparSegredos,
+  urlWebhookConta,
+} from "../application/integracao-canal";
 import type {
   AgenteIAIntegracao,
   ContaCanalConectada,
@@ -119,43 +129,10 @@ export function ConfiguracoesRealPage() {
   );
 }
 
-interface FormularioAgente {
-  contaId: string;
-  nomeConta: string;
-  identificador: string;
-  baseUrl: string;
-  instancia: string;
-  chaveEvolution: string;
-  canalAtivo: boolean;
-  agenteId: string;
-  nomeAgente: string;
-  funcao: string;
-  alma: string;
-  saudacao: string;
-  handoff: string;
-  modelo: string;
-  chaveOpenRouter: string;
-  agenteAtivo: boolean;
-}
-
-const FORMULARIO_INICIAL: FormularioAgente = {
-  contaId: "",
-  nomeConta: "WhatsApp Akros",
-  identificador: "",
-  baseUrl: "",
-  instancia: "",
-  chaveEvolution: "",
-  canalAtivo: true,
-  agenteId: "",
-  nomeAgente: "Assistente Akros",
-  funcao: "primeiro atendimento e triagem",
-  alma: "Acolha, esclareça próximos passos gerais e encaminhe casos que exijam análise humana. Não dê aconselhamento jurídico.",
-  saudacao: "Olá! Sou assistente virtual da Akros. Como posso ajudar?",
-  handoff:
-    "Vou encaminhar sua mensagem para nossa equipe humana e retornaremos assim que possível.",
-  modelo: "openai/gpt-4.1-mini",
-  chaveOpenRouter: "",
-  agenteAtivo: false,
+const ROTULO_CANAL: Record<ProvedorCanal, string> = {
+  evolution: "WhatsApp · Evolution",
+  whatsapp_oficial: "WhatsApp · API oficial (Meta)",
+  instagram: "Instagram · Direct (Meta)",
 };
 
 function IntegracaoAgentes({
@@ -169,80 +146,104 @@ function IntegracaoAgentes({
 }) {
   const [aberto, setAberto] = useState(false);
   const [enviando, setEnviando] = useState(false);
-  const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
-  const contasEvolution = contasCanal.filter((conta) => conta.provedor === "evolution");
+  const [canal, setCanal] = useState<FormularioCanal>(CANAL_INICIAL);
+  const [agente, setAgente] = useState<FormularioAgente>(AGENTE_INICIAL);
+  const [resultado, setResultado] = useState<{
+    provedor: ProvedorCanal;
+    webhookUrl: string;
+  } | null>(null);
+  const contasDoTipo = contasCanal.filter((conta) => conta.provedor === canal.provedor);
+  const ehMeta = canal.provedor !== "evolution";
+  const primeiraVez = !canal.contaId;
+  const urlProjeto = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const urlDaConta = urlWebhookConta(urlProjeto, canal.provedor, canal.contaId);
 
-  function alterar<K extends keyof FormularioAgente>(chave: K, valor: FormularioAgente[K]) {
-    setFormulario((atual) => ({ ...atual, [chave]: valor }));
+  function alterarCanal<K extends keyof FormularioCanal>(chave: K, valor: FormularioCanal[K]) {
+    setCanal((atual) => ({ ...atual, [chave]: valor }));
+  }
+
+  function alterarAgente<K extends keyof FormularioAgente>(chave: K, valor: FormularioAgente[K]) {
+    setAgente((atual) => ({ ...atual, [chave]: valor }));
+  }
+
+  function escolherTipo(provedor: ProvedorCanal) {
+    // Trocar o tipo zera tudo do canal: campo de um provedor não pode vazar para o corpo de outro.
+    setCanal({
+      ...CANAL_INICIAL,
+      provedor,
+      nomeConta: provedor === "instagram" ? "Instagram Akros" : "WhatsApp Akros",
+    });
+    setResultado(null);
   }
 
   function escolherConta(id: string) {
-    const conta = contasEvolution.find((item) => item.id === id);
-    setFormulario((atual) => ({
-      ...atual,
+    const conta = contasDoTipo.find((item) => item.id === id);
+    setResultado(null);
+    setCanal({
+      ...CANAL_INICIAL,
+      provedor: canal.provedor,
       contaId: id === "nova" ? "" : id,
-      nomeConta: conta?.nomeExibicao ?? atual.nomeConta,
+      nomeConta: conta?.nomeExibicao ?? CANAL_INICIAL.nomeConta,
       identificador: conta?.identificador ?? "",
+      ativa: conta?.ativa ?? true,
       baseUrl: conta?.evolution?.baseUrl ?? "",
       instancia: conta?.evolution?.instancia ?? "",
-      chaveEvolution: "",
-      canalAtivo: conta?.ativa ?? true,
-    }));
+      phoneNumberId: conta?.meta?.phoneNumberId ?? "",
+      wabaId: conta?.meta?.wabaId ?? "",
+      igAccountId: conta?.meta?.igAccountId ?? "",
+    });
   }
 
   function escolherAgente(id: string) {
-    const agente = agentesIA.find((item) => item.id === id);
-    setFormulario((atual) => ({
-      ...atual,
+    const existente = agentesIA.find((item) => item.id === id);
+    setAgente({
       agenteId: id === "novo" ? "" : id,
-      nomeAgente: agente?.nome ?? FORMULARIO_INICIAL.nomeAgente,
-      funcao: agente?.funcao ?? FORMULARIO_INICIAL.funcao,
-      alma: agente?.alma ?? FORMULARIO_INICIAL.alma,
-      saudacao: agente?.saudacao ?? FORMULARIO_INICIAL.saudacao,
-      handoff: agente?.mensagemHandoff ?? FORMULARIO_INICIAL.handoff,
-      modelo: agente?.modelo || FORMULARIO_INICIAL.modelo,
+      nomeAgente: existente?.nome ?? AGENTE_INICIAL.nomeAgente,
+      funcao: existente?.funcao ?? AGENTE_INICIAL.funcao,
+      alma: existente?.alma ?? AGENTE_INICIAL.alma,
+      saudacao: existente?.saudacao ?? AGENTE_INICIAL.saudacao,
+      handoff: existente?.mensagemHandoff ?? AGENTE_INICIAL.handoff,
+      modelo: existente?.modelo || AGENTE_INICIAL.modelo,
       chaveOpenRouter: "",
-      agenteAtivo: agente?.ativo ?? false,
-    }));
+      agenteAtivo: existente?.ativo ?? false,
+    });
+  }
+
+  async function copiar(valor: string, nome: string) {
+    try {
+      await navigator.clipboard.writeText(valor);
+      toast.success(`${nome} copiado.`);
+    } catch {
+      toast.error("Não foi possível copiar; selecione e copie manualmente.");
+    }
   }
 
   async function salvar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     setEnviando(true);
     try {
-      const { error } = await getSupabase().functions.invoke("integracoes-ia-salvar", {
+      const { data, error } = await getSupabase().functions.invoke("integracoes-ia-salvar", {
         headers: { "x-akros-csrf": "1" },
-        body: {
-          evolution: {
-            ...(formulario.contaId ? { contaId: formulario.contaId } : {}),
-            nomeExibicao: formulario.nomeConta,
-            identificador: formulario.identificador,
-            baseUrl: formulario.baseUrl,
-            instancia: formulario.instancia,
-            ...(formulario.chaveEvolution ? { apiKey: formulario.chaveEvolution } : {}),
-            ativa: formulario.canalAtivo,
-          },
-          agente: {
-            ...(formulario.agenteId ? { agenteId: formulario.agenteId } : {}),
-            nome: formulario.nomeAgente,
-            funcao: formulario.funcao,
-            alma: formulario.alma,
-            saudacao: formulario.saudacao,
-            mensagemHandoff: formulario.handoff,
-            modelo: formulario.modelo,
-            ...(formulario.chaveOpenRouter ? { apiKeyOpenRouter: formulario.chaveOpenRouter } : {}),
-            ativo: formulario.agenteAtivo,
-          },
-        },
+        body: corpoDeSalvar(canal, agente),
       });
       if (error) throw await erroDetalhado(error);
 
-      // Campo password volta vazio antes de qualquer rerender/releitura. Nunca há localStorage.
-      setFormulario((atual) => ({ ...atual, chaveEvolution: "", chaveOpenRouter: "" }));
+      const resposta = (data ?? {}) as { contaId?: string; webhookUrl?: string };
+      // Credenciais voltam a vazio antes de qualquer rerender/releitura. Nunca há localStorage.
+      setCanal((atual) => ({
+        ...limparSegredos(atual),
+        contaId: resposta.contaId ?? atual.contaId,
+      }));
+      setAgente((atual) => ({ ...atual, chaveOpenRouter: "" }));
       await aoSalvar();
-      setAberto(false);
+      if (ehMeta && resposta.webhookUrl) {
+        // Meta: falta o passo no painel dela; mantém o diálogo aberto com o que copiar.
+        setResultado({ provedor: canal.provedor, webhookUrl: resposta.webhookUrl });
+      } else {
+        setAberto(false);
+      }
       toast.success(
-        formulario.agenteAtivo
+        agente.agenteAtivo
           ? "Canal e agente ativos. Mensagens novas poderão receber resposta."
           : "Integração salva. Agente continua desligado.",
       );
@@ -254,7 +255,7 @@ function IntegracaoAgentes({
   }
 
   return (
-    <Secao titulo="Agente WhatsApp · Evolution + OpenRouter" icone={Bot}>
+    <Secao titulo="Agente de atendimento · WhatsApp e Instagram" icone={Bot}>
       <div className="flex flex-col gap-4 px-5 py-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -264,21 +265,28 @@ function IntegracaoAgentes({
                 : `${agentesIA.length} agente(s) configurado(s).`}
             </p>
             <p className="mt-1 max-w-2xl text-sm text-ink-soft">
-              Chaves são enviadas uma vez por HTTPS, guardadas cifradas no Vault e nunca aparecem de
-              novo nesta tela. O webhook da Evolution é registrado automaticamente.
+              Escolha o canal (Evolution, API oficial do WhatsApp ou Direct do Instagram). Chaves
+              são enviadas uma vez por HTTPS, guardadas cifradas no Vault e nunca aparecem de novo
+              nesta tela.
             </p>
           </div>
-          <Button size="sm" onClick={() => setAberto(true)}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setResultado(null);
+              setAberto(true);
+            }}
+          >
             <KeyRound className="h-4 w-4" aria-hidden />
-            Configurar agente
+            Configurar canal e agente
           </Button>
         </div>
-        {agentesIA.map((agente) => (
+        {agentesIA.map((item) => (
           <Linha
-            key={agente.id}
-            titulo={agente.nome}
-            detalhe={`${agente.funcao} · ${agente.modelo || "modelo pendente"}`}
-            status={agente.ativo ? "Ativa" : "Inativa"}
+            key={item.id}
+            titulo={item.nome}
+            detalhe={`${item.funcao} · ${item.modelo || "modelo pendente"}`}
+            status={item.ativo ? "Ativa" : "Inativa"}
           />
         ))}
         <div className="flex gap-2 rounded-lg bg-cream-100 px-3 py-2.5 text-xs text-ink-soft">
@@ -291,8 +299,8 @@ function IntegracaoAgentes({
       <Modal
         open={aberto}
         onClose={() => !enviando && setAberto(false)}
-        title="Configurar agente WhatsApp"
-        description="A chave não será mostrada novamente. Deixe em branco apenas para manter chave já configurada."
+        title="Configurar canal e agente"
+        description="As chaves não serão mostradas novamente. Deixe em branco apenas para manter a chave já configurada."
         className="max-h-[calc(100vh-2rem)] max-w-2xl overflow-y-auto"
       >
         <form className="flex flex-col gap-4" onSubmit={salvar}>
@@ -304,14 +312,69 @@ function IntegracaoAgentes({
             </div>
           </div>
 
-          <h3 className="text-sm font-semibold text-navy">Canal Evolution</h3>
+          {resultado ? (
+            <output
+              data-testid="resultado-meta"
+              className="flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+            >
+              <p className="font-semibold">Falta um passo no painel da Meta</p>
+              <p>
+                Em <strong>Webhooks</strong> do seu app, cadastre o endereço e o token de
+                verificação abaixo e assine o campo <strong>messages</strong>. A Meta só confirma
+                depois de chamar o endereço, então salve aqui primeiro (já feito).
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="min-w-0 flex-1 break-all rounded bg-white px-2 py-1 text-xs">
+                  {resultado.webhookUrl}
+                </code>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => copiar(resultado.webhookUrl, "Endereço do webhook")}
+                >
+                  Copiar endereço
+                </Button>
+              </div>
+              {canal.verifyToken ? (
+                <div className="flex items-center gap-2">
+                  <code className="min-w-0 flex-1 break-all rounded bg-white px-2 py-1 text-xs">
+                    {canal.verifyToken}
+                  </code>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => copiar(canal.verifyToken, "Token de verificação")}
+                  >
+                    Copiar token
+                  </Button>
+                </div>
+              ) : null}
+            </output>
+          ) : null}
+
+          <h3 className="text-sm font-semibold text-navy">Canal</h3>
           <Select
-            label="Conta Evolution"
-            value={formulario.contaId || "nova"}
+            label="Tipo de canal"
+            value={canal.provedor}
+            disabled={!primeiraVez}
+            hint={primeiraVez ? undefined : "O tipo não muda numa conta existente."}
+            onChange={(evento) => escolherTipo(evento.target.value as ProvedorCanal)}
+          >
+            {(Object.keys(ROTULO_CANAL) as ProvedorCanal[]).map((tipo) => (
+              <option key={tipo} value={tipo}>
+                {ROTULO_CANAL[tipo]}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="Conta"
+            value={canal.contaId || "nova"}
             onChange={(evento) => escolherConta(evento.target.value)}
           >
-            <option value="nova">Nova conta Evolution</option>
-            {contasEvolution.map((conta) => (
+            <option value="nova">Nova conta</option>
+            {contasDoTipo.map((conta) => (
               <option key={conta.id} value={conta.id}>
                 {conta.nomeExibicao} · {conta.identificador}
               </option>
@@ -321,49 +384,146 @@ function IntegracaoAgentes({
             <Input
               required
               label="Nome exibido"
-              value={formulario.nomeConta}
-              onChange={(evento) => alterar("nomeConta", evento.target.value)}
+              value={canal.nomeConta}
+              onChange={(evento) => alterarCanal("nomeConta", evento.target.value)}
             />
             <Input
               required
-              label="Número WhatsApp"
-              placeholder="5511999999999"
-              value={formulario.identificador}
-              onChange={(evento) => alterar("identificador", evento.target.value)}
+              label={canal.provedor === "instagram" ? "Usuário do Instagram" : "Número WhatsApp"}
+              placeholder={canal.provedor === "instagram" ? "akros.immigration" : "5511999999999"}
+              value={canal.identificador}
+              onChange={(evento) => alterarCanal("identificador", evento.target.value)}
             />
           </div>
-          <Input
-            required
-            type="url"
-            label="URL HTTPS da Evolution"
-            placeholder="https://evolution.suaempresa.com"
-            value={formulario.baseUrl}
-            onChange={(evento) => alterar("baseUrl", evento.target.value)}
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input
-              required
-              label="Nome da instância"
-              value={formulario.instancia}
-              onChange={(evento) => alterar("instancia", evento.target.value)}
-            />
-            <Input
-              type="password"
-              autoComplete="new-password"
-              label="API key Evolution"
-              hint={
-                formulario.contaId
-                  ? "Vazio mantém a chave guardada."
-                  : "Obrigatória na primeira configuração."
-              }
-              value={formulario.chaveEvolution}
-              onChange={(evento) => alterar("chaveEvolution", evento.target.value)}
-            />
-          </div>
+
+          {canal.provedor === "evolution" ? (
+            <>
+              <Input
+                required
+                type="url"
+                label="URL HTTPS da Evolution"
+                placeholder="https://evolution.suaempresa.com"
+                value={canal.baseUrl}
+                onChange={(evento) => alterarCanal("baseUrl", evento.target.value)}
+              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  required
+                  label="Nome da instância"
+                  value={canal.instancia}
+                  onChange={(evento) => alterarCanal("instancia", evento.target.value)}
+                />
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  required={primeiraVez}
+                  label="API key Evolution"
+                  hint={
+                    primeiraVez
+                      ? "Obrigatória na primeira configuração."
+                      : "Vazio mantém a chave guardada."
+                  }
+                  value={canal.chaveEvolution}
+                  onChange={(evento) => alterarCanal("chaveEvolution", evento.target.value)}
+                />
+              </div>
+              <p className="text-xs text-ink-soft">
+                O webhook da Evolution é registrado automaticamente ao salvar. O número precisa
+                estar pareado (QR) no painel da própria Evolution.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {canal.provedor === "whatsapp_oficial" ? (
+                  <>
+                    <Input
+                      required
+                      inputMode="numeric"
+                      label="ID do número de telefone"
+                      hint="Phone number ID, no painel do WhatsApp da Meta."
+                      value={canal.phoneNumberId}
+                      onChange={(evento) => alterarCanal("phoneNumberId", evento.target.value)}
+                    />
+                    <Input
+                      required
+                      inputMode="numeric"
+                      label="ID da conta WhatsApp Business"
+                      hint="WABA ID. Webhooks de outra conta são ignorados."
+                      value={canal.wabaId}
+                      onChange={(evento) => alterarCanal("wabaId", evento.target.value)}
+                    />
+                  </>
+                ) : (
+                  <Input
+                    required
+                    inputMode="numeric"
+                    label="ID da conta do Instagram"
+                    hint="Instagram business account ID (não é o @usuário)."
+                    value={canal.igAccountId}
+                    onChange={(evento) => alterarCanal("igAccountId", evento.target.value)}
+                  />
+                )}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  required={primeiraVez}
+                  label={
+                    canal.provedor === "instagram"
+                      ? "Page Access Token"
+                      : "Token de acesso permanente"
+                  }
+                  hint={
+                    primeiraVez
+                      ? "Obrigatório na primeira configuração."
+                      : "Vazio mantém o token guardado."
+                  }
+                  value={canal.accessToken}
+                  onChange={(evento) => alterarCanal("accessToken", evento.target.value)}
+                />
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  required={primeiraVez}
+                  label="App Secret"
+                  hint={
+                    primeiraVez ? "Valida a assinatura dos webhooks." : "Vazio mantém o guardado."
+                  }
+                  value={canal.appSecret}
+                  onChange={(evento) => alterarCanal("appSecret", evento.target.value)}
+                />
+              </div>
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Input
+                    required={primeiraVez}
+                    label="Token de verificação do webhook"
+                    hint="Invente um (8+ letras e números) ou gere; você o cola no painel da Meta."
+                    value={canal.verifyToken}
+                    onChange={(evento) => alterarCanal("verifyToken", evento.target.value)}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => alterarCanal("verifyToken", gerarTokenVerificacao())}
+                >
+                  Gerar
+                </Button>
+              </div>
+              {urlDaConta ? (
+                <p className="break-all text-xs text-ink-soft">
+                  Endereço do webhook desta conta: <code>{urlDaConta}</code>
+                </p>
+              ) : null}
+            </>
+          )}
           <Checkbox
             label="Canal conectado e apto a receber mensagens"
-            checked={formulario.canalAtivo}
-            onChange={(evento) => alterar("canalAtivo", evento.target.checked)}
+            checked={canal.ativa}
+            onChange={(evento) => alterarCanal("ativa", evento.target.checked)}
           />
 
           <h3 className="border-t border-border pt-4 text-sm font-semibold text-navy">
@@ -371,13 +531,13 @@ function IntegracaoAgentes({
           </h3>
           <Select
             label="Agente"
-            value={formulario.agenteId || "novo"}
+            value={agente.agenteId || "novo"}
             onChange={(evento) => escolherAgente(evento.target.value)}
           >
             <option value="novo">Novo agente</option>
-            {agentesIA.map((agente) => (
-              <option key={agente.id} value={agente.id}>
-                {agente.nome}
+            {agentesIA.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.nome}
               </option>
             ))}
           </Select>
@@ -385,36 +545,36 @@ function IntegracaoAgentes({
             <Input
               required
               label="Nome do agente"
-              value={formulario.nomeAgente}
-              onChange={(evento) => alterar("nomeAgente", evento.target.value)}
+              value={agente.nomeAgente}
+              onChange={(evento) => alterarAgente("nomeAgente", evento.target.value)}
             />
             <Input
               required
               label="Função"
-              value={formulario.funcao}
-              onChange={(evento) => alterar("funcao", evento.target.value)}
+              value={agente.funcao}
+              onChange={(evento) => alterarAgente("funcao", evento.target.value)}
             />
           </div>
           <Textarea
             required
             label="Orientação e tom"
-            value={formulario.alma}
-            onChange={(evento) => alterar("alma", evento.target.value)}
+            value={agente.alma}
+            onChange={(evento) => alterarAgente("alma", evento.target.value)}
           />
           <div className="grid gap-3 sm:grid-cols-2">
             <Textarea
               required
               label="Saudação"
               rows={3}
-              value={formulario.saudacao}
-              onChange={(evento) => alterar("saudacao", evento.target.value)}
+              value={agente.saudacao}
+              onChange={(evento) => alterarAgente("saudacao", evento.target.value)}
             />
             <Textarea
               required
               label="Mensagem de handoff"
               rows={3}
-              value={formulario.handoff}
-              onChange={(evento) => alterar("handoff", evento.target.value)}
+              value={agente.handoff}
+              onChange={(evento) => alterarAgente("handoff", evento.target.value)}
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -422,26 +582,27 @@ function IntegracaoAgentes({
               required
               label="Modelo OpenRouter"
               hint="Use identificador do catálogo OpenRouter."
-              value={formulario.modelo}
-              onChange={(evento) => alterar("modelo", evento.target.value)}
+              value={agente.modelo}
+              onChange={(evento) => alterarAgente("modelo", evento.target.value)}
             />
             <Input
               type="password"
               autoComplete="new-password"
+              required={!agente.agenteId}
               label="API key OpenRouter"
               hint={
-                formulario.agenteId
+                agente.agenteId
                   ? "Vazio mantém a chave guardada."
                   : "Obrigatória na primeira configuração."
               }
-              value={formulario.chaveOpenRouter}
-              onChange={(evento) => alterar("chaveOpenRouter", evento.target.value)}
+              value={agente.chaveOpenRouter}
+              onChange={(evento) => alterarAgente("chaveOpenRouter", evento.target.value)}
             />
           </div>
           <Checkbox
             label="Ativar agente agora — ele responderá novas mensagens deste canal"
-            checked={formulario.agenteAtivo}
-            onChange={(evento) => alterar("agenteAtivo", evento.target.checked)}
+            checked={agente.agenteAtivo}
+            onChange={(evento) => alterarAgente("agenteAtivo", evento.target.checked)}
           />
           <div className="flex justify-end gap-3 border-t border-border pt-4">
             <Button
@@ -450,7 +611,7 @@ function IntegracaoAgentes({
               onClick={() => setAberto(false)}
               disabled={enviando}
             >
-              Cancelar
+              {resultado ? "Fechar" : "Cancelar"}
             </Button>
             <Button type="submit" loading={enviando}>
               Salvar com segurança

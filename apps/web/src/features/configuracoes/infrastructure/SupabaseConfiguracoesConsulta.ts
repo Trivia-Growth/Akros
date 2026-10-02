@@ -52,7 +52,7 @@ interface LinhaCompartilhamento {
   membro_id: string;
 }
 
-interface LinhaContaCanal {
+export interface LinhaContaCanal {
   id: string;
   provedor: ProvedorCanal;
   nome_exibicao: string;
@@ -160,7 +160,7 @@ export function paraContaAgenda(
   };
 }
 
-function paraContaCanal(linha: LinhaContaCanal): ContaCanalConectada {
+export function paraContaCanal(linha: LinhaContaCanal): ContaCanalConectada {
   const conta: ContaCanalConectada = {
     id: linha.id,
     provedor: linha.provedor,
@@ -178,6 +178,23 @@ function paraContaCanal(linha: LinhaContaCanal): ContaCanalConectada {
       instancia,
       credenciaisConfiguradas: linha.credenciais_configuradas,
     };
+  }
+  if (linha.provedor === "whatsapp_oficial") {
+    const phoneNumberId = texto(metadados.phoneNumberId);
+    const wabaId = texto(metadados.wabaId);
+    if (phoneNumberId && wabaId) {
+      conta.meta = {
+        phoneNumberId,
+        wabaId,
+        credenciaisConfiguradas: linha.credenciais_configuradas,
+      };
+    }
+  }
+  if (linha.provedor === "instagram") {
+    const igAccountId = texto(metadados.igAccountId);
+    if (igAccountId) {
+      conta.meta = { igAccountId, credenciaisConfiguradas: linha.credenciais_configuradas };
+    }
   }
   return conta;
 }

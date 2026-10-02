@@ -32,7 +32,7 @@ interface LinhaEmail {
 interface LinhaEvento {
   id: string;
   cliente_id: string | null;
-  canal: "whatsapp" | "email" | "chat_portal" | "reuniao" | "sistema";
+  canal: "whatsapp" | "instagram" | "email" | "chat_portal" | "reuniao" | "sistema";
   direcao: "entrada" | "saida" | "interno";
   autor: string;
   conteudo: string;
