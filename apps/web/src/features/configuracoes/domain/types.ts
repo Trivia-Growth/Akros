@@ -107,6 +107,13 @@ export interface ContaCanalConectada {
   conectadoEm: string;
   /** Metadados operacionais, sem API key nem token do webhook. */
   evolution?: { baseUrl: string; instancia: string; credenciaisConfiguradas: boolean };
+  /** WhatsApp oficial e Instagram (Meta): só ids públicos, nunca token nem App Secret. */
+  meta?: {
+    phoneNumberId?: string;
+    wabaId?: string;
+    igAccountId?: string;
+    credenciaisConfiguradas: boolean;
+  };
 }
 
 /** Configuração de atendimento exibível ao admin. Chave OpenRouter fica somente no Vault. */

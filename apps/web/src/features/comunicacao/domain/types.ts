@@ -8,7 +8,13 @@ export type TipoMensagem = "texto" | "imagem" | "audio" | "arquivo";
  * a unificação acontece na leitura: `useTimelineCliente` (application/hooks.ts) funde
  * eventosComunicacao + mensagens de Conversa num só fluxo cronológico, sem migrar o inbox.
  */
-export type CanalEvento = "whatsapp" | "email" | "chat_portal" | "reuniao" | "sistema";
+export type CanalEvento =
+  | "whatsapp"
+  | "instagram"
+  | "email"
+  | "chat_portal"
+  | "reuniao"
+  | "sistema";
 export type DirecaoEvento = "entrada" | "saida" | "interno";
 
 export interface AnexoEvento {
