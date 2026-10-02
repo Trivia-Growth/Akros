@@ -51,3 +51,12 @@ Deno.test("erros: sem modelo, HTTP de erro, corpo vazio e custo inválido", asyn
   const r = await gerarRespostaOpenRouter(ok({ choices: [{ message: { content: "x" } }], usage: { cost: -1 } }), REGRA, "k", []);
   assertEquals(r.custo, null);
 });
+
+Deno.test("explicarErroIA: mensagem útil ao admin por status, sem eco de corpo", async () => {
+  const { explicarErroIA } = await import("./openrouter.ts");
+  assertEquals(explicarErroIA(new ErroIA("x", 401)).includes("recusou a chave"), true);
+  assertEquals(explicarErroIA(new ErroIA("x", 402)).includes("crédito"), true);
+  assertEquals(explicarErroIA(new ErroIA("x", 400)).includes("modelo"), true);
+  assertEquals(explicarErroIA(new ErroIA("Agente sem modelo OpenRouter")).includes("modelo configurado"), true);
+  assertEquals(explicarErroIA(new Error("qualquer")), "Não foi possível gerar a resposta agora.");
+});

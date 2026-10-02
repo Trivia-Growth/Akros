@@ -52,67 +52,10 @@ serve(async (req) => {
     const urlProjeto = Deno.env.get("SUPABASE_URL");
     if (!urlProjeto) throw new HttpError(500, "Ambiente Supabase incompleto");
 
-    const contaId = canal.contaId ?? crypto.randomUUID();
-    const { data: contaExistente, error: erroConta } = await supabase
-      .schema("configuracoes")
-      .from("contas_canal")
-      .select("id,provedor")
-      .eq("id", contaId)
-      .is("deleted_at", null)
-      .maybeSingle<LinhaConta>();
-    if (erroConta) throw new HttpError(500, "Não foi possível validar conta de canal");
-    if (contaExistente && contaExistente.provedor !== canal.provedor) {
-      throw badRequest("Conta selecionada pertence a outro tipo de canal");
-    }
-
-    // 1) Segredos da conta: calcula tudo ANTES de gravar qualquer coisa, para uma entrada incompleta
-    //    recusar sem deixar conta pela metade.
-    const escopo = escopoDaConta(canal.provedor, contaId);
-    const segredoNovo = await montarSegredo(supabase, canal, escopo);
-    const webhookUrl = urlWebhook(urlProjeto, canal.provedor, contaId);
-
-    // 2) Conta fica INATIVA e sem credenciais até tudo dar certo. Falha externa não liga resposta.
-    const publico = metadadosPublicos(canal);
-    const agora = new Date().toISOString();
-    const valoresConta = {
-      id: contaId,
-      provedor: canal.provedor,
-      nome_exibicao: canal.nomeExibicao,
-      identificador: canal.identificador,
-      ativa: false,
-      metadados_publicos: publico,
-      updated_by: userId,
-      updated_at: agora,
-    };
-    const gravarConta = contaExistente
-      ? supabase.schema("configuracoes").from("contas_canal").update(valoresConta).eq("id", contaId)
-      : supabase.schema("configuracoes").from("contas_canal").insert({ ...valoresConta, created_by: userId });
-    const { error: erroSalvarConta } = await gravarConta;
-    if (erroSalvarConta) throw new HttpError(500, "Não foi possível salvar conta de canal");
-
-    await salvarSegredo(supabase, escopo, segredoNovo.valor);
-
-    // 3) Passo externo (só Evolution): a Meta o administrador registra no painel dela, com a URL e o
-    //    token de verificação. Falha aqui deixa a conta inativa e devolve o motivo ao admin.
-    if (canal.provedor === "evolution") {
-      try {
-        await registrarWebhookEvolution(fetch, {
-          baseUrl: canal.baseUrl,
-          apiKey: (segredoNovo.valor as unknown as SegredoEvolution).apiKey,
-          instancia: canal.instancia,
-          urlWebhook: webhookUrl,
-          token: (segredoNovo.valor as unknown as SegredoEvolution).webhookToken,
-        });
-      } catch (erro) {
-        const status = erro instanceof ErroProvedor ? erro.status : 0;
-        throw new HttpError(
-          502,
-          status === 401 || status === 403
-            ? "A Evolution recusou a chave. Confira a API key e a instância."
-            : "Não foi possível registrar o webhook na Evolution. Confira a URL, a instância e se ela está online.",
-        );
-      }
-    }
+    // Canal é opcional: sem ele só o agente é salvo (para testar no Playground antes de conectar).
+    const conta = canal ? await prepararCanal(supabase, canal, userId, urlProjeto) : null;
+    const contaId = conta?.contaId ?? null;
+    const webhookUrl = conta?.webhookUrl ?? null;
 
     // 4) Agente (chave OpenRouter no Vault, regra em tabela admin-only).
     const agenteId = agente.agenteId ?? crypto.randomUUID();
@@ -139,7 +82,7 @@ serve(async (req) => {
       ativo: agente.ativo,
       nome_agente: agente.nome,
       funcao: agente.funcao,
-      contas_canal_ids: [...new Set([...contasAtuais, contaId])],
+      contas_canal_ids: [...new Set([...contasAtuais, ...(contaId ? [contaId] : [])])],
       alma: agente.alma,
       saudacao: agente.saudacao,
       janelas_atendimento: [],
@@ -158,27 +101,30 @@ serve(async (req) => {
     if (erroAgente) throw new HttpError(500, "Não foi possível salvar agente");
 
     // 5) Só agora a conta passa a valer: credenciais confirmadas e estado pedido pelo admin.
-    const { error: erroAtivarConta } = await supabase
-      .schema("configuracoes")
-      .from("contas_canal")
-      .update({
-        ativa: canal.ativa,
-        credenciais_configuradas: true,
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", contaId);
-    if (erroAtivarConta) throw new HttpError(500, "Não foi possível concluir configuração do canal");
+    if (canal && contaId) {
+      const { error: erroAtivarConta } = await supabase
+        .schema("configuracoes")
+        .from("contas_canal")
+        .update({
+          ativa: canal.ativa,
+          credenciais_configuradas: true,
+          updated_by: userId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", contaId);
+      if (erroAtivarConta) throw new HttpError(500, "Não foi possível concluir configuração do canal");
+    }
 
-    console.log(JSON.stringify({ ts: new Date().toISOString(), nivel: "info", fn: FN, reqId, contaId, agenteId, provedor: canal.provedor }));
+    console.log(JSON.stringify({ ts: new Date().toISOString(), nivel: "info", fn: FN, reqId, contaId, agenteId, provedor: canal?.provedor ?? null }));
     return new Response(
       JSON.stringify({
         contaId,
         agenteId,
-        provedor: canal.provedor,
-        canalAtivo: canal.ativa,
+        provedor: canal?.provedor ?? null,
+        canalAtivo: canal?.ativa ?? null,
         agenteAtivo: agente.ativo,
         // Público por desenho: é o que o administrador cola no painel da Meta (e a Evolution já recebeu).
+        // `null` quando só o agente foi salvo.
         webhookUrl,
       }),
       { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
@@ -237,4 +183,73 @@ async function montarSegredo(
     throw badRequest("Informe o token de acesso, o App Secret e o token de verificação na primeira configuração");
   }
   return { valor: { accessToken, appSecret, verifyToken } };
+}
+
+/** Passos 1 a 3: valida a conta, grava segredos e conta (INATIVA) e registra o webhook da Evolution. */
+async function prepararCanal(
+  supabase: ReturnType<typeof clienteServico>,
+  canal: Canal,
+  userId: string,
+  urlProjeto: string,
+): Promise<{ contaId: string; webhookUrl: string }> {
+  const contaId = canal.contaId ?? crypto.randomUUID();
+  const { data: contaExistente, error: erroConta } = await supabase
+    .schema("configuracoes")
+    .from("contas_canal")
+    .select("id,provedor")
+    .eq("id", contaId)
+    .is("deleted_at", null)
+    .maybeSingle<LinhaConta>();
+  if (erroConta) throw new HttpError(500, "Não foi possível validar conta de canal");
+  if (contaExistente && contaExistente.provedor !== canal.provedor) {
+    throw badRequest("Conta selecionada pertence a outro tipo de canal");
+  }
+
+  // 1) Segredos da conta: calcula tudo ANTES de gravar qualquer coisa, para uma entrada incompleta
+  //    recusar sem deixar conta pela metade.
+  const escopo = escopoDaConta(canal.provedor, contaId);
+  const segredoNovo = await montarSegredo(supabase, canal, escopo);
+  const webhookUrl = urlWebhook(urlProjeto, canal.provedor, contaId);
+
+  // 2) Conta fica INATIVA e sem credenciais até tudo dar certo. Falha externa não liga resposta.
+  const valoresConta = {
+    id: contaId,
+    provedor: canal.provedor,
+    nome_exibicao: canal.nomeExibicao,
+    identificador: canal.identificador,
+    ativa: false,
+    metadados_publicos: metadadosPublicos(canal),
+    updated_by: userId,
+    updated_at: new Date().toISOString(),
+  };
+  const gravarConta = contaExistente
+    ? supabase.schema("configuracoes").from("contas_canal").update(valoresConta).eq("id", contaId)
+    : supabase.schema("configuracoes").from("contas_canal").insert({ ...valoresConta, created_by: userId });
+  const { error: erroSalvarConta } = await gravarConta;
+  if (erroSalvarConta) throw new HttpError(500, "Não foi possível salvar conta de canal");
+
+  await salvarSegredo(supabase, escopo, segredoNovo.valor);
+
+  // 3) Passo externo (só Evolution): a Meta o administrador registra no painel dela, com a URL e o
+  //    token de verificação. Falha aqui deixa a conta inativa e devolve o motivo ao admin.
+  if (canal.provedor === "evolution") {
+    try {
+      await registrarWebhookEvolution(fetch, {
+        baseUrl: canal.baseUrl,
+        apiKey: (segredoNovo.valor as unknown as SegredoEvolution).apiKey,
+        instancia: canal.instancia,
+        urlWebhook: webhookUrl,
+        token: (segredoNovo.valor as unknown as SegredoEvolution).webhookToken,
+      });
+    } catch (erro) {
+      const status = erro instanceof ErroProvedor ? erro.status : 0;
+      throw new HttpError(
+        502,
+        status === 401 || status === 403
+          ? "A Evolution recusou a chave. Confira a API key e a instância."
+          : "Não foi possível registrar o webhook na Evolution. Confira a URL, a instância e se ela está online.",
+      );
+    }
+  }
+  return { contaId, webhookUrl };
 }

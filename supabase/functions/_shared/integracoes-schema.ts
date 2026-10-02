@@ -61,7 +61,8 @@ export const AgenteSchema = z
     agenteId: uuid.optional(),
     nome: texto(2, 120),
     funcao: texto(2, 160),
-    alma: texto(20, 6000),
+    // Hoje é a única "base" do agente (o prompt de sistema); 16 mil caracteres cabem folgados.
+    alma: texto(20, 16000),
     saudacao: texto(2, 1000),
     mensagemHandoff: texto(2, 1000),
     modelo: texto(2, 160),
@@ -70,7 +71,12 @@ export const AgenteSchema = z
   })
   .strict();
 
-export const EntradaSchema = z.object({ canal: CanalSchema, agente: AgenteSchema }).strict();
+/**
+ * `canal` é opcional: dá para salvar só o agente (chave OpenRouter, modelo, orientação) e testá-lo no
+ * Playground antes de conectar qualquer WhatsApp ou Instagram. Canal sem agente não existe: o canal
+ * só vale ligado a um agente que responda por ele.
+ */
+export const EntradaSchema = z.object({ canal: CanalSchema.optional(), agente: AgenteSchema }).strict();
 
 export type Canal = z.infer<typeof CanalSchema>;
 export type Agente = z.infer<typeof AgenteSchema>;

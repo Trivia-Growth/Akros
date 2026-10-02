@@ -13,7 +13,34 @@ export interface RegraAgente {
   llm: unknown;
 }
 
-export class ErroIA extends Error {}
+export class ErroIA extends Error {
+  constructor(
+    message: string,
+    /** Status HTTP da OpenRouter, quando houve resposta. Nunca o corpo (pode ecoar a chave). */
+    public readonly status?: number,
+  ) {
+    super(message);
+  }
+}
+
+/** Mensagem para o administrador (não para o cliente final) a partir do status da OpenRouter. */
+export function explicarErroIA(erro: unknown): string {
+  if (!(erro instanceof ErroIA)) return "Não foi possível gerar a resposta agora.";
+  if (erro.status === undefined) {
+    return erro.message === "Agente sem modelo OpenRouter"
+      ? "O agente não tem modelo configurado. Informe o modelo na configuração do agente."
+      : "A IA não devolveu uma resposta. Tente de novo.";
+  }
+  if (erro.status === 401) return "A OpenRouter recusou a chave. Confira a API key do agente.";
+  if (erro.status === 402) return "Sem crédito na OpenRouter. Adicione saldo na conta.";
+  if (erro.status === 403) return "A OpenRouter negou o acesso (chave ou modelo não permitidos nesta conta).";
+  if (erro.status === 404 || erro.status === 400) {
+    return "A OpenRouter não aceitou o modelo. Confira o identificador (ex.: openai/gpt-4.1-mini).";
+  }
+  if (erro.status === 429) return "Limite de uso da OpenRouter atingido. Tente de novo em instantes.";
+  if (erro.status >= 500) return "A OpenRouter está indisponível agora. Tente de novo em instantes.";
+  return "A OpenRouter recusou o pedido.";
+}
 
 export function modeloDoAgente(regra: RegraAgente): string | null {
   const llm = objeto(regra.llm);
@@ -73,7 +100,7 @@ export async function gerarRespostaOpenRouter(
     redirect: "error",
     signal: AbortSignal.timeout(20_000),
   });
-  if (!resposta.ok) throw new ErroIA(`OpenRouter respondeu ${resposta.status}`);
+  if (!resposta.ok) throw new ErroIA(`OpenRouter respondeu ${resposta.status}`, resposta.status);
   const corpo = objeto(await resposta.json().catch(() => null));
   const escolhas = Array.isArray(corpo.choices) ? corpo.choices : [];
   const conteudo = texto(objeto(objeto(escolhas[0]).message).content);

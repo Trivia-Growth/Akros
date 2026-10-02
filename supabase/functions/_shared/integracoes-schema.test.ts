@@ -54,8 +54,19 @@ Deno.test("segredos curtos demais são recusados", () => {
 
 Deno.test("agente: orientação mínima e tamanhos máximos", () => {
   assert(!ok(evo, { ...AGENTE, alma: "curta" }).success);
-  assert(!ok(evo, { ...AGENTE, alma: "x".repeat(6001) }).success);
+  assert(!ok(evo, { ...AGENTE, alma: "x".repeat(16001) }).success);
   assert(!ok(evo, { ...AGENTE, agenteId: "nao-uuid" }).success);
+});
+
+Deno.test("canal é opcional: dá para salvar só o agente (teste no Playground antes de conectar)", () => {
+  assert(EntradaSchema.safeParse({ agente: AGENTE }).success);
+  assert(EntradaSchema.safeParse({ agente: { ...AGENTE, apiKeyOpenRouter: "chave-de-teste" } }).success);
+});
+
+Deno.test("canal sem agente continua inválido; o agente aceita orientação longa (até 16 mil)", () => {
+  assert(!EntradaSchema.safeParse({ canal: evo }).success);
+  assert(ok(evo, { ...AGENTE, alma: "x".repeat(16000) }).success);
+  assert(!ok(evo, { ...AGENTE, alma: "x".repeat(16001) }).success);
 });
 
 Deno.test("URL do webhook por provedor", () => {

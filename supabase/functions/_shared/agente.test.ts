@@ -166,3 +166,28 @@ Deno.test("contato desconhecido registra sem cliente e usa o nome do perfil", as
   await processarEntrada(d2, { ...ENTRADA, nome: null }, OPCOES);
   assertEquals(recebido, { clienteId: null, clienteNome: "Contato" });
 });
+
+// ── decidirResposta: a mesma decisão da produção e do Playground (E13-S14) ──
+import { decidirResposta } from "./agente.ts";
+
+Deno.test("decidirResposta: encaminha sem consultar chave nem chamar a IA", async () => {
+  let chaves = 0;
+  let ia = 0;
+  const deps = {
+    chaveOpenRouter: () => { chaves++; return Promise.resolve("k"); },
+    gerarResposta: () => { ia++; return Promise.resolve({ texto: "x", custo: null }); },
+  };
+  const d = await decidirResposta(deps, REGRA, "preciso de um advogado", [], 1600);
+  assertEquals(d, { tipo: "handoff", texto: "Vou encaminhar para a equipe." });
+  assertEquals([chaves, ia], [0, 0]);
+});
+
+Deno.test("decidirResposta: sem chave não chama a IA; com chave devolve texto truncado e custo", async () => {
+  let ia = 0;
+  const gerar = () => { ia++; return Promise.resolve({ texto: "y".repeat(3000), custo: 0.5 }); };
+  assertEquals(await decidirResposta({ chaveOpenRouter: () => Promise.resolve(null), gerarResposta: gerar }, REGRA, "oi", [], 900), { tipo: "sem_chave" });
+  assertEquals(ia, 0);
+  const d = await decidirResposta({ chaveOpenRouter: () => Promise.resolve("k"), gerarResposta: gerar }, REGRA, "oi", [], 900);
+  assertEquals(d.tipo === "resposta" && d.texto.length, 900);
+  assertEquals(d.tipo === "resposta" && d.custo, 0.5);
+});
