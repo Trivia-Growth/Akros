@@ -38,7 +38,7 @@ Uma feature **não está pronta** até passar em TODOS os gates abaixo. Não é 
 ## 4. CI
 
 - [ ] `pnpm run ci:local` verde (= `lefthook run pre-push`)
-- [ ] `gh pr checks` verde no PR: `qualidade`, `seguranca`, `db-tests` (sem check pulado)
+- [ ] `gh pr checks` verde no PR: agregador `ci` (cobre `qualidade`, `seguranca` e `db-tests`; sem check pulado)
 
 ## 5. Documentação e rastreabilidade
 

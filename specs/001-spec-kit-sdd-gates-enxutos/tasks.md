@@ -35,12 +35,13 @@ Formato: `[ID] [US] descrição — gate`. Cada gate é um comando.
 
 ## Phase 4: Fora do repositório (@devops)
 
-- [ ] T-09 Trocar os required checks da `main` pelos 3 novos **antes do merge**:
+- [ ] T-09 Trocar **uma vez** os required checks da `main` pelo agregador `ci` (os 12 nomes antigos
+      saem). Depois disso, mudar jobs da CI não exige mexer na proteção:
       ```bash
       gh api -X PATCH repos/Trivia-Growth/Akros/branches/main/protection/required_status_checks \
-        -f strict=true -f 'contexts[]=qualidade' -f 'contexts[]=seguranca' -f 'contexts[]=db-tests'
+        -f strict=true -f 'contexts[]=ci'
       ```
-      — gate: `gh api repos/Trivia-Growth/Akros/branches/main/protection/required_status_checks --jq .contexts`
+      — gate: `gh api repos/Trivia-Growth/Akros/branches/main/protection/required_status_checks --jq .contexts` → `["ci"]`
 
 ## Phase 5: Verificação
 

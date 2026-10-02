@@ -137,8 +137,8 @@ Ver `seguranca/os-grade.md`. Toda dívida → `docs/SECURITY_DEBT.md`.
 ## Definition of Done
 `Definition-of-Done.md` (checklist curto). Resumo:
 - Acceptance Scenarios verdes **pelo comando** (não inspeção); `/speckit-converge` em **Converged**.
-- `pnpm run ci:local` verde; depois `gh pr checks` verde no PR (jobs `qualidade`, `seguranca`,
-  `db-tests`), sem check obrigatório pulado.
+- `pnpm run ci:local` verde; depois `gh pr checks` verde no PR (agregador `ci`, que cobre `qualidade`,
+  `seguranca` e `db-tests`), sem check obrigatório pulado.
 - Mexeu em auth, RLS ou sessão: `pnpm e2e` verde.
 - Sem `SPEC_DEVIATION` pendente · ADR registrado se a decisão é difícil de reverter · glossário e
   `docs/STATE.md` atualizados.

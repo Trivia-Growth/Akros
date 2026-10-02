@@ -71,7 +71,8 @@ dispensa o ciclo e vai direto ao PR.
 Gates mantidos, e só estes (ADR-0016):
 - **Local (pre-commit/pre-push):** Biome, typecheck, vitest, commitlint, gitleaks (se instalado).
 - **CI:** qualidade (lint, typecheck, `arch:check`, build, testes), segurança (gitleaks, migrations,
-  Edge Functions) e `db-tests` (migrations do zero + testes SQL).
+  Edge Functions) e `db-tests` (migrations do zero + testes SQL), agregados no check `ci`, o único
+  obrigatório na `main`.
 - **Sob demanda:** `pnpm e2e` (Playwright contra o Supabase real) antes de mexer em auth/RLS/sessão.
 
 Gate novo só entra se pegar um defeito que nenhum dos acima pega e que tenha custado caro; entra

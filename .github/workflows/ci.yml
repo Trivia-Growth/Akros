@@ -1,5 +1,7 @@
-# CI — três jobs (ADR-0016). Antes eram 13, um por gate, cada um reinstalando dependências.
+# CI — três jobs de gate + o agregador `ci` (ADR-0016). Antes eram 13 jobs, cada um reinstalando
+# dependências.
 #
+#   • ci         — agregador: o ÚNICO check obrigatório na `main`. Falha se qualquer job abaixo falhar.
 #   • qualidade  — o que prova que o código está correto: Biome, typecheck, arquitetura, testes, build.
 #   • seguranca  — o que impede regressão de segurança: segredo no histórico, migration sem RLS
 #                  FORCE/GRANT, Edge Function pública sem rate limit.
@@ -122,4 +124,23 @@ jobs:
           for f in supabase/tests/*_test.sql; do
             echo "── $f"
             psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+  # Único check obrigatório na proteção da `main`. Jobs acima podem ser criados, renomeados ou
+  # removidos sem tocar na proteção de branch: basta manter este nome e o `needs` em dia.
+  # `if: always()` faz o job rodar mesmo com falha upstream; sem isso ele seria "skipped", e
+  # check pulado conta como verde para o GitHub.
+  ci:
+    name: ci
+    if: always()
+    needs: [qualidade, seguranca, db-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Todos os jobs precisam ter passado
+        env:
+          RESULTADOS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "resultados: $RESULTADOS"
+          for r in $RESULTADOS; do
+            [ "$r" = "success" ] || { echo "::error::job upstream terminou como '$r'"; exit 1; }
           done

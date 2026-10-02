@@ -56,8 +56,13 @@ outro pega.** Gate que policia formato de documento sai.
 
 ### Como a CI fica
 
-Três jobs: `qualidade` (Biome, typecheck, `arch:check`, testes, build), `seguranca` (gitleaks,
-`lint:migrations`, `check:edge-functions`) e `db-tests`. Um `pnpm install` por job em vez de 13.
+Três jobs de gate: `qualidade` (Biome, typecheck, `arch:check`, testes, build), `seguranca` (gitleaks,
+`lint:migrations`, `check:edge-functions`) e `db-tests`, mais o agregador `ci`, que depende dos três
+e falha se qualquer um falhar ou for pulado. Um `pnpm install` por job em vez de 13.
+
+**O agregador `ci` é o único check obrigatório na `main`.** Sem ele, cada criação, renomeação ou
+remoção de job exigiria alterar a proteção de branch (ação manual do `@devops`, fácil de esquecer e
+capaz de travar PR). Com ele, a lista de gates evolui só no `ci.yml`.
 
 ### e2e fora do pre-push
 
@@ -71,9 +76,9 @@ real: uma regressão de autorização pode chegar à CI sem ninguém ter rodado 
 
 - (+) `pre-push` cai de ~14 comandos para 4 em paralelo; CI de 13 jobs para 3.
 - (+) Nenhum gate de segurança, de banco ou de arquitetura foi removido.
-- (−) Há três jobs a menos como *required checks* na `main`. A proteção de branch precisa trocar os
-  12 nomes antigos por `qualidade`, `seguranca` e `db-tests` **antes do merge**, senão o PR fica
-  esperando checks que não existem mais (ação do `@devops`; comando em `tasks.md`).
+- (−) A proteção de branch precisa trocar os 12 nomes antigos por `ci` **uma vez, antes do merge**,
+  senão o PR fica esperando checks que não existem mais (ação do `@devops`; comando em `tasks.md`
+  T-09). Depois disso, mudar jobs não exige mexer na proteção.
 - (−) Sem `audit:esteira`, link quebrado em doc só aparece em leitura. Aceito: doc não derruba produção.
 - Reintroduzir um gate exige o teste do próprio gate e a saída de outro de custo equivalente
   (constituição, "Gates e fluxo").
