@@ -39,7 +39,7 @@ describe("ComunicacaoRealPage — caminho para configurar o agente", () => {
     estado.agentes = [{ id: "a1", nome: "Ana", funcao: "Primeiro atendimento", ativo: true }];
     renderWithRouter(<ComunicacaoRealPage />);
     fireEvent.click(screen.getAllByRole("tab")[3]); // 4ª aba: Agente IA
-    expect(screen.getByText("Ana")).toBeTruthy();
+    expect(screen.getAllByText("Ana").length).toBeGreaterThan(0); // lista + seletor do Playground
     expect(screen.getByTestId("atalho-configurar-agente").getAttribute("href")).toBe(
       "/admin/configuracoes",
     );

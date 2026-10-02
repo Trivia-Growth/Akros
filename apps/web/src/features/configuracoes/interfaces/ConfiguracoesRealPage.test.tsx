@@ -36,6 +36,10 @@ function abrir() {
   return screen.getByRole("dialog");
 }
 
+function conectarCanal(dialogo: HTMLElement) {
+  fireEvent.click(within(dialogo).getByLabelText(/Conectar um canal agora/i));
+}
+
 function preencher(dialogo: HTMLElement, rotulo: string | RegExp, valor: string) {
   fireEvent.change(within(dialogo).getByLabelText(rotulo), { target: { value: valor } });
 }
@@ -48,8 +52,34 @@ describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
     cleanup();
   });
 
+  it("abre só com o agente: sem campos de canal até marcar 'Conectar um canal agora'", () => {
+    const d = abrir();
+    expect(within(d).queryByLabelText("Tipo de canal")).toBeNull();
+    expect(within(d).queryByLabelText(/URL HTTPS da Evolution/i)).toBeNull();
+    expect(within(d).getByLabelText(/API key OpenRouter/i)).toBeTruthy();
+    conectarCanal(d);
+    expect(within(d).getByLabelText("Tipo de canal")).toBeTruthy();
+  });
+
+  it("salvar só o agente envia o corpo sem canal e mostra a dica do Playground", async () => {
+    invoke.mockResolvedValue({
+      data: { agenteId: "a1", provedor: null, webhookUrl: null },
+      error: null,
+    });
+    const d = abrir();
+    preencher(d, /API key OpenRouter/i, "sk-or-v1-secreta");
+    fireEvent.submit(d.querySelector("form") as HTMLFormElement);
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+    const corpo = invoke.mock.calls[0][1].body;
+    expect(corpo).not.toHaveProperty("canal");
+    expect(corpo.agente).toMatchObject({ apiKeyOpenRouter: "sk-or-v1-secreta", ativo: false });
+    expect(await screen.findByText(/Playground/)).toBeTruthy();
+    expect(document.body.innerHTML).not.toContain("sk-or-v1-secreta");
+  });
+
   it("começa em Evolution e mostra só os campos dela", () => {
     const d = abrir();
+    conectarCanal(d);
     expect(within(d).getByLabelText(/URL HTTPS da Evolution/i)).toBeTruthy();
     expect(within(d).queryByLabelText(/ID do número de telefone/i)).toBeNull();
     expect(within(d).queryByLabelText(/ID da conta do Instagram/i)).toBeNull();
@@ -57,6 +87,7 @@ describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
 
   it("trocar para WhatsApp oficial troca os campos e esconde os da Evolution", () => {
     const d = abrir();
+    conectarCanal(d);
     fireEvent.change(within(d).getByLabelText("Tipo de canal"), {
       target: { value: "whatsapp_oficial" },
     });
@@ -69,6 +100,7 @@ describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
 
   it("Instagram pede o id da conta e o Page Access Token", () => {
     const d = abrir();
+    conectarCanal(d);
     fireEvent.change(within(d).getByLabelText("Tipo de canal"), { target: { value: "instagram" } });
     expect(within(d).getByLabelText(/ID da conta do Instagram/i)).toBeTruthy();
     expect(within(d).getByLabelText(/Page Access Token/i)).toBeTruthy();
@@ -77,6 +109,7 @@ describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
 
   it("'Gerar' preenche um token de verificação de 32 caracteres hexadecimais", () => {
     const d = abrir();
+    conectarCanal(d);
     fireEvent.change(within(d).getByLabelText("Tipo de canal"), { target: { value: "instagram" } });
     fireEvent.click(within(d).getByRole("button", { name: "Gerar" }));
     const campo = within(d).getByLabelText(/Token de verificação do webhook/i) as HTMLInputElement;
@@ -89,6 +122,7 @@ describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
       error: null,
     });
     const d = abrir();
+    conectarCanal(d);
     fireEvent.change(within(d).getByLabelText("Tipo de canal"), {
       target: { value: "whatsapp_oficial" },
     });
@@ -134,6 +168,7 @@ describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
   it("erro do servidor mostra a causa e não troca a tela por sucesso", async () => {
     invoke.mockResolvedValue({ data: null, error: new Error("falha") });
     const d = abrir();
+    conectarCanal(d);
     preencher(d, /Número WhatsApp/i, "5511999999999");
     preencher(d, /URL HTTPS da Evolution/i, "https://evo.exemplo.com");
     preencher(d, /Nome da instância/i, "akros");

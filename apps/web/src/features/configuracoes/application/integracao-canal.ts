@@ -91,7 +91,15 @@ function seDigitado<K extends string>(chave: K, valor: string): { [P in K]?: str
   return limpo ? ({ [chave]: limpo } as { [P in K]: string }) : {};
 }
 
-export function corpoDeSalvar(canal: FormularioCanal, agente: FormularioAgente) {
+/**
+ * `incluirCanal = false` salva só o agente (chave OpenRouter, modelo, orientação): dá para testá-lo
+ * no Playground antes de conectar qualquer WhatsApp ou Instagram.
+ */
+export function corpoDeSalvar(
+  canal: FormularioCanal,
+  agente: FormularioAgente,
+  incluirCanal = true,
+) {
   const comum = {
     ...(canal.contaId ? { contaId: canal.contaId } : {}),
     nomeExibicao: canal.nomeConta.trim(),
@@ -126,7 +134,7 @@ export function corpoDeSalvar(canal: FormularioCanal, agente: FormularioAgente) 
             ...seDigitado("verifyToken", canal.verifyToken),
           };
   return {
-    canal: dadosCanal,
+    ...(incluirCanal ? { canal: dadosCanal } : {}),
     agente: {
       ...(agente.agenteId ? { agenteId: agente.agenteId } : {}),
       nome: agente.nomeAgente.trim(),
