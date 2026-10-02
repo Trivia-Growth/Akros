@@ -29,11 +29,49 @@ BEGIN
   END IF;
 END $$;
 
--- Mesmo que uma configuração padrão do Vault conceda algo amplo, nenhum papel exposto pela API
--- pode consultar view decriptada ou chamar helpers diretamente. As RPCs abaixo são a fronteira.
-REVOKE ALL ON SCHEMA vault FROM anon, authenticated;
-REVOKE ALL ON ALL TABLES IN SCHEMA vault FROM anon, authenticated;
-REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA vault FROM PUBLIC, anon, authenticated;
+-- Nenhum papel exposto pela API pode consultar view decriptada nem chamar helpers do Vault
+-- diretamente: as RPCs abaixo são a fronteira. Tenta fechar o que ainda estiver aberto e, o que
+-- importa, VERIFICA o resultado e aborta se a API ainda alcançar o cofre.
+--
+-- Os REVOKE são tolerantes porque o papel da migration (`postgres` no Supabase) não é dono do
+-- Vault: `REVOKE ... ON ALL FUNCTIONS IN SCHEMA vault` falha com "permission denied for function
+-- _crypto_aead_det_encrypt" nas funções internas, onde esse papel não tem privilégio nenhum
+-- (achado no ensaio da migration contra o banco real, em transação revertida). No Supabase atual
+-- `anon` e `authenticated` já nascem sem acesso, então a pós-condição é o que protege de verdade.
+DO $$
+DECLARE
+  v_papel text;
+  v_alcanca boolean;
+BEGIN
+  BEGIN
+    REVOKE ALL ON SCHEMA vault FROM anon, authenticated;
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    REVOKE ALL ON ALL TABLES IN SCHEMA vault FROM anon, authenticated;
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    REVOKE EXECUTE ON FUNCTION
+      vault.create_secret(text, text, text, uuid),
+      vault.update_secret(uuid, text, text, text, uuid)
+    FROM PUBLIC, anon, authenticated;
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  FOREACH v_papel IN ARRAY ARRAY['anon', 'authenticated']
+  LOOP
+    v_alcanca :=
+      has_schema_privilege(v_papel, 'vault', 'USAGE')
+      OR has_table_privilege(v_papel, 'vault.decrypted_secrets', 'SELECT')
+      OR has_table_privilege(v_papel, 'vault.secrets', 'SELECT')
+      OR has_function_privilege(v_papel, 'vault.create_secret(text,text,text,uuid)', 'EXECUTE')
+      OR has_function_privilege(v_papel, 'vault.update_secret(uuid,text,text,text,uuid)', 'EXECUTE');
+    IF v_alcanca THEN
+      RAISE EXCEPTION 'Vault ainda acessível ao papel %: feche o acesso antes de aplicar E13-S12', v_papel;
+    END IF;
+  END LOOP;
+END $$;
 
 -- Só referencia o item cifrado pelo Vault. Não há API key, token de webhook nem ciphertext nesta
 -- tabela; inclusive service_role precisa passar pelas RPCs abaixo para tocar o valor.

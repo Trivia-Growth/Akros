@@ -24,13 +24,16 @@ ela é imutável**: qualquer ajuste vira `0017`.
 2. Conferir o Vault real (a guarda da migration depende disto):
    `select pg_get_function_arguments('vault.create_secret'::regproc);` →
    `new_secret text, new_name text DEFAULT NULL, new_description text DEFAULT '', new_key_id uuid DEFAULT NULL`.
-3. Aplicar o conteúdo de `supabase/migrations/0016_E13-S12_integracao_evolution_openrouter.sql`
+3. **Ensaiar antes**: rodar `BEGIN; <conteúdo da migration>; <asserções>; ROLLBACK;` no banco real. Foi o
+   ensaio que achou o terceiro bug da `0016` (REVOKE em funções internas do Vault, `permission
+   denied`), que nem a CI nem o Postgres local reproduzem. Resultado sem erro = aplica.
+4. Aplicar o conteúdo de `supabase/migrations/0016_E13-S12_integracao_evolution_openrouter.sql`
    pelo mesmo caminho das anteriores (SQL via Management API ou `supabase db push`) e registrar a
    versão em `supabase_migrations.schema_migrations` (`version = '0016'`,
    `name = 'E13-S12_integracao_evolution_openrouter'`).
-4. Conferir: tabelas `configuracoes.referencias_cofre` e `comunicacao.webhooks_canal` existem com
+5. Conferir: tabelas `configuracoes.referencias_cofre` e `comunicacao.webhooks_canal` existem com
    RLS forçada; `select crm.normalizar_telefone('+55 (11) 98888-1001');` → `551188881001`.
-5. Conferir que o Data API **não** enxerga o cofre: com a chave `anon`,
+6. Conferir que o Data API **não** enxerga o cofre: com a chave `anon`,
    `GET /rest/v1/referencias_cofre` com `Accept-Profile: configuracoes` → 401/403.
 
 ## 2. Edge Functions
