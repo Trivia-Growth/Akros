@@ -230,13 +230,18 @@ function IntegracaoAgentes({
       });
       if (error) throw await erroDetalhado(error);
 
-      const resposta = (data ?? {}) as { contaId?: string; webhookUrl?: string };
+      const resposta = (data ?? {}) as { contaId?: string; agenteId?: string; webhookUrl?: string };
       // Credenciais voltam a vazio antes de qualquer rerender/releitura. Nunca há localStorage.
       setCanal((atual) => ({
         ...limparSegredos(atual),
         contaId: resposta.contaId ?? atual.contaId,
       }));
-      setAgente((atual) => ({ ...atual, chaveOpenRouter: "" }));
+      // Guarda o id devolvido: salvar de novo atualiza ESTE agente em vez de criar outro.
+      setAgente((atual) => ({
+        ...atual,
+        chaveOpenRouter: "",
+        agenteId: resposta.agenteId ?? atual.agenteId,
+      }));
       await aoSalvar();
       if (conectarCanal && ehMeta && resposta.webhookUrl) {
         // Meta: falta o passo no painel dela; mantém o diálogo aberto com o que copiar.
@@ -278,6 +283,9 @@ function IntegracaoAgentes({
             size="sm"
             onClick={() => {
               setResultado(null);
+              // Com agente já criado, abre editando o primeiro: "Novo agente" por padrão fazia cada
+              // salvamento extra criar um agente duplicado.
+              if (!agente.agenteId && agentesIA.length > 0) escolherAgente(agentesIA[0].id);
               setAberto(true);
             }}
           >

@@ -6,13 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const invoke = vi.fn();
 vi.mock("@/shared/supabase/client", () => ({ getSupabase: () => ({ functions: { invoke } }) }));
+const estado = vi.hoisted(() => ({ agentesIA: [] as unknown[] }));
 vi.mock("../application/hooks", () => ({
   useConfiguracoesReais: () => ({
     equipe: [],
     integracoes: [],
     contasAgenda: [],
     contasCanal: [],
-    agentesIA: [],
+    agentesIA: estado.agentesIA,
     carregando: false,
     erro: null,
     refetch: () => Promise.resolve(),
@@ -47,6 +48,7 @@ function preencher(dialogo: HTMLElement, rotulo: string | RegExp, valor: string)
 describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
   beforeEach(() => {
     invoke.mockReset();
+    estado.agentesIA = [];
   });
   afterEach(() => {
     cleanup();
@@ -178,5 +180,58 @@ describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
     expect(screen.queryByTestId("resultado-meta")).toBeNull();
     expect(screen.getByRole("dialog")).toBeTruthy();
+  });
+
+  it("com agente já criado, abre editando o primeiro (não 'Novo agente') e salva com o id dele", async () => {
+    estado.agentesIA = [
+      {
+        id: "6f29faf4-9e1e-4c66-b8cd-19c309d8581f",
+        nome: "Ana",
+        funcao: "triagem",
+        alma: "Acolha o cliente com calma e encaminhe casos jurídicos.",
+        saudacao: "Olá",
+        mensagemHandoff: "Vou chamar a equipe",
+        modelo: "openai/gpt-4.1-mini",
+        ativo: true,
+      },
+    ];
+    invoke.mockResolvedValue({
+      data: { agenteId: "6f29faf4-9e1e-4c66-b8cd-19c309d8581f" },
+      error: null,
+    });
+    const d = abrir();
+    expect((within(d).getByLabelText("Agente") as HTMLSelectElement).value).toBe(
+      "6f29faf4-9e1e-4c66-b8cd-19c309d8581f",
+    );
+    expect((within(d).getByLabelText(/Nome do agente/i) as HTMLInputElement).value).toBe("Ana");
+    preencher(d, /API key OpenRouter/i, "chave-nova-1234");
+    fireEvent.submit(d.querySelector("form") as HTMLFormElement);
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+    expect(invoke.mock.calls[0][1].body.agente.agenteId).toBe(
+      "6f29faf4-9e1e-4c66-b8cd-19c309d8581f",
+    );
+  });
+
+  it("criou um agente novo e salvou de novo: o segundo salvamento atualiza o mesmo (sem duplicar)", async () => {
+    invoke.mockResolvedValue({
+      data: { agenteId: "1ea6f326-5912-4493-8d25-d5040bd23dea" },
+      error: null,
+    });
+    const d = abrir();
+    preencher(d, /API key OpenRouter/i, "chave-nova-1234");
+    fireEvent.submit(d.querySelector("form") as HTMLFormElement);
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+    expect(invoke.mock.calls[0][1].body.agente).not.toHaveProperty("agenteId");
+    await screen.findAllByText(/Playground/);
+    // Só o agente foi salvo, então o diálogo fecha; reabrir e salvar de novo deve atualizar o mesmo.
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: /configurar canal e agente/i }));
+    const d2 = screen.getByRole("dialog");
+    preencher(d2, /API key OpenRouter/i, "outra-chave-5678");
+    fireEvent.submit(d2.querySelector("form") as HTMLFormElement);
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
+    expect(invoke.mock.calls[1][1].body.agente.agenteId).toBe(
+      "1ea6f326-5912-4493-8d25-d5040bd23dea",
+    );
   });
 });
