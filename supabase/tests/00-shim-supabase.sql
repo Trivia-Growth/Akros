@@ -74,17 +74,34 @@ CREATE TABLE vault.secrets (
 );
 CREATE VIEW vault.decrypted_secrets AS
   SELECT id, name, decrypted_secret, description, created_at, updated_at FROM vault.secrets;
-CREATE OR REPLACE FUNCTION vault.create_secret(p_secret text, p_name text DEFAULT NULL, p_description text DEFAULT NULL)
-RETURNS uuid LANGUAGE plpgsql AS $$
+-- Assinaturas IDÊNTICAS às do supabase_vault 0.3.1 de produção (conferidas em 2026-10-01 com
+-- pg_get_function_arguments). O shim anterior declarava 3 e 4 argumentos e deixou a 0016 passar na
+-- CI com uma guarda (`to_regprocedure('vault.create_secret(text,text,text)')`) que falha no
+-- Supabase real, onde a função tem 4 argumentos. Divergência de assinatura aqui é bug de CI.
+CREATE OR REPLACE FUNCTION vault.create_secret(
+  new_secret text,
+  new_name text DEFAULT NULL,
+  new_description text DEFAULT '',
+  new_key_id uuid DEFAULT NULL
+) RETURNS uuid LANGUAGE plpgsql AS $$
 DECLARE v_id uuid;
 BEGIN
-  INSERT INTO vault.secrets (name, decrypted_secret, description) VALUES (p_name, p_secret, p_description)
+  INSERT INTO vault.secrets (name, decrypted_secret, description)
+  VALUES (new_name, new_secret, new_description)
   RETURNING id INTO v_id;
   RETURN v_id;
 END $$;
-CREATE OR REPLACE FUNCTION vault.update_secret(p_id uuid, p_secret text, p_name text DEFAULT NULL, p_description text DEFAULT NULL)
-RETURNS void LANGUAGE sql AS $$
+CREATE OR REPLACE FUNCTION vault.update_secret(
+  secret_id uuid,
+  new_secret text DEFAULT NULL,
+  new_name text DEFAULT NULL,
+  new_description text DEFAULT NULL,
+  new_key_id uuid DEFAULT NULL
+) RETURNS void LANGUAGE sql AS $$
   UPDATE vault.secrets
-  SET decrypted_secret = p_secret, name = p_name, description = p_description, updated_at = now()
-  WHERE id = p_id
+  SET decrypted_secret = coalesce(new_secret, decrypted_secret),
+      name = coalesce(new_name, name),
+      description = coalesce(new_description, description),
+      updated_at = now()
+  WHERE id = secret_id
 $$;
