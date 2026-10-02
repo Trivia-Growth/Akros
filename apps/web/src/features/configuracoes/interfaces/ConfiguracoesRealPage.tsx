@@ -146,6 +146,8 @@ function IntegracaoAgentes({
 }) {
   const [aberto, setAberto] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  // Começa só com o agente: testar no Playground vem antes de conectar um número ou conta.
+  const [conectarCanal, setConectarCanal] = useState(false);
   const [canal, setCanal] = useState<FormularioCanal>(CANAL_INICIAL);
   const [agente, setAgente] = useState<FormularioAgente>(AGENTE_INICIAL);
   const [resultado, setResultado] = useState<{
@@ -224,7 +226,7 @@ function IntegracaoAgentes({
     try {
       const { data, error } = await getSupabase().functions.invoke("integracoes-ia-salvar", {
         headers: { "x-akros-csrf": "1" },
-        body: corpoDeSalvar(canal, agente),
+        body: corpoDeSalvar(canal, agente, conectarCanal),
       });
       if (error) throw await erroDetalhado(error);
 
@@ -236,16 +238,18 @@ function IntegracaoAgentes({
       }));
       setAgente((atual) => ({ ...atual, chaveOpenRouter: "" }));
       await aoSalvar();
-      if (ehMeta && resposta.webhookUrl) {
+      if (conectarCanal && ehMeta && resposta.webhookUrl) {
         // Meta: falta o passo no painel dela; mantém o diálogo aberto com o que copiar.
         setResultado({ provedor: canal.provedor, webhookUrl: resposta.webhookUrl });
       } else {
         setAberto(false);
       }
       toast.success(
-        agente.agenteAtivo
-          ? "Canal e agente ativos. Mensagens novas poderão receber resposta."
-          : "Integração salva. Agente continua desligado.",
+        !conectarCanal
+          ? "Agente salvo. Teste a conversa em Comunicação → Agente IA → Playground."
+          : agente.agenteAtivo
+            ? "Canal e agente ativos. Mensagens novas poderão receber resposta."
+            : "Integração salva. Agente continua desligado.",
       );
     } catch (causa) {
       toast.error(causa instanceof Error ? causa.message : "Não foi possível salvar integração.");
@@ -299,7 +303,7 @@ function IntegracaoAgentes({
       <Modal
         open={aberto}
         onClose={() => !enviando && setAberto(false)}
-        title="Configurar canal e agente"
+        title="Configurar agente e canal"
         description="As chaves não serão mostradas novamente. Deixe em branco apenas para manter a chave já configurada."
         className="max-h-[calc(100vh-2rem)] max-w-2xl overflow-y-auto"
       >
@@ -354,177 +358,197 @@ function IntegracaoAgentes({
             </output>
           ) : null}
 
-          <h3 className="text-sm font-semibold text-navy">Canal</h3>
-          <Select
-            label="Tipo de canal"
-            value={canal.provedor}
-            disabled={!primeiraVez}
-            hint={primeiraVez ? undefined : "O tipo não muda numa conta existente."}
-            onChange={(evento) => escolherTipo(evento.target.value as ProvedorCanal)}
-          >
-            {(Object.keys(ROTULO_CANAL) as ProvedorCanal[]).map((tipo) => (
-              <option key={tipo} value={tipo}>
-                {ROTULO_CANAL[tipo]}
-              </option>
-            ))}
-          </Select>
-          <Select
-            label="Conta"
-            value={canal.contaId || "nova"}
-            onChange={(evento) => escolherConta(evento.target.value)}
-          >
-            <option value="nova">Nova conta</option>
-            {contasDoTipo.map((conta) => (
-              <option key={conta.id} value={conta.id}>
-                {conta.nomeExibicao} · {conta.identificador}
-              </option>
-            ))}
-          </Select>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input
-              required
-              label="Nome exibido"
-              value={canal.nomeConta}
-              onChange={(evento) => alterarCanal("nomeConta", evento.target.value)}
-            />
-            <Input
-              required
-              label={canal.provedor === "instagram" ? "Usuário do Instagram" : "Número WhatsApp"}
-              placeholder={canal.provedor === "instagram" ? "akros.immigration" : "5511999999999"}
-              value={canal.identificador}
-              onChange={(evento) => alterarCanal("identificador", evento.target.value)}
-            />
-          </div>
-
-          {canal.provedor === "evolution" ? (
+          <Checkbox
+            label="Conectar um canal agora (WhatsApp ou Instagram)"
+            checked={conectarCanal}
+            onChange={(evento) => setConectarCanal(evento.target.checked)}
+          />
+          {conectarCanal ? (
             <>
-              <Input
-                required
-                type="url"
-                label="URL HTTPS da Evolution"
-                placeholder="https://evolution.suaempresa.com"
-                value={canal.baseUrl}
-                onChange={(evento) => alterarCanal("baseUrl", evento.target.value)}
-              />
+              <h3 className="text-sm font-semibold text-navy">Canal</h3>
+              <Select
+                label="Tipo de canal"
+                value={canal.provedor}
+                disabled={!primeiraVez}
+                hint={primeiraVez ? undefined : "O tipo não muda numa conta existente."}
+                onChange={(evento) => escolherTipo(evento.target.value as ProvedorCanal)}
+              >
+                {(Object.keys(ROTULO_CANAL) as ProvedorCanal[]).map((tipo) => (
+                  <option key={tipo} value={tipo}>
+                    {ROTULO_CANAL[tipo]}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                label="Conta"
+                value={canal.contaId || "nova"}
+                onChange={(evento) => escolherConta(evento.target.value)}
+              >
+                <option value="nova">Nova conta</option>
+                {contasDoTipo.map((conta) => (
+                  <option key={conta.id} value={conta.id}>
+                    {conta.nomeExibicao} · {conta.identificador}
+                  </option>
+                ))}
+              </Select>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input
                   required
-                  label="Nome da instância"
-                  value={canal.instancia}
-                  onChange={(evento) => alterarCanal("instancia", evento.target.value)}
+                  label="Nome exibido"
+                  value={canal.nomeConta}
+                  onChange={(evento) => alterarCanal("nomeConta", evento.target.value)}
                 />
                 <Input
-                  type="password"
-                  autoComplete="new-password"
-                  required={primeiraVez}
-                  label="API key Evolution"
-                  hint={
-                    primeiraVez
-                      ? "Obrigatória na primeira configuração."
-                      : "Vazio mantém a chave guardada."
+                  required
+                  label={
+                    canal.provedor === "instagram" ? "Usuário do Instagram" : "Número WhatsApp"
                   }
-                  value={canal.chaveEvolution}
-                  onChange={(evento) => alterarCanal("chaveEvolution", evento.target.value)}
+                  placeholder={
+                    canal.provedor === "instagram" ? "akros.immigration" : "5511999999999"
+                  }
+                  value={canal.identificador}
+                  onChange={(evento) => alterarCanal("identificador", evento.target.value)}
                 />
               </div>
-              <p className="text-xs text-ink-soft">
-                O webhook da Evolution é registrado automaticamente ao salvar. O número precisa
-                estar pareado (QR) no painel da própria Evolution.
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {canal.provedor === "whatsapp_oficial" ? (
-                  <>
-                    <Input
-                      required
-                      inputMode="numeric"
-                      label="ID do número de telefone"
-                      hint="Phone number ID, no painel do WhatsApp da Meta."
-                      value={canal.phoneNumberId}
-                      onChange={(evento) => alterarCanal("phoneNumberId", evento.target.value)}
-                    />
-                    <Input
-                      required
-                      inputMode="numeric"
-                      label="ID da conta WhatsApp Business"
-                      hint="WABA ID. Webhooks de outra conta são ignorados."
-                      value={canal.wabaId}
-                      onChange={(evento) => alterarCanal("wabaId", evento.target.value)}
-                    />
-                  </>
-                ) : (
+
+              {canal.provedor === "evolution" ? (
+                <>
                   <Input
                     required
-                    inputMode="numeric"
-                    label="ID da conta do Instagram"
-                    hint="Instagram business account ID (não é o @usuário)."
-                    value={canal.igAccountId}
-                    onChange={(evento) => alterarCanal("igAccountId", evento.target.value)}
+                    type="url"
+                    label="URL HTTPS da Evolution"
+                    placeholder="https://evolution.suaempresa.com"
+                    value={canal.baseUrl}
+                    onChange={(evento) => alterarCanal("baseUrl", evento.target.value)}
                   />
-                )}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  required={primeiraVez}
-                  label={
-                    canal.provedor === "instagram"
-                      ? "Page Access Token"
-                      : "Token de acesso permanente"
-                  }
-                  hint={
-                    primeiraVez
-                      ? "Obrigatório na primeira configuração."
-                      : "Vazio mantém o token guardado."
-                  }
-                  value={canal.accessToken}
-                  onChange={(evento) => alterarCanal("accessToken", evento.target.value)}
-                />
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  required={primeiraVez}
-                  label="App Secret"
-                  hint={
-                    primeiraVez ? "Valida a assinatura dos webhooks." : "Vazio mantém o guardado."
-                  }
-                  value={canal.appSecret}
-                  onChange={(evento) => alterarCanal("appSecret", evento.target.value)}
-                />
-              </div>
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <Input
-                    required={primeiraVez}
-                    label="Token de verificação do webhook"
-                    hint="Invente um (8+ letras e números) ou gere; você o cola no painel da Meta."
-                    value={canal.verifyToken}
-                    onChange={(evento) => alterarCanal("verifyToken", evento.target.value)}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => alterarCanal("verifyToken", gerarTokenVerificacao())}
-                >
-                  Gerar
-                </Button>
-              </div>
-              {urlDaConta ? (
-                <p className="break-all text-xs text-ink-soft">
-                  Endereço do webhook desta conta: <code>{urlDaConta}</code>
-                </p>
-              ) : null}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Input
+                      required
+                      label="Nome da instância"
+                      value={canal.instancia}
+                      onChange={(evento) => alterarCanal("instancia", evento.target.value)}
+                    />
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      required={primeiraVez}
+                      label="API key Evolution"
+                      hint={
+                        primeiraVez
+                          ? "Obrigatória na primeira configuração."
+                          : "Vazio mantém a chave guardada."
+                      }
+                      value={canal.chaveEvolution}
+                      onChange={(evento) => alterarCanal("chaveEvolution", evento.target.value)}
+                    />
+                  </div>
+                  <p className="text-xs text-ink-soft">
+                    O webhook da Evolution é registrado automaticamente ao salvar. O número precisa
+                    estar pareado (QR) no painel da própria Evolution.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {canal.provedor === "whatsapp_oficial" ? (
+                      <>
+                        <Input
+                          required
+                          inputMode="numeric"
+                          label="ID do número de telefone"
+                          hint="Phone number ID, no painel do WhatsApp da Meta."
+                          value={canal.phoneNumberId}
+                          onChange={(evento) => alterarCanal("phoneNumberId", evento.target.value)}
+                        />
+                        <Input
+                          required
+                          inputMode="numeric"
+                          label="ID da conta WhatsApp Business"
+                          hint="WABA ID. Webhooks de outra conta são ignorados."
+                          value={canal.wabaId}
+                          onChange={(evento) => alterarCanal("wabaId", evento.target.value)}
+                        />
+                      </>
+                    ) : (
+                      <Input
+                        required
+                        inputMode="numeric"
+                        label="ID da conta do Instagram"
+                        hint="Instagram business account ID (não é o @usuário)."
+                        value={canal.igAccountId}
+                        onChange={(evento) => alterarCanal("igAccountId", evento.target.value)}
+                      />
+                    )}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      required={primeiraVez}
+                      label={
+                        canal.provedor === "instagram"
+                          ? "Page Access Token"
+                          : "Token de acesso permanente"
+                      }
+                      hint={
+                        primeiraVez
+                          ? "Obrigatório na primeira configuração."
+                          : "Vazio mantém o token guardado."
+                      }
+                      value={canal.accessToken}
+                      onChange={(evento) => alterarCanal("accessToken", evento.target.value)}
+                    />
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      required={primeiraVez}
+                      label="App Secret"
+                      hint={
+                        primeiraVez
+                          ? "Valida a assinatura dos webhooks."
+                          : "Vazio mantém o guardado."
+                      }
+                      value={canal.appSecret}
+                      onChange={(evento) => alterarCanal("appSecret", evento.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Input
+                        required={primeiraVez}
+                        label="Token de verificação do webhook"
+                        hint="Invente um (8+ letras e números) ou gere; você o cola no painel da Meta."
+                        value={canal.verifyToken}
+                        onChange={(evento) => alterarCanal("verifyToken", evento.target.value)}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => alterarCanal("verifyToken", gerarTokenVerificacao())}
+                    >
+                      Gerar
+                    </Button>
+                  </div>
+                  {urlDaConta ? (
+                    <p className="break-all text-xs text-ink-soft">
+                      Endereço do webhook desta conta: <code>{urlDaConta}</code>
+                    </p>
+                  ) : null}
+                </>
+              )}
+              <Checkbox
+                label="Canal conectado e apto a receber mensagens"
+                checked={canal.ativa}
+                onChange={(evento) => alterarCanal("ativa", evento.target.checked)}
+              />
             </>
+          ) : (
+            <p className="text-xs text-ink-soft">
+              Sem canal, só o agente é salvo. Depois de salvar, converse com ele em Comunicação →
+              Agente IA → Playground e ajuste a orientação antes de conectar um número.
+            </p>
           )}
-          <Checkbox
-            label="Canal conectado e apto a receber mensagens"
-            checked={canal.ativa}
-            onChange={(evento) => alterarCanal("ativa", evento.target.checked)}
-          />
 
           <h3 className="border-t border-border pt-4 text-sm font-semibold text-navy">
             Agente OpenRouter

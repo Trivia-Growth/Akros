@@ -4,6 +4,7 @@ import { CircleAlert, LockKeyhole, Mail, MessageCircle, Sparkles } from "lucide-
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useComunicacaoAdminSupabase } from "../application/useComunicacaoAdminSupabase";
+import { PlaygroundAgente } from "./PlaygroundAgente";
 
 /** Admin real: todas as coleções vêm do Supabase; envio e configuração aguardam fluxos seguros. */
 export function ComunicacaoRealPage() {
@@ -58,7 +59,10 @@ export function ComunicacaoRealPage() {
           </Card>
         </TabsContent>
         <TabsContent value="agent">
-          <ListaAgentes agentes={agentes} />
+          <div className="flex flex-col gap-4">
+            <ListaAgentes agentes={agentes} />
+            <PlaygroundAgente agentes={agentes} />
+          </div>
         </TabsContent>
         <TabsContent value="knowledge">
           <ListaFontes fontes={fontes} />

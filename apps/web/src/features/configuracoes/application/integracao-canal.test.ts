@@ -94,6 +94,17 @@ describe("integracao-canal — corpo enviado a integracoes-ia-salvar", () => {
     expect(corpo.agente).toMatchObject({ nome: "Ana", apiKeyOpenRouter: "sk-or-1" });
   });
 
+  it("incluirCanal=false salva só o agente (Playground antes de conectar um número)", () => {
+    const corpo = corpoDeSalvar(
+      { ...CANAL_INICIAL, baseUrl: "https://nao-deve-ir.com", chaveEvolution: "segredo" },
+      { ...AGENTE_INICIAL, chaveOpenRouter: "sk-or-1" },
+      false,
+    );
+    expect(corpo).not.toHaveProperty("canal");
+    expect(JSON.stringify(corpo)).not.toContain("segredo");
+    expect(corpo.agente).toMatchObject({ apiKeyOpenRouter: "sk-or-1" });
+  });
+
   it("limparSegredos zera as credenciais digitadas, preserva o token de verificação (aperto de mão da Meta) e o resto", () => {
     const limpo = limparSegredos({
       ...CANAL_INICIAL,
