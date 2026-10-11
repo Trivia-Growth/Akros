@@ -183,10 +183,15 @@ $$;
 -- so por crm.meus_casos(), definida mais acima. Mas crm.meus_casos() NAO e SECURITY DEFINER: ela
 -- roda com o privilegio de quem a chamou (authenticated), entao o Postgres checa EXECUTE em
 -- crm._minhas_participacoes_ativas() contra essa MESMA role (authenticated), nao contra a role
--- que criou a funcao. Sem este GRANT, toda chamada a crm.meus_casos() por um usuario autenticado
--- falharia com "permission denied for function _minhas_participacoes_ativas" antes mesmo de
--- chegar a RLS. O GRANT nao abre acesso novo: o corpo da funcao so devolve linhas do proprio
--- auth.uid(), exatamente o que a policy "participante_ve_a_propria_linha" tambem permite.
+-- que criou a funcao. O GRANT explicito abaixo e o que torna esse acesso deliberado, no mesmo
+-- padrao de toda SECURITY DEFINER chamavel deste repositorio (REVOKE ALL FROM PUBLIC primeiro,
+-- GRANT EXECUTE depois so para a role que precisa — ver 0016, configuracoes.salvar_segredo_
+-- integracao/crm.obter_cliente_por_telefone): sem o REVOKE, o Postgres concede EXECUTE a PUBLIC
+-- por padrao na criacao da funcao, entao a fronteira real dependeria de um privilegio implicito,
+-- nao de um GRANT visivel aqui. O GRANT nao abre acesso novo alem do que PUBLIC ja teria por
+-- padrao: o corpo da funcao so devolve linhas do proprio auth.uid(), exatamente o que a policy
+-- "participante_ve_a_propria_linha" tambem permite.
+REVOKE ALL ON FUNCTION crm._minhas_participacoes_ativas() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION crm._minhas_participacoes_ativas() TO authenticated;
 
 GRANT EXECUTE ON FUNCTION crm.e_admin() TO authenticated;

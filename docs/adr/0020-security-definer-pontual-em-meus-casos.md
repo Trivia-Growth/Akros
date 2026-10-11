@@ -51,13 +51,18 @@ através de um helper interno, `SECURITY DEFINER`, com `SET search_path` fixo �
 aceito neste projeto em `audit.registrar_mudanca()` (0008).**
 
 ```sql
--- Helper interno, nao GRANT a authenticated: so crm.meus_casos() chama. SECURITY DEFINER aqui
--- nao concede privilegio novo -- o WHERE auth_user_id = auth.uid() ja restringe ao proprio
+-- Helper interno: so crm.meus_casos() chama, nunca referenciado por policy nem por nenhuma
+-- Edge Function diretamente. Como crm.meus_casos() nao e SECURITY DEFINER, o Postgres checa
+-- EXECUTE deste helper contra a role de quem chamou meus_casos() (authenticated) -- por isso
+-- GRANT EXECUTE a authenticated e necessario aqui (precedido de REVOKE ALL FROM PUBLIC, mesmo
+-- padrao de toda SECURITY DEFINER chamavel neste repositorio: ver 0016). Esse GRANT nao e
+-- concessao de privilegio novo -- o WHERE auth_user_id = auth.uid() ja restringe ao proprio
 -- chamador, exatamente o que a policy direta "participante_ve_a_propria_linha" tambem permite.
--- Existe so para quebrar a autorreferencia estrutural de RLS (crm.participantes -> policy ->
--- crm.participo_do_caso() -> crm.meus_casos() -> crm.participantes de novo): dentro de uma
--- funcao SECURITY DEFINER cujo dono tem BYPASSRLS, esta consulta NAO reentra na RLS de
--- crm.participantes, rompendo o ciclo de forma estrutural, nao por ordem de avaliacao de OR.
+-- SECURITY DEFINER aqui existe so para quebrar a autorreferencia estrutural de RLS
+-- (crm.participantes -> policy -> crm.participo_do_caso() -> crm.meus_casos() ->
+-- crm.participantes de novo): dentro de uma funcao SECURITY DEFINER cujo dono tem BYPASSRLS,
+-- esta consulta NAO reentra na RLS de crm.participantes, rompendo o ciclo de forma estrutural,
+-- nao por ordem de avaliacao de OR.
 CREATE FUNCTION crm._minhas_participacoes_ativas()
 RETURNS setof uuid
 LANGUAGE sql
@@ -68,6 +73,9 @@ AS $$
   SELECT cliente_id FROM crm.participantes
   WHERE auth_user_id = auth.uid() AND estado = 'ativo';
 $$;
+
+REVOKE ALL ON FUNCTION crm._minhas_participacoes_ativas() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION crm._minhas_participacoes_ativas() TO authenticated;
 
 CREATE FUNCTION crm.meus_casos()
 RETURNS setof uuid
@@ -81,10 +89,15 @@ $$;
 ```
 
 `crm.meus_casos()`, `crm.meus_papeis()`, `crm.tenho_papel()` e `crm.participo_do_caso()`
-continuam **sem** `SECURITY DEFINER` — a exceção é só do helper interno de uma linha, nunca
-exposto via `GRANT EXECUTE` a `authenticated`, e cujo corpo é auditável em uma inspeção de
-segundos: um único `SELECT` com `WHERE auth_user_id = auth.uid()`, sem parâmetro vindo do
-chamador, sem possibilidade de devolver linha de outro usuário.
+continuam **sem** `SECURITY DEFINER` — a exceção é só do helper interno de uma linha. Ele **recebe**
+`GRANT EXECUTE` a `authenticated` (precedido de `REVOKE ALL ... FROM PUBLIC`, mesmo padrão de toda
+`SECURITY DEFINER` chamável deste repositório — ver 0016): como `crm.meus_casos()` não é
+`SECURITY DEFINER`, o Postgres checa `EXECUTE` do helper contra a role de quem chamou
+`crm.meus_casos()`, não contra o dono do helper, então o grant é necessário para o encadeamento
+funcionar, e deliberado (não um default implícito de `PUBLIC`) por causa do `REVOKE`. O corpo do
+helper é auditável em uma inspeção de segundos: um único `SELECT` com `WHERE auth_user_id =
+auth.uid()`, sem parâmetro vindo do chamador, sem possibilidade de devolver linha de outro
+usuário — é isso, não a ausência de `GRANT`, que mantém o escopo mínimo.
 
 A policy direta `participante_ve_a_propria_linha` em `crm.participantes` permanece — ela não é
 mais necessária para romper a recursão (o helper já rompe), mas continua sendo exigência própria
@@ -113,7 +126,9 @@ considerada validada em produção.
 - Usa um padrão já aceito e revisado neste projeto (`SECURITY DEFINER` + `search_path` fixo), não
   uma técnica nova.
 - Escopo do `SECURITY DEFINER` é o menor possível: uma função interna, uma linha de SQL, sem
-  parâmetro, sem `GRANT` a `authenticated`.
+  parâmetro, `GRANT EXECUTE` explícito e único a `authenticated` (precedido de `REVOKE ALL FROM
+  PUBLIC`, nunca dependendo do default implícito do Postgres) — mesmo padrão já usado neste
+  repositório para toda `SECURITY DEFINER` chamável (0016).
 
 **Negativas / trade-offs aceitos**
 - `crm.meus_casos()`/`tenho_papel()`/`participo_do_caso()` deixam de ser 100% "sem SECURITY
