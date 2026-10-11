@@ -16,6 +16,7 @@
 --           DROP FUNCTION IF EXISTS crm.tenho_papel(uuid, text);
 --           DROP FUNCTION IF EXISTS crm.meus_papeis(uuid);
 --           DROP FUNCTION IF EXISTS crm.meus_casos();
+--           DROP FUNCTION IF EXISTS crm._minhas_participacoes_ativas();  -- ver ADR-0020
 --           DROP FUNCTION IF EXISTS crm.e_admin();
 --           DROP TABLE IF EXISTS crm.participantes, crm.contrato_condicoes, crm.contratos,
 --             crm.organizacoes CASCADE;
@@ -116,20 +117,37 @@ AS $$
   SELECT auth.jwt() -> 'app_metadata' ->> 'role' = 'admin';
 $$;
 
--- Esta funcao consulta crm.participantes, que tem FORCE ROW LEVEL SECURITY -- sem cuidado,
--- entraria em "infinite recursion detected in policy for relation participantes" (a policy
--- "participante_ve_participantes_do_caso" chama crm.participo_do_caso(), que chama esta funcao,
--- que consulta crm.participantes de novo). A recursao e cortada pela policy
--- "participante_ve_a_propria_linha" (mais abaixo): o filtro desta funcao
--- (auth_user_id = auth.uid()) e exatamente o predicado direto daquela policy, que resolve TRUE
--- sem chamar crm.participo_do_caso() de novo -- a leitura das PROPRIAS linhas nunca recursa.
+-- ADR-0020: exececao pontual ao "sem SECURITY DEFINER" acima. crm.meus_casos() precisa ler
+-- "minhas participacoes ativas" em crm.participantes, e crm.participantes tem a policy
+-- "participante_ve_participantes_do_caso" que chama crm.participo_do_caso() -> crm.meus_casos()
+-- de volta -- autorreferencia estrutural de RLS ("infinite recursion detected in policy for
+-- relation participantes"), que o Postgres detecta na fase de rewrite/planejamento, nao em tempo
+-- de execucao -- uma policy direta no "OR" (participante_ve_a_propria_linha, mais abaixo) nao e
+-- garantia suficiente de que essa expansao estrutural nunca dispare. Por isso a leitura de
+-- crm.participantes sai daqui e vai para este helper interno, SECURITY DEFINER, mesmo padrao ja
+-- aceito no projeto em audit.registrar_mudanca() (0008). Nao concede privilegio novo: o
+-- WHERE auth_user_id = auth.uid() trava o resultado ao proprio chamador, sem parametro vindo de
+-- fora. Nunca GRANT a authenticated diretamente -- so crm.meus_casos() chama.
+CREATE FUNCTION crm._minhas_participacoes_ativas()
+RETURNS setof uuid
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = crm, pg_temp
+AS $$
+  SELECT cliente_id FROM crm.participantes
+  WHERE auth_user_id = auth.uid() AND estado = 'ativo';
+$$;
+
+-- Dentro de uma funcao SECURITY DEFINER cujo dono tem BYPASSRLS, a consulta acima NAO reentra na
+-- RLS de crm.participantes -- rompe o ciclo de forma estrutural, nao por ordem de avaliacao de
+-- OR. crm.meus_casos() continua sem SECURITY DEFINER (so delega a parte perigosa).
 CREATE FUNCTION crm.meus_casos()
 RETURNS setof uuid
 LANGUAGE sql
 STABLE
 AS $$
-  SELECT cliente_id FROM crm.participantes
-  WHERE auth_user_id = auth.uid() AND estado = 'ativo'
+  SELECT * FROM crm._minhas_participacoes_ativas()
   UNION
   -- Vinculo legado mono-titular (crm.clientes.auth_user_id) -- continua valendo durante a
   -- migracao. Remover este UNION e tarefa de migration futura (0024), fora deste escopo.
@@ -160,6 +178,16 @@ STABLE
 AS $$
   SELECT p_cliente_id IN (SELECT crm.meus_casos());
 $$;
+
+-- crm._minhas_participacoes_ativas() nao e chamada diretamente por ninguem fora deste arquivo --
+-- so por crm.meus_casos(), abaixo. Mas crm.meus_casos() NAO e SECURITY DEFINER: ela roda com o
+-- privilegio de quem a chamou (authenticated), entao o Postgres checa EXECUTE em
+-- crm._minhas_participacoes_ativas() contra essa MESMA role (authenticated), nao contra a role
+-- que criou a funcao. Sem este GRANT, toda chamada a crm.meus_casos() por um usuario autenticado
+-- falharia com "permission denied for function _minhas_participacoes_ativas" antes mesmo de
+-- chegar a RLS. O GRANT nao abre acesso novo: o corpo da funcao so devolve linhas do proprio
+-- auth.uid(), exatamente o que a policy "participante_ve_a_propria_linha" tambem permite.
+GRANT EXECUTE ON FUNCTION crm._minhas_participacoes_ativas() TO authenticated;
 
 GRANT EXECUTE ON FUNCTION crm.e_admin() TO authenticated;
 GRANT EXECUTE ON FUNCTION crm.meus_casos() TO authenticated;
@@ -214,6 +242,10 @@ GRANT ALL ON crm.organizacoes, crm.contratos, crm.contrato_condicoes, crm.partic
 CREATE POLICY "admin_ve_todas_organizacoes" ON crm.organizacoes
   FOR SELECT USING (crm.e_admin());
 
+-- Depende da correcao de ADR-0020: crm.participo_do_caso() chama crm.meus_casos(), que agora
+-- resolve a leitura de crm.participantes via o helper SECURITY DEFINER
+-- crm._minhas_participacoes_ativas() em vez de consultar crm.participantes direto -- esta
+-- policy herda a correcao automaticamente, sem mudanca propria.
 CREATE POLICY "participante_ve_organizacao_do_caso" ON crm.organizacoes
   FOR SELECT USING (
     EXISTS (
@@ -227,15 +259,11 @@ CREATE POLICY "participante_ve_organizacao_do_caso" ON crm.organizacoes
 CREATE POLICY "admin_ve_todos_participantes" ON crm.participantes
   FOR SELECT USING (crm.e_admin());
 
--- Base nao-recursiva para a RLS de crm.participantes: crm.meus_casos() (chamada por
--- crm.participo_do_caso(), usada na policy seguinte) consulta esta tabela filtrando por
--- auth_user_id = auth.uid(). Sem esta policy, a UNICA policy de nao-admin seria a de baixo, que
--- chama de volta crm.participo_do_caso() -- sem um disjunto direto que resolva TRUE sem recursar,
--- essa consulta interna reentraria na mesma RLS indefinidamente ("infinite recursion detected in
--- policy for relation participantes"). Com este predicado direto, a consulta interna de
--- crm.meus_casos() (que filtra exatamente por auth_user_id = auth.uid()) resolve aqui, sem
--- precisar avaliar o outro disjunto. Tambem e correta por si so: participante sempre ve a
--- propria linha, mesmo em um cenario onde crm.participo_do_caso() nao alcancasse por algum motivo.
+-- Exigencia propria do desenho: participante sempre ve a propria linha. Deixou de ser o
+-- mecanismo que rompe a autorreferencia de RLS (ver ADR-0020 -- isso agora e papel do helper
+-- SECURITY DEFINER crm._minhas_participacoes_ativas(), acionado por crm.meus_casos()); esta
+-- policy continua como defesa em profundidade: participante ve a propria linha mesmo num cenario
+-- onde crm.participo_do_caso() nao alcancasse por algum motivo.
 CREATE POLICY "participante_ve_a_propria_linha" ON crm.participantes
   FOR SELECT USING (auth_user_id = auth.uid());
 
