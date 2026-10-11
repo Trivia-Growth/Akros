@@ -138,6 +138,40 @@ existam sempre. Nada aqui apaga dado.
 
 ### 1.3 `0019_E03-S07_jornada_documentos_por_papel.sql`
 
+**Correção em 2026-10-11**: esta migration também cria a tabela genérica de idempotência que
+faltava no desenho original — nenhuma migration anterior (0017/0018) a previa, e `_shared/
+idempotencia.ts` (§2) precisa de algum lugar para gravar. Entra aqui, no início do arquivo, antes
+das alterações de jornada/documentos (são independentes entre si):
+
+```sql
+CREATE SCHEMA IF NOT EXISTS comandos;
+
+-- Generico para toda Edge Function de comando desta feature que exige idempotencyKey (§2).
+-- Só service_role acessa (zero GRANT a authenticated, zero policy) -- e um comando client-side
+-- nunca consulta isto diretamente, so o handler do servidor.
+CREATE TABLE comandos.idempotencia (
+  chave          text PRIMARY KEY,
+  hash_conteudo  text NOT NULL,
+  resultado      jsonb NOT NULL,
+  criado_por     uuid NOT NULL,
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE comandos.idempotencia ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comandos.idempotencia FORCE ROW LEVEL SECURITY;
+GRANT USAGE ON SCHEMA comandos TO service_role;
+GRANT ALL ON comandos.idempotencia TO service_role;
+-- Sem GRANT a authenticated, sem policy: RLS FORCE + zero privilegio de tabela nega tudo.
+-- service_role tem BYPASSRLS por padrao no Supabase, FORCE nao o alcanca (mesmo criterio de
+-- audit.eventos, 0008).
+```
+
+Chave sugerida pelas Edge Functions: `sha256(nome_da_acao + ":" + idempotencyKey_do_cliente)` —
+nunca o `idempotencyKey` bruto do cliente como chave primária sozinho, para não colidir entre
+ações diferentes. `hash_conteudo` é o hash do corpo normalizado da requisição (detecta "mesma
+chave, conteúdo diferente" → 409). `resultado` é o corpo de resposta original, devolvido sem
+reprocessar.
+
 ```
 jornada.jornadas  + contrato_id uuid references crm.contratos(id)
                   + levantamento_estado text not null default 'incompleto'
@@ -364,6 +398,29 @@ nunca somadas; ausência de dado nunca vira zero nem "em dia".
 Seis funções. Toda função: CORS restrito → JWT → papel → Zod `strict` → rate limit declarado
 (gate `check:edge-functions`) → lógica → RFC 7807. Entrada é **união discriminada** por `acao`.
 Nenhuma aceita `clienteId` do participante como fonte de autoridade: o caso vem da participação.
+
+**Correção em 2026-10-11 — padrão porta/adapter também nas Edge Functions.** O repositório já
+estabelece isso para webhook/agente (`_shared/webhook.ts` declara a porta `IOWebhook`;
+`_shared/io-supabase.ts` é o adapter real com `service_role`; os testes injetam um fake — nenhum
+teste de `_shared/*.test.ts` toca banco real). Toda lógica nova desta feature segue o mesmo
+desenho, não `createClient()` chamado direto de dentro da função de autorização/comando:
+
+- **`requireAdmin(req)` e `requireServiceRole(req)` já existem** em `_shared/auth.ts` (checam
+  `app_metadata.role` do usuário validado pelo Auth, e comparação em tempo constante contra as
+  chaves privilegiadas do projeto, respectivamente) — **reusar**, não recriar. `onedrive-oauth`
+  usa `requireAdmin`; `arquivo-processar` usa `requireServiceRole` com o segredo do Cron.
+  `_shared/autorizacao-caso.ts` só precisa do que é genuinamente novo: `resolverParticipacao` e
+  `exigirPapel`, que declaram a porta de dados `IOAutorizacaoCaso` — hoje uma leitura:
+  `participacoesDoUsuario(authUserId): Promise<{ clienteId: string; papel: string }[]>` (mesma
+  regra de `crm.meus_casos()`/`crm.meus_papeis()`: linhas ativas de `crm.participantes` + o
+  vínculo legado `crm.clientes.auth_user_id`).
+- `_shared/io-supabase-caso.ts` é o adapter real (`service_role`) dessa porta, nome próprio porque
+  `io-supabase.ts` já tem responsabilidade única (IO do webhook/agente) — não acumule autorização
+  de caso nele.
+- Comandos com estado próprio (`caso-comandos`, `revisao-comandos`, `envio-comandos`) crescem o
+  mesmo padrão: a lógica de cada `acao` recebe sua porta de E/S (pode reaproveitar/estender
+  `io-supabase-caso.ts`), o `index.ts` de cada função só monta o adapter real e despacha por
+  `acao`. Os testes Deno de cada função usam um fake, nunca Postgres real.
 
 | Função | Quem | Ações |
 |---|---|---|
