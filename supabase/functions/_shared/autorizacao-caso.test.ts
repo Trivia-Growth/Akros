@@ -66,3 +66,25 @@ Deno.test("exigirPapel com caso que o usuário não participa lança 404, não 4
   assert(erro instanceof HttpError);
   assertEquals((erro as HttpError).status, 404);
 });
+
+// Vínculo legado mono-titular (papel: null) — crm.meus_casos() inclui, crm.meus_papeis() não.
+// exigirPapel precisa tratar isso como "participa do caso, mas sem papel reconhecido": 403, nunca
+// autorizado para nenhum papel específico, mesmo quando o papel pedido é "aplicante" (o papel que
+// o vínculo legado teria na prática, se migrado) — ver comentário em Participacao.papel.
+Deno.test("exigirPapel com único vínculo legado (papel null) lança 403 mesmo pedindo aplicante", async () => {
+  const io = montarIO([{ clienteId: "caso-legado", papel: null }]);
+  let erro: unknown;
+  try {
+    await exigirPapel(io, AUTH_USER_ID, "caso-legado", ["aplicante"]);
+  } catch (e) {
+    erro = e;
+  }
+  assert(erro instanceof HttpError);
+  assertEquals((erro as HttpError).status, 403);
+});
+
+Deno.test("resolverParticipacao inclui o vínculo legado (papel null) na lista — leitura do caso continua funcionando", async () => {
+  const io = montarIO([{ clienteId: "caso-legado", papel: null }]);
+  const r = await resolverParticipacao(io, AUTH_USER_ID, { clienteId: "caso-legado" });
+  assertEquals(r, [{ clienteId: "caso-legado", papel: null }]);
+});

@@ -13,12 +13,13 @@ let cliente: SupabaseClient | null = null;
 // mesmo critério de `io-supabase.ts`.
 const sb = () => (cliente ??= clienteServico());
 
-/** Adapter real de `IOAutorizacaoCaso`. Replica a regra de `crm.meus_casos()`/`crm.meus_papeis()`
- *  (0017): linhas ativas de `crm.participantes` para este `auth_user_id`, MAIS o vínculo legado
- *  mono-titular (`crm.clientes.auth_user_id`) — que antecede o modelo de participantes e por
- *  isso é tratado como papel `aplicante` (o titular original do caso). Vínculo legado é
- *  descartado se o `cliente_id` já apareceu via `crm.participantes` (fonte autoritativa quando
- *  presente), para não devolver papel duplicado/divergente para o mesmo caso. */
+/** Adapter real de `IOAutorizacaoCaso`. Replica a regra de `crm.meus_casos()` (0017): linhas
+ *  ativas de `crm.participantes` para este `auth_user_id`, MAIS o vínculo legado mono-titular
+ *  (`crm.clientes.auth_user_id`), com `papel: null` — `crm.meus_papeis()`/`crm.tenho_papel()`
+ *  NÃO têm esse fallback (de propósito: ver comentário em `autorizacao-caso.ts`), então não
+ *  sintetize papel aqui para o vínculo legado. Vínculo legado é descartado se o `cliente_id` já
+ *  apareceu via `crm.participantes` (fonte autoritativa quando presente), para não devolver
+ *  papel duplicado/divergente para o mesmo caso. */
 export function criarIOCaso(): IOAutorizacaoCaso {
   return {
     async participacoesDoUsuario(authUserId) {
@@ -47,7 +48,7 @@ export function criarIOCaso(): IOAutorizacaoCaso {
 
       const vinculoLegado = clienteRes.data;
       if (vinculoLegado && !participacoes.some((p) => p.clienteId === vinculoLegado.id)) {
-        participacoes.push({ clienteId: vinculoLegado.id, papel: "aplicante" });
+        participacoes.push({ clienteId: vinculoLegado.id, papel: null });
       }
 
       return participacoes;

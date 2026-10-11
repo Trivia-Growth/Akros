@@ -411,9 +411,16 @@ desenho, não `createClient()` chamado direto de dentro da função de autoriza�
   usa `requireAdmin`; `arquivo-processar` usa `requireServiceRole` com o segredo do Cron.
   `_shared/autorizacao-caso.ts` só precisa do que é genuinamente novo: `resolverParticipacao` e
   `exigirPapel`, que declaram a porta de dados `IOAutorizacaoCaso` — hoje uma leitura:
-  `participacoesDoUsuario(authUserId): Promise<{ clienteId: string; papel: string }[]>` (mesma
-  regra de `crm.meus_casos()`/`crm.meus_papeis()`: linhas ativas de `crm.participantes` + o
-  vínculo legado `crm.clientes.auth_user_id`).
+  `participacoesDoUsuario(authUserId): Promise<{ clienteId: string; papel: Papel | null }[]>`.
+  **Correção em 2026-10-11 (revisão adversarial)**: a regra NÃO é a mesma de
+  `crm.meus_casos()`/`crm.meus_papeis()` — é a de `crm.meus_casos()` **sozinha**
+  (linhas ativas de `crm.participantes` + o vínculo legado `crm.clientes.auth_user_id`, este
+  último com `papel: null`). `crm.meus_papeis()`/`crm.tenho_papel()` deliberadamente **não** têm
+  fallback para o vínculo legado — ele participa do caso (por isso aparece na lista, e leituras
+  do tipo "qual é o meu caso" continuam funcionando), mas não tem papel reconhecido, então
+  `exigirPapel` nunca autoriza uma ação restrita a papel para ele. Não sintetize papel (ex.:
+  `"aplicante"`) para o vínculo legado: isso autorizaria, no Edge Function com `service_role` (sem
+  RLS por trás), uma ação que a leitura via RLS depois recusaria mostrar.
 - `_shared/io-supabase-caso.ts` é o adapter real (`service_role`) dessa porta, nome próprio porque
   `io-supabase.ts` já tem responsabilidade única (IO do webhook/agente) — não acumule autorização
   de caso nele.
