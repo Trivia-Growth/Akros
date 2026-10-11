@@ -142,5 +142,22 @@
     "language": "Preferred language",
     "save": "Save changes",
     "saved": "Profile updated successfully!"
+  },
+  "upload": {
+    "selectFile": "Select PDF file",
+    "maxSize": "Maximum size: {{size}}",
+    "onlyPdf": "Only PDF files are accepted",
+    "fileTooLarge": "File is above the {{size}} limit",
+    "invalidFile": "Invalid file. Check the format and try again.",
+    "uploading": "Uploading...",
+    "received": "Received on {{date}}",
+    "storagePending": "Received — awaiting storage",
+    "storageInProgress": "Transferring to Akros' file storage",
+    "storageDone": "Stored",
+    "storageFailed": "Storage failed — the team has been notified; your submitted file is preserved",
+    "retry": "Try again",
+    "blockedPhase": "This request belongs to a phase that is not yet unlocked",
+    "notYourRole": "This document is directed to another participant of the case",
+    "newVersion": "New version submitted"
   }
 }

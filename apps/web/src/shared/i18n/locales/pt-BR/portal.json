@@ -142,5 +142,22 @@
     "language": "Idioma preferido",
     "save": "Salvar alterações",
     "saved": "Perfil atualizado com sucesso!"
+  },
+  "upload": {
+    "selectFile": "Selecionar arquivo PDF",
+    "maxSize": "Tamanho máximo: {{size}}",
+    "onlyPdf": "Somente arquivos PDF são aceitos",
+    "fileTooLarge": "Arquivo acima do limite de {{size}}",
+    "invalidFile": "Arquivo inválido. Verifique o formato e tente novamente.",
+    "uploading": "Enviando...",
+    "received": "Recebido em {{date}}",
+    "storagePending": "Recebido — aguardando armazenamento",
+    "storageInProgress": "Transferindo para o arquivo da Akros",
+    "storageDone": "Armazenado",
+    "storageFailed": "Falha ao armazenar — a equipe foi notificada; o arquivo enviado está preservado",
+    "retry": "Tentar novamente",
+    "blockedPhase": "Esta solicitação pertence a uma fase ainda não liberada",
+    "notYourRole": "Este documento é dirigido a outro participante do caso",
+    "newVersion": "Nova versão enviada"
   }
 }

@@ -458,9 +458,14 @@ importam entre si — o que cruza domínio vai para `apps/web/src/shared/contrac
 Registro no container: `apps/web/src/app/real-repositories.ts` e `di.ts` — adapter, hooks e tela na
 **mesma** entrega, nunca `di.ts` sozinho (regra fixa de E13-S11).
 
-i18n: `shared/i18n/locales/{pt-BR,en}/` ganham `caso.json` (participantes, papéis, contrato),
-`envio.json` (estados de recebimento/armazenamento, erros) e chaves novas em `jornada.json` e
-`pagamentos.json`. Zero texto hardcoded; o texto da estimativa diz **protocolo**, nunca decisão.
+i18n: **correção em 2026-10-11** — o repositório usa só 4 namespaces (`common`, `site`, `portal`,
+`admin`; ver `shared/i18n/index.ts`), com chaves agrupadas por seção dentro de cada arquivo (ex.:
+`journey.*`, `dashboard.*` em `portal.json`). Não criar `caso.json`/`envio.json` novos. Esta
+feature adiciona seções novas em `portal.json`/`admin.json` (pt-BR e en): `admin.json` ganha
+`case.*` (contrato, participantes, papéis, prioridade), `participants.*`; `portal.json` ganha
+`upload.*` (estados de recebimento/armazenamento, erro de envio), `progress.*` (percentual,
+estimativa de protocolo). Zero texto hardcoded; o texto da estimativa diz **protocolo**, nunca
+decisão do USCIS.
 
 ---
 

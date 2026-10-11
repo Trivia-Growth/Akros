@@ -42,8 +42,8 @@ alwaysApply: false
 - [ ] T002 [P] Criar `apps/web/src/shared/contracts/caso.ts` com `PapelParticipante` (`aplicante`, `beneficiario`, `organizacao_aplicante`, `familiar_apoio`), `SujeitoDocumento` (`caso`, `participante`, `familiar`), `EstadoRecebimento` (`reservada`, `recebida`, `rejeitada`), `EstadoArmazenamento` (`pendente`, `transferindo`, `armazenado`, `falhou`) e o DTO de resumo do caso
 - [ ] T003 [P] Criar `apps/web/src/shared/contracts/arquivo.ts` com a porta `EnvioArquivoPort` e as constantes de limite (`TAMANHO_MAXIMO_BYTES = 20000000`, `MIME_ACEITO = "application/pdf"`, `RESERVA_VALIDADE_HORAS = 24`)
 - [ ] T004 [P] Criar `supabase/functions/_shared/limites.ts` espelhando as mesmas constantes de T003 (valores duplicados entre runtimes são intencionais; mantenha-os iguais e cite o outro arquivo em comentário)
-- [ ] T005 [P] Criar `apps/web/src/shared/i18n/locales/pt-BR/caso.json` e `.../en/caso.json` com as chaves de participante, papel, contrato e prioridade contratual
-- [ ] T006 [P] Criar `apps/web/src/shared/i18n/locales/pt-BR/envio.json` e `.../en/envio.json` com estados de recebimento/armazenamento e mensagens de erro de envio
+- [ ] T005 [P] Adicionar a seção `case.*` em `apps/web/src/shared/i18n/locales/{pt-BR,en}/admin.json` (SPEC_DEVIATION de design-tecnico.md §3: repositório usa 4 namespaces fixos, não arquivo por feature — ver `shared/i18n/index.ts`) com as chaves de contrato, participantes, papel e prioridade contratual
+- [ ] T006 [P] Adicionar a seção `upload.*` em `apps/web/src/shared/i18n/locales/{pt-BR,en}/portal.json` com estados de recebimento/armazenamento e mensagens de erro de envio
 - [ ] T007 Rodar `rtk pnpm run ci:local` na branch limpa e registrar a saída base em `specs/005-cliente-360-operacional/tasks.md` (seção Decisões de implementação), para distinguir falha nova de falha pré-existente
 
 ---
@@ -244,7 +244,7 @@ critério e comportamento com histórico insuficiente.
 - [ ] T111 [US7] Estender `apps/web/src/features/jornada/application/calcular-previsao.ts` com o cálculo de `progresso` e `previsaoProtocolo` a partir das projeções, mantendo a fórmula aberta e a data do cálculo
 - [ ] T112 [US7] Criar `apps/web/src/features/jornada/application/usePrevisaoProtocolo.ts` e o adapter `apps/web/src/features/jornada/infrastructure/SupabaseProgressoConsulta.ts` (+ `.test.ts`)
 - [ ] T113 [US7] Exibir percentual, critério, estimativa de protocolo e motivo de "sem previsão" em `apps/web/src/features/jornada/interfaces/JornadaRealPage.tsx` e no resumo do portal em `apps/web/src/features/jornada/interfaces/DashboardRealPage.tsx`
-- [ ] T114 [US7] Adicionar as chaves de texto em `apps/web/src/shared/i18n/locales/{pt-BR,en}/jornada.json` com a palavra **protocolo** explícita e nenhuma menção a decisão, aprovação ou chance
+- [ ] T114 [US7] Adicionar a seção `progress.*` em `apps/web/src/shared/i18n/locales/{pt-BR,en}/portal.json` com a palavra **protocolo** explícita e nenhuma menção a decisão, aprovação ou chance
 - [ ] T115 [P] [US7] Escrever `apps/web/src/features/jornada/interfaces/previsao-protocolo.smoke.test.tsx` provando o texto de estimativa de protocolo, o estado "sem previsão" e a ausência de qualquer promessa de aprovação
 - [ ] T116 [US7] Registrar evidência dos 5 cenários da US7 em `specs/005-cliente-360-operacional/evidencias/us7.md`
 
@@ -336,4 +336,4 @@ qual arquivo carrega a marca.
 
 | Data | Task | Decisão / desvio | Onde está marcado |
 |---|---|---|---|
-| | | | |
+| 2026-10-11 | T005/T006/T114 | SPEC_DEVIATION de design-tecnico.md §3: repositório usa 4 namespaces i18n fixos (`common`/`site`/`portal`/`admin`), não arquivo por feature. Seções novas (`case.*`, `participants.*` em `admin.json`; `upload.*`, `progress.*` em `portal.json`) em vez de `caso.json`/`envio.json`/`jornada.json` | `design-tecnico.md` §3 atualizado; `tasks.md` T005/T006/T114 |
