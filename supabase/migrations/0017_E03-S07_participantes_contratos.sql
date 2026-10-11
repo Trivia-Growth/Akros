@@ -180,8 +180,8 @@ AS $$
 $$;
 
 -- crm._minhas_participacoes_ativas() nao e chamada diretamente por ninguem fora deste arquivo --
--- so por crm.meus_casos(), abaixo. Mas crm.meus_casos() NAO e SECURITY DEFINER: ela roda com o
--- privilegio de quem a chamou (authenticated), entao o Postgres checa EXECUTE em
+-- so por crm.meus_casos(), definida mais acima. Mas crm.meus_casos() NAO e SECURITY DEFINER: ela
+-- roda com o privilegio de quem a chamou (authenticated), entao o Postgres checa EXECUTE em
 -- crm._minhas_participacoes_ativas() contra essa MESMA role (authenticated), nao contra a role
 -- que criou a funcao. Sem este GRANT, toda chamada a crm.meus_casos() por um usuario autenticado
 -- falharia com "permission denied for function _minhas_participacoes_ativas" antes mesmo de
