@@ -12,6 +12,13 @@
 --   roles authenticated / anon / service_role → alvos de GRANT (55 usos)
 --   Vault → cifra real em produção; substituto mínimo só para provar migrations/RLS na imagem
 --            postgres pura da CI (E13-S12).
+--   storage.buckets / storage.objects → Supabase Storage provisiona este schema (extensão
+--            própria, fora de supabase/migrations/) ANTES de qualquer migration de usuário
+--            rodar — contrato mínimo reproduzido aqui pela primeira vez em 0020 (E03-S07,
+--            T016-T018: primeiro uso de Storage neste repositório). CONCERN registrado no
+--            relatório desta task: o shape exato de colunas/grants/RLS (FORCE ou só ENABLE?)
+--            do Supabase Storage real não foi confirmado contra o projeto de verdade nesta
+--            sessão — este stub é a melhor reprodução disponível, não uma cópia confirmada.
 
 CREATE SCHEMA IF NOT EXISTS auth;
 
@@ -105,3 +112,53 @@ CREATE OR REPLACE FUNCTION vault.update_secret(
       updated_at = now()
   WHERE id = secret_id
 $$;
+
+-- Stub minimo de Supabase Storage (E03-S07, 0020 e a primeira migration deste repositorio a
+-- tocar `storage`). Reproduz so o contrato que 0020 usa: `storage.buckets` (destino do INSERT
+-- de T017) e `storage.objects` (destino da CREATE POLICY de INSERT). Colunas alem dessas duas
+-- tabelas, e qualquer outra tabela real do Storage (storage.migrations etc.), ficam de fora de
+-- proposito -- nenhuma migration deste repo as usa.
+--
+-- GRANT amplo a anon/authenticated/service_role nas duas tabelas, ANTES de qualquer policy
+-- de usuario: e assim que o Supabase Storage real provisiona (GRANT ALL ON ALL TABLES IN
+-- SCHEMA storage ao subir a extensao, fora de supabase/migrations/) -- a RLS, nao a ausencia de
+-- privilegio de tabela, e o que de fato nega authenticated nesta tabela. Reproduzir o GRANT
+-- largo aqui e o que torna o teste de "authenticated nao le objeto que ele mesmo enviou"
+-- (08-rls-arquivos_test.sql) uma prova de RLS de verdade, nao um falso-positivo por erro de
+-- privilegio de tabela.
+--
+-- RLS habilitada (ENABLE, NAO FORCE) nas duas: e o padrao real do Supabase Storage. FORCE nao
+-- mudaria o resultado dos testes desta sessao (quem aplica a migration/shim na CI e o owner da
+-- tabela via psql -U postgres, que RLS nunca restringe, com ou sem FORCE) -- mas e exatamente o
+-- tipo de detalhe que esta sessao NAO confirmou contra um projeto Supabase real (ver CONCERN no
+-- relatorio desta task). Se este shim um dia divergir do comportamento real, o sintoma seria
+-- "teste passa aqui, falha em produção" -- igual ao que o comentario no topo deste arquivo ja
+-- avisa sobre toda primitiva nova.
+CREATE SCHEMA IF NOT EXISTS storage;
+
+CREATE TABLE IF NOT EXISTS storage.buckets (
+  id                  text PRIMARY KEY,
+  name                text NOT NULL,
+  owner               uuid,
+  public              boolean DEFAULT false,
+  file_size_limit     bigint,
+  allowed_mime_types  text[],
+  created_at          timestamptz DEFAULT now(),
+  updated_at          timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS storage.objects (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  bucket_id   text REFERENCES storage.buckets(id),
+  name        text,
+  owner       uuid,
+  metadata    jsonb,
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+
+ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+GRANT USAGE ON SCHEMA storage TO anon, authenticated, service_role;
+GRANT ALL ON storage.buckets, storage.objects TO anon, authenticated, service_role;
