@@ -15,6 +15,14 @@
 --    do mesmo caso. Inserida como owner, antes de assumir papel de aplicacao (mesma convencao de
 --    02-rls-leads/06-rls-participantes).
 
+-- auth.users PRIMEIRO -- crm.clientes.auth_user_id tem FK real para auth.users(id) (0001), e o
+-- shim de 00-shim-supabase.sql cria essa tabela vazia. Sem esta linha o INSERT de crm.clientes
+-- abaixo quebra com foreign_key_violation (\set ON_ERROR_STOP on aborta o script inteiro antes
+-- de qualquer prova rodar -- nao e so defensivo, e o que faz crm.meu_cliente_id() resolver o
+-- cliente certo via auth_user_id = auth.uid(), em vez do UPDATE ser negado por motivo errado
+-- (cliente_id = NULL nunca bate com nada, o que provaria vazio, nao que a RLS bloqueou).
+INSERT INTO auth.users (id) VALUES ('e1111111-1111-1111-1111-111111111111');
+
 INSERT INTO crm.clientes (id, auth_user_id, nome, email, telefone, tipo_visto, case_manager)
 VALUES ('a1111111-1111-1111-1111-111111111111', 'e1111111-1111-1111-1111-111111111111',
         'Cliente Teste A-02', 'clientea02@example.com', '11900000001', 'eb2-niw', 'Natalia');
