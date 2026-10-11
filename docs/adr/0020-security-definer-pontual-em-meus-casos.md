@@ -103,12 +103,26 @@ A policy direta `participante_ve_a_propria_linha` em `crm.participantes` permane
 mais necessária para romper a recursão (o helper já rompe), mas continua sendo exigência própria
 do desenho (participante vê a própria linha) e serve como defesa em profundidade.
 
-**Pendência declarada**: isto resolve o risco por raciocínio e por precedente (mesmo padrão aceito
-de `audit.registrar_mudanca()`), não por prova empírica — ninguém rodou isto contra um Postgres
-real ainda. **Gate**: a primeira aplicação real desta migration (CI `db-tests`, ambiente @devops,
-ou sessão com Docker disponível) precisa confirmar que `SELECT * FROM crm.participantes` como
-usuário autenticado não lança "infinite recursion" antes de qualquer migration `0018`+ ser
-considerada validada em produção.
+**Pendência declarada — RESOLVIDA em 2026-10-11.** Esta sessão não tinha Docker, mas tinha
+PostgreSQL 17 local via Homebrew (`/opt/homebrew/bin/postgres`, serviço já rodando) — descoberto
+tarde, depois de várias tasks terem sido instruídas a "não executar contra banco real" por engano.
+Corrigido o engano, migrations `0001`–`0020` foram aplicadas do zero num banco limpo (shim de
+`supabase/tests/00-shim-supabase.sql` + `psql` sequencial) e a sequência completa de testes SQL
+(`01`–`09`) rodou de ponta a ponta sem nenhum erro:
+
+```sql
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL request.jwt.claims = '{"sub":"<participante-do-caso-A>", ...}';
+  SELECT count(*) FROM crm.participantes;  -- NÃO lança "infinite recursion"; devolve 1 linha
+                                            -- (só o próprio caso), não 2.
+ROLLBACK;
+```
+
+Confirmado por execução real, não só por leitura: (1) nenhuma recursão ocorre; (2) o isolamento
+por caso funciona (participante do caso A não vê linha do caso B); (3) admin continua vendo as
+duas. O gate que este ADR declarava está fechado. Resultado completo registrado em
+`specs/005-cliente-360-operacional/tasks.md` ("Decisões de implementação").
 
 ## Alternativas consideradas
 

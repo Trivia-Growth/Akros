@@ -14,55 +14,55 @@
 --    06-rls-participantes/09-a02).
 
 INSERT INTO auth.users (id) VALUES
-  ('e1111111-1111-1111-1111-111111111111'),
-  ('e2222222-2222-2222-2222-222222222222');
+  ('e7111111-1111-1111-1111-111111111111'),
+  ('e7222222-2222-2222-2222-222222222222');
 
 INSERT INTO crm.clientes (id, nome, email, telefone, tipo_visto, case_manager)
-VALUES ('a1111111-1111-1111-1111-111111111111', 'Cliente Teste Papel', 'papel@example.com',
+VALUES ('a7111111-1111-1111-1111-111111111111', 'Cliente Teste Papel', 'papel@example.com',
         '11900000003', 'eb2-niw', 'Natalia');
 
 -- P1: aplicante, ativo durante todo o teste (cenarios 1-3).
 -- P2: familiar_apoio, ativo no cenario 5 até ser revogado no meio do proprio cenario.
 INSERT INTO crm.participantes (id, cliente_id, papel, sujeito_tipo, familiar_id, auth_user_id, nome_exibicao, email)
 VALUES
-  ('d1000000-0000-0000-0000-000000000001', 'a1111111-1111-1111-1111-111111111111', 'aplicante', 'titular', NULL,
-   'e1111111-1111-1111-1111-111111111111', 'Participante Aplicante', 'p1@example.com'),
-  ('d1000000-0000-0000-0000-000000000002', 'a1111111-1111-1111-1111-111111111111', 'familiar_apoio', 'familiar',
-   'fam-revogavel', 'e2222222-2222-2222-2222-222222222222', 'Participante Familiar', 'p2@example.com');
+  ('d7000000-0000-0000-0000-000000000001', 'a7111111-1111-1111-1111-111111111111', 'aplicante', 'titular', NULL,
+   'e7111111-1111-1111-1111-111111111111', 'Participante Aplicante', 'p1@example.com'),
+  ('d7000000-0000-0000-0000-000000000002', 'a7111111-1111-1111-1111-111111111111', 'familiar_apoio', 'familiar',
+   'fam-revogavel', 'e7222222-2222-2222-2222-222222222222', 'Participante Familiar', 'p2@example.com');
 
 INSERT INTO jornada.jornadas (id, cliente_id)
-VALUES ('b1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111');
+VALUES ('b7111111-1111-1111-1111-111111111111', 'a7111111-1111-1111-1111-111111111111');
 
 INSERT INTO jornada.fases (id, jornada_id, ordem, titulo, descricao, status)
 VALUES
-  ('c1111111-1111-1111-1111-111111111111', 'b1111111-1111-1111-1111-111111111111', 1,
+  ('c7111111-1111-1111-1111-111111111111', 'b7111111-1111-1111-1111-111111111111', 1,
    'Fase Liberada', 'Fase liberada para o portal', 'liberada'),
-  ('c2222222-2222-2222-2222-222222222222', 'b1111111-1111-1111-1111-111111111111', 2,
+  ('c7222222-2222-2222-2222-222222222222', 'b7111111-1111-1111-1111-111111111111', 2,
    'Fase Bloqueada', 'Fase ainda bloqueada', 'bloqueada');
 
 INSERT INTO jornada.etapas (id, fase_id, titulo, descricao, status, responsavel)
 VALUES
-  ('f1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111',
+  ('f7111111-1111-1111-1111-111111111111', 'c7111111-1111-1111-1111-111111111111',
    'Etapa da Fase Liberada', 'Descricao', 'pendente', 'cliente'),
-  ('f2222222-2222-2222-2222-222222222222', 'c2222222-2222-2222-2222-222222222222',
+  ('f7222222-2222-2222-2222-222222222222', 'c7222222-2222-2222-2222-222222222222',
    'Etapa da Fase Bloqueada', 'Descricao', 'pendente', 'cliente');
 
 INSERT INTO documentos.documentos (id, cliente_id, fase_id, nome, tipo, status, restrito_ao_papel, papel_dirigido)
 VALUES
-  ('11111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111',
-   'c1111111-1111-1111-1111-111111111111', 'Documento Nao Restrito', 'generico', 'pendente', false, NULL),
-  ('22222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111',
-   'c1111111-1111-1111-1111-111111111111', 'Documento Restrito ao Beneficiario', 'generico', 'pendente',
+  ('11111111-1111-1111-1111-111111111111', 'a7111111-1111-1111-1111-111111111111',
+   'c7111111-1111-1111-1111-111111111111', 'Documento Nao Restrito', 'generico', 'pendente', false, NULL),
+  ('22222222-2222-2222-2222-222222222222', 'a7111111-1111-1111-1111-111111111111',
+   'c7111111-1111-1111-1111-111111111111', 'Documento Restrito ao Beneficiario', 'generico', 'pendente',
    true, 'beneficiario');
 
 INSERT INTO crm.notas_internas (id, cliente_id, conteudo, autor_id)
-VALUES ('91111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111',
+VALUES ('91111111-1111-1111-1111-111111111111', 'a7111111-1111-1111-1111-111111111111',
         'Nota interna do caso', '99999999-9999-9999-9999-999999999999');
 
 -- ── 1. Participante ve documento NAO restrito do seu caso ───────────────────
 BEGIN;
   SET LOCAL ROLE authenticated;
-  SET LOCAL request.jwt.claims = '{"sub":"e1111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
+  SET LOCAL request.jwt.claims = '{"sub":"e7111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
   DO $$
   BEGIN
     ASSERT (SELECT count(*) FROM documentos.documentos WHERE id = '11111111-1111-1111-1111-111111111111') = 1,
@@ -74,7 +74,7 @@ COMMIT;
 --      listagem (RLS filtra igual, mas e o cenario mais facil de vazar por engano) ────────────
 BEGIN;
   SET LOCAL ROLE authenticated;
-  SET LOCAL request.jwt.claims = '{"sub":"e1111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
+  SET LOCAL request.jwt.claims = '{"sub":"e7111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
   DO $$
   BEGIN
     ASSERT (SELECT count(*) FROM documentos.documentos WHERE id = '22222222-2222-2222-2222-222222222222') = 0,
@@ -86,14 +86,14 @@ COMMIT;
 --      etapa fica escondida, para o cliente saber que a fase existe e esta bloqueada) ─────────
 BEGIN;
   SET LOCAL ROLE authenticated;
-  SET LOCAL request.jwt.claims = '{"sub":"e1111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
+  SET LOCAL request.jwt.claims = '{"sub":"e7111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
   DO $$
   BEGIN
-    ASSERT (SELECT count(*) FROM jornada.etapas WHERE id = 'f2222222-2222-2222-2222-222222222222') = 0,
+    ASSERT (SELECT count(*) FROM jornada.etapas WHERE id = 'f7222222-2222-2222-2222-222222222222') = 0,
       'participante NAO deveria ver etapa de fase bloqueada';
-    ASSERT (SELECT count(*) FROM jornada.etapas WHERE id = 'f1111111-1111-1111-1111-111111111111') = 1,
+    ASSERT (SELECT count(*) FROM jornada.etapas WHERE id = 'f7111111-1111-1111-1111-111111111111') = 1,
       'participante deveria ver etapa de fase liberada (controle positivo)';
-    ASSERT (SELECT count(*) FROM jornada.fases WHERE id = 'c2222222-2222-2222-2222-222222222222') = 1,
+    ASSERT (SELECT count(*) FROM jornada.fases WHERE id = 'c7222222-2222-2222-2222-222222222222') = 1,
       'a FASE bloqueada em si deveria ser visivel (so a etapa dela e escondida)';
   END $$;
 COMMIT;
@@ -105,13 +105,13 @@ COMMIT;
 --      que "vazio". Os dois desfechos (erro ou zero linhas) contam como "participante nao ve". ─
 BEGIN;
   SET LOCAL ROLE authenticated;
-  SET LOCAL request.jwt.claims = '{"sub":"e1111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
+  SET LOCAL request.jwt.claims = '{"sub":"e7111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
   DO $$
   DECLARE v_count integer;
   BEGIN
     BEGIN
       SELECT count(*) INTO v_count FROM crm.notas_internas
-      WHERE cliente_id = 'a1111111-1111-1111-1111-111111111111';
+      WHERE cliente_id = 'a7111111-1111-1111-1111-111111111111';
       ASSERT v_count = 0,
         'participante NAO deveria ver nenhuma nota interna, mesmo filtrando pelo proprio cliente_id';
     EXCEPTION WHEN insufficient_privilege THEN
@@ -125,7 +125,7 @@ COMMIT;
 --     do proprio caso normalmente.
 BEGIN;
   SET LOCAL ROLE authenticated;
-  SET LOCAL request.jwt.claims = '{"sub":"e2222222-2222-2222-2222-222222222222","app_metadata":{"role":"cliente"}}';
+  SET LOCAL request.jwt.claims = '{"sub":"e7222222-2222-2222-2222-222222222222","app_metadata":{"role":"cliente"}}';
   DO $$
   BEGIN
     ASSERT (SELECT count(*) FROM documentos.documentos WHERE id = '11111111-1111-1111-1111-111111111111') = 1,
@@ -137,13 +137,13 @@ COMMIT;
 --     pra UPDATE direto de teste (nao e o fluxo de producao, que seria via Edge Function).
 UPDATE crm.participantes
   SET estado = 'revogado', revogado_em = now()
-  WHERE id = 'd1000000-0000-0000-0000-000000000002';
+  WHERE id = 'd7000000-0000-0000-0000-000000000002';
 
 -- 5c. Depois da revogacao: a mesma consulta, pelo mesmo participante, retorna vazio -- prova que
 --     a leitura some, nao so que nunca existiu.
 BEGIN;
   SET LOCAL ROLE authenticated;
-  SET LOCAL request.jwt.claims = '{"sub":"e2222222-2222-2222-2222-222222222222","app_metadata":{"role":"cliente"}}';
+  SET LOCAL request.jwt.claims = '{"sub":"e7222222-2222-2222-2222-222222222222","app_metadata":{"role":"cliente"}}';
   DO $$
   BEGIN
     ASSERT (SELECT count(*) FROM documentos.documentos WHERE id = '11111111-1111-1111-1111-111111111111') = 0,

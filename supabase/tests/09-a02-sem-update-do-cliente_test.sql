@@ -21,40 +21,40 @@
 -- de qualquer prova rodar -- nao e so defensivo, e o que faz crm.meu_cliente_id() resolver o
 -- cliente certo via auth_user_id = auth.uid(), em vez do UPDATE ser negado por motivo errado
 -- (cliente_id = NULL nunca bate com nada, o que provaria vazio, nao que a RLS bloqueou).
-INSERT INTO auth.users (id) VALUES ('e1111111-1111-1111-1111-111111111111');
+INSERT INTO auth.users (id) VALUES ('e9111111-1111-1111-1111-111111111111');
 
 INSERT INTO crm.clientes (id, auth_user_id, nome, email, telefone, tipo_visto, case_manager)
-VALUES ('a1111111-1111-1111-1111-111111111111', 'e1111111-1111-1111-1111-111111111111',
+VALUES ('a9111111-1111-1111-1111-111111111111', 'e9111111-1111-1111-1111-111111111111',
         'Cliente Teste A-02', 'clientea02@example.com', '11900000001', 'eb2-niw', 'Natalia');
 
 INSERT INTO jornada.jornadas (id, cliente_id)
-VALUES ('b1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111');
+VALUES ('b9111111-1111-1111-1111-111111111111', 'a9111111-1111-1111-1111-111111111111');
 
 INSERT INTO jornada.fases (id, jornada_id, ordem, titulo, descricao, status)
-VALUES ('c1111111-1111-1111-1111-111111111111', 'b1111111-1111-1111-1111-111111111111',
+VALUES ('c9111111-1111-1111-1111-111111111111', 'b9111111-1111-1111-1111-111111111111',
         1, 'Fase Teste', 'Descricao da fase teste', 'liberada');
 
 INSERT INTO jornada.etapas (id, fase_id, titulo, descricao, status, responsavel)
-VALUES ('d1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111',
+VALUES ('d9111111-1111-1111-1111-111111111111', 'c9111111-1111-1111-1111-111111111111',
         'Etapa Teste', 'Descricao da etapa teste', 'pendente', 'cliente');
 
 INSERT INTO documentos.documentos (id, cliente_id, nome, tipo, status)
-VALUES ('e1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111',
+VALUES ('e9111111-1111-1111-1111-111111111111', 'a9111111-1111-1111-1111-111111111111',
         'Documento Teste', 'passaporte', 'enviado');
 
 INSERT INTO pagamentos.pagamentos (id, cliente_id, descricao, valor, moeda, status, vencimento, tipo)
-VALUES ('f1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111',
+VALUES ('f9111111-1111-1111-1111-111111111111', 'a9111111-1111-1111-1111-111111111111',
         'Pagamento Teste', 1000.00, 'USD', 'pendente', '2026-12-01', 'entrada');
 
 -- ── 1. Cliente NAO aprova o proprio documento por UPDATE direto ─────────────
 BEGIN;
   SET LOCAL ROLE authenticated;
-  SET LOCAL request.jwt.claims = '{"sub":"e1111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
+  SET LOCAL request.jwt.claims = '{"sub":"e9111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
   DO $$
   BEGIN
     BEGIN
       UPDATE documentos.documentos SET status = 'aprovado'
-      WHERE id = 'e1111111-1111-1111-1111-111111111111';
+      WHERE id = 'e9111111-1111-1111-1111-111111111111';
       ASSERT false, 'cliente NAO pode aprovar o proprio documento por UPDATE direto';
     EXCEPTION WHEN insufficient_privilege THEN
       NULL; -- esperado: 0018 revoga GRANT UPDATE de authenticated em documentos.documentos
@@ -66,19 +66,19 @@ COMMIT;
 -- Um UPDATE bloqueado sem releitura nao prova nada (convencao do projeto, ver 0005/E13-S01..S03).
 DO $$
 BEGIN
-  ASSERT (SELECT status FROM documentos.documentos WHERE id = 'e1111111-1111-1111-1111-111111111111')
+  ASSERT (SELECT status FROM documentos.documentos WHERE id = 'e9111111-1111-1111-1111-111111111111')
     = 'enviado', 'status do documento NAO deveria ter mudado';
 END $$;
 
 -- ── 2. Cliente NAO marca o proprio pagamento como pago, nem muda o valor ────
 BEGIN;
   SET LOCAL ROLE authenticated;
-  SET LOCAL request.jwt.claims = '{"sub":"e1111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
+  SET LOCAL request.jwt.claims = '{"sub":"e9111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
   DO $$
   BEGIN
     BEGIN
       UPDATE pagamentos.pagamentos SET status = 'pago', valor = 1.00
-      WHERE id = 'f1111111-1111-1111-1111-111111111111';
+      WHERE id = 'f9111111-1111-1111-1111-111111111111';
       ASSERT false, 'cliente NAO pode marcar o proprio pagamento como pago nem mudar o valor';
     EXCEPTION WHEN insufficient_privilege THEN
       NULL; -- esperado: 0018 revoga GRANT UPDATE de authenticated em pagamentos.pagamentos
@@ -88,21 +88,21 @@ COMMIT;
 
 DO $$
 BEGIN
-  ASSERT (SELECT status FROM pagamentos.pagamentos WHERE id = 'f1111111-1111-1111-1111-111111111111')
+  ASSERT (SELECT status FROM pagamentos.pagamentos WHERE id = 'f9111111-1111-1111-1111-111111111111')
     = 'pendente', 'status do pagamento NAO deveria ter mudado';
-  ASSERT (SELECT valor FROM pagamentos.pagamentos WHERE id = 'f1111111-1111-1111-1111-111111111111')
+  ASSERT (SELECT valor FROM pagamentos.pagamentos WHERE id = 'f9111111-1111-1111-1111-111111111111')
     = 1000.00, 'valor do pagamento NAO deveria ter mudado';
 END $$;
 
 -- ── 3. Cliente NAO conclui a propria etapa por UPDATE direto ────────────────
 BEGIN;
   SET LOCAL ROLE authenticated;
-  SET LOCAL request.jwt.claims = '{"sub":"e1111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
+  SET LOCAL request.jwt.claims = '{"sub":"e9111111-1111-1111-1111-111111111111","app_metadata":{"role":"cliente"}}';
   DO $$
   BEGIN
     BEGIN
       UPDATE jornada.etapas SET status = 'concluida'
-      WHERE id = 'd1111111-1111-1111-1111-111111111111';
+      WHERE id = 'd9111111-1111-1111-1111-111111111111';
       ASSERT false, 'cliente NAO pode concluir a propria etapa por UPDATE direto';
     EXCEPTION WHEN insufficient_privilege THEN
       NULL; -- esperado: 0018 revoga GRANT UPDATE de authenticated em jornada.etapas
@@ -112,7 +112,7 @@ COMMIT;
 
 DO $$
 BEGIN
-  ASSERT (SELECT status FROM jornada.etapas WHERE id = 'd1111111-1111-1111-1111-111111111111')
+  ASSERT (SELECT status FROM jornada.etapas WHERE id = 'd9111111-1111-1111-1111-111111111111')
     = 'pendente', 'status da etapa NAO deveria ter mudado';
 END $$;
 
@@ -126,7 +126,7 @@ BEGIN;
   BEGIN
     BEGIN
       UPDATE documentos.documentos SET status = 'aprovado'
-      WHERE id = 'e1111111-1111-1111-1111-111111111111';
+      WHERE id = 'e9111111-1111-1111-1111-111111111111';
       ASSERT false, 'admin TAMBEM nao pode aprovar documento por UPDATE direto (0018 e intencional)';
     EXCEPTION WHEN insufficient_privilege THEN
       NULL; -- esperado
@@ -141,7 +141,7 @@ BEGIN;
   BEGIN
     BEGIN
       UPDATE pagamentos.pagamentos SET status = 'pago', valor = 1.00
-      WHERE id = 'f1111111-1111-1111-1111-111111111111';
+      WHERE id = 'f9111111-1111-1111-1111-111111111111';
       ASSERT false, 'admin TAMBEM nao pode marcar pagamento como pago por UPDATE direto (0018 e intencional)';
     EXCEPTION WHEN insufficient_privilege THEN
       NULL; -- esperado
@@ -156,7 +156,7 @@ BEGIN;
   BEGIN
     BEGIN
       UPDATE jornada.etapas SET status = 'concluida'
-      WHERE id = 'd1111111-1111-1111-1111-111111111111';
+      WHERE id = 'd9111111-1111-1111-1111-111111111111';
       ASSERT false, 'admin TAMBEM nao pode concluir etapa por UPDATE direto (0018 e intencional)';
     EXCEPTION WHEN insufficient_privilege THEN
       NULL; -- esperado
@@ -167,13 +167,13 @@ COMMIT;
 -- Releitura final — prova que nenhuma das tentativas de admin acima mudou nada.
 DO $$
 BEGIN
-  ASSERT (SELECT status FROM documentos.documentos WHERE id = 'e1111111-1111-1111-1111-111111111111')
+  ASSERT (SELECT status FROM documentos.documentos WHERE id = 'e9111111-1111-1111-1111-111111111111')
     = 'enviado', 'status do documento NAO deveria ter mudado (tentativa de admin)';
-  ASSERT (SELECT status FROM pagamentos.pagamentos WHERE id = 'f1111111-1111-1111-1111-111111111111')
+  ASSERT (SELECT status FROM pagamentos.pagamentos WHERE id = 'f9111111-1111-1111-1111-111111111111')
     = 'pendente', 'status do pagamento NAO deveria ter mudado (tentativa de admin)';
-  ASSERT (SELECT valor FROM pagamentos.pagamentos WHERE id = 'f1111111-1111-1111-1111-111111111111')
+  ASSERT (SELECT valor FROM pagamentos.pagamentos WHERE id = 'f9111111-1111-1111-1111-111111111111')
     = 1000.00, 'valor do pagamento NAO deveria ter mudado (tentativa de admin)';
-  ASSERT (SELECT status FROM jornada.etapas WHERE id = 'd1111111-1111-1111-1111-111111111111')
+  ASSERT (SELECT status FROM jornada.etapas WHERE id = 'd9111111-1111-1111-1111-111111111111')
     = 'pendente', 'status da etapa NAO deveria ter mudado (tentativa de admin)';
 END $$;
 
