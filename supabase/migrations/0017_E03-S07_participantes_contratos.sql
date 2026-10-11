@@ -19,6 +19,9 @@
 --           DROP FUNCTION IF EXISTS crm.e_admin();
 --           DROP TABLE IF EXISTS crm.participantes, crm.contrato_condicoes, crm.contratos,
 --             crm.organizacoes CASCADE;
+--           (as policies, incluindo "participante_ve_a_propria_linha" e
+--           "participante_ve_participantes_do_caso", caem junto com o DROP TABLE CASCADE acima
+--           -- nao precisam de DROP POLICY explicito)
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────
 -- Tabelas (T008) — ordem: organizacoes, contratos, contrato_condicoes, participantes
@@ -113,17 +116,13 @@ AS $$
   SELECT auth.jwt() -> 'app_metadata' ->> 'role' = 'admin';
 $$;
 
--- RISCO CONHECIDO, nao verificado contra Postgres real nesta sessao (ver T020 e relatorio desta
--- task): esta funcao consulta crm.participantes, e crm.participantes tem a policy
--- "participante_ve_participantes_do_caso" (mais abaixo) que chama crm.participo_do_caso(), que
--- chama esta funcao. Avaliar aquela policy pode exigir reavaliar a RLS de crm.participantes
--- dentro de si mesma -- o cenario classico de "infinite recursion detected in policy for
--- relation" do Postgres. A correcao padrao (Supabase RLS guide) para esse padrao e
--- SECURITY DEFINER especificamente nesta leitura (ela só devolve a participacao do proprio
--- auth.uid(), nunca de outro usuario -- quebraria o ciclo sem conceder privilegio novo). Nao
--- aplicada aqui porque o brief desta task exige "sem SECURITY DEFINER" (mesmo criterio de
--- crm.meu_cliente_id()) e essa e uma decisao de seguranca que nao deve ser tomada sem revisao
--- humana contra um Postgres real. Reportado como concern nesta task.
+-- Esta funcao consulta crm.participantes, que tem FORCE ROW LEVEL SECURITY -- sem cuidado,
+-- entraria em "infinite recursion detected in policy for relation participantes" (a policy
+-- "participante_ve_participantes_do_caso" chama crm.participo_do_caso(), que chama esta funcao,
+-- que consulta crm.participantes de novo). A recursao e cortada pela policy
+-- "participante_ve_a_propria_linha" (mais abaixo): o filtro desta funcao
+-- (auth_user_id = auth.uid()) e exatamente o predicado direto daquela policy, que resolve TRUE
+-- sem chamar crm.participo_do_caso() de novo -- a leitura das PROPRIAS linhas nunca recursa.
 CREATE FUNCTION crm.meus_casos()
 RETURNS setof uuid
 LANGUAGE sql
@@ -227,6 +226,18 @@ CREATE POLICY "participante_ve_organizacao_do_caso" ON crm.organizacoes
 -- ── crm.participantes ───────────────────────────────────────────────────────────────────────
 CREATE POLICY "admin_ve_todos_participantes" ON crm.participantes
   FOR SELECT USING (crm.e_admin());
+
+-- Base nao-recursiva para a RLS de crm.participantes: crm.meus_casos() (chamada por
+-- crm.participo_do_caso(), usada na policy seguinte) consulta esta tabela filtrando por
+-- auth_user_id = auth.uid(). Sem esta policy, a UNICA policy de nao-admin seria a de baixo, que
+-- chama de volta crm.participo_do_caso() -- sem um disjunto direto que resolva TRUE sem recursar,
+-- essa consulta interna reentraria na mesma RLS indefinidamente ("infinite recursion detected in
+-- policy for relation participantes"). Com este predicado direto, a consulta interna de
+-- crm.meus_casos() (que filtra exatamente por auth_user_id = auth.uid()) resolve aqui, sem
+-- precisar avaliar o outro disjunto. Tambem e correta por si so: participante sempre ve a
+-- propria linha, mesmo em um cenario onde crm.participo_do_caso() nao alcancasse por algum motivo.
+CREATE POLICY "participante_ve_a_propria_linha" ON crm.participantes
+  FOR SELECT USING (auth_user_id = auth.uid());
 
 -- LIMITACAO: e-mail do participante visivel aos demais participantes do caso (nome e papel sao
 -- publicos dentro do caso por design, mas o Postgres RLS nao faz column-level masking -- nao e
