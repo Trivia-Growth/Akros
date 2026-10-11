@@ -8,6 +8,12 @@ alwaysApply: false
 
 ## Agora
 
+- **Cliente 360 operacional (E03-S07): implementação iniciada em 2026-10-11.** Branch
+  `feat/E03-S07-cliente-360-operacional`, worktree própria. Spec, refinamento, plano,
+  `design-tecnico.md` (nomes de tabela/policy/função/Edge Function) e `tasks.md` (140 tarefas,
+  fases 1–11) em `specs/005-cliente-360-operacional/`; ADR-0018 (participantes por papel) e
+  ADR-0019 (OneDrive OAuth delegado) aceitos. Execução via subagent-driven-development, fase por
+  fase a partir do Setup/Foundational. Fase 11 (rollout) é exclusiva do `@devops`.
 - **Data:** 2026-10-01
 - **Story ativa:** `E00-S07` 🟨 — Spec Kit como SDD + gates enxutos, na branch
   `chore/E00-S07-spec-kit-sdd` (worktree `~/GitHub/Akros-sdd`). Implementada e verificada
