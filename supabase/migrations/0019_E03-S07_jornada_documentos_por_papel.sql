@@ -162,7 +162,7 @@ CREATE TABLE documentos.decisoes_revisao (
 -- automaticamente. Append-only (mesmo criterio de audit.eventos, 0008: "nunca conceder
 -- UPDATE/DELETE a ninguem" via GRANT, nao via policy) exige revogar explicitamente aqui, ou o
 -- default privilege silenciosamente destrancaria a tabela so para service_role.
-REVOKE UPDATE, DELETE ON documentos.decisoes_revisao FROM service_role;
+REVOKE UPDATE, DELETE, TRUNCATE ON documentos.decisoes_revisao FROM service_role;
 
 ALTER TABLE documentos.decisoes_revisao ENABLE ROW LEVEL SECURITY;
 ALTER TABLE documentos.decisoes_revisao FORCE ROW LEVEL SECURITY;
@@ -184,13 +184,14 @@ CREATE TABLE crm.notas_internas (
 ALTER TABLE crm.notas_internas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE crm.notas_internas FORCE ROW LEVEL SECURITY;
 
--- Admin-only por design: zero GRANT a `authenticated` (nem SELECT) -- mais restritivo que o
--- padrao "GRANT SELECT a authenticated + policy so-admin" usado em crm.contratos (0017,
--- SPEC_DEVIATION la documentada). Aqui a nota interna nunca deve ser alcancavel nem por uma
--- sessao autenticada com claim admin via PostgREST direto -- so service_role (Edge Function de
--- back-office) le/escreve. A policy abaixo documenta a intencao e vale se um GRANT SELECT a
--- authenticated for adicionado no futuro; sem ele, authenticated recebe insufficient_privilege
--- antes mesmo da RLS -- "nunca no DTO do portal" levado ao limite.
+-- Admin-only, mesmo padrao de crm.contratos (0017, SPEC_DEVIATION la documentada): GRANT SELECT
+-- a authenticated (nao INSERT/UPDATE/DELETE) + policy so-admin, para que admin leia pelo cliente
+-- Supabase normal (nao so por service_role) e participante receba [] em vez de erro de
+-- privilegio. Correcao em 2026-10-11 (revisao adversarial): a versao anterior deste comentario
+-- previa zero GRANT a authenticated, o que deixava a policy abaixo inalcancavel mesmo para
+-- admin via PostgREST -- "nunca no DTO do portal" e garantido pela ausencia de policy de
+-- participante, nao pela ausencia de GRANT.
+GRANT SELECT ON crm.notas_internas TO authenticated;
 GRANT ALL ON crm.notas_internas TO service_role;
 
 CREATE POLICY "admin_ve_todas_notas_internas" ON crm.notas_internas
