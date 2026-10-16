@@ -1,6 +1,8 @@
-// caso-comandos.test.ts — E03-S07 (T032). Deno test, só fakes: nenhum teste aqui toca Postgres
-// real (a prova contra Postgres real está em task-031-032-report.md, rodada manualmente contra
-// `crm_test`). Mesmo estilo de `_shared/playground.test.ts`.
+// caso-comandos.test.ts — E03-S07 (T032, estendido em T046-T048 para
+// convidar_participante/revogar_participante/solicitar_documento). Deno test, só fakes: nenhum
+// teste aqui toca Postgres real (a prova contra Postgres real das cinco ações está em
+// task-031-032-report.md e task-046-048-report.md, rodada manualmente contra `crm_test`). Mesmo
+// estilo de `_shared/playground.test.ts`.
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { HttpError } from "../_shared/auth.ts";
 import {
@@ -12,6 +14,9 @@ import {
 const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
 const CLIENTE_ID = "22222222-2222-4222-8222-222222222222";
 const CONTRATO_ID = "33333333-3333-4333-8333-333333333333";
+const PARTICIPANTE_ID = "44444444-4444-4444-8444-444444444444";
+const FASE_ID = "55555555-5555-4555-8555-555555555555";
+const OUTRO_PARTICIPANTE_ID = "66666666-6666-4666-8666-666666666666";
 
 interface Espiao {
   rpc: number;
@@ -82,6 +87,35 @@ const PREPARAR_CASO = {
   contratoId: CONTRATO_ID,
   levantamentoEstado: "conferido",
   idempotencyKey: "chave-2",
+};
+
+const CONVIDAR_PARTICIPANTE = {
+  acao: "convidar_participante",
+  clienteId: CLIENTE_ID,
+  papel: "aplicante",
+  sujeitoTipo: "titular",
+  nomeExibicao: "Fulano Aplicante",
+  email: "fulano@teste.com",
+  idempotencyKey: "chave-3",
+};
+
+const REVOGAR_PARTICIPANTE = {
+  acao: "revogar_participante",
+  participanteId: PARTICIPANTE_ID,
+  idempotencyKey: "chave-4",
+};
+
+const SOLICITAR_DOCUMENTO = {
+  acao: "solicitar_documento",
+  clienteId: CLIENTE_ID,
+  faseId: FASE_ID,
+  requisitoTipo: "passaporte",
+  sujeitoTipo: "participante",
+  sujeitoParticipanteId: PARTICIPANTE_ID,
+  titulo: "Envie seu passaporte",
+  prazoEm: "2026-12-01",
+  instrucao: "Enviar cópia colorida",
+  idempotencyKey: "chave-5",
 };
 
 Deno.test("CSRF ausente é 401, antes de autenticar; RPC nunca chamada", async () => {
@@ -237,4 +271,124 @@ Deno.test("acao desconhecida (fora da união discriminada) é 422", async () => 
   const r = await h(req({ acao: "cadastrar_cobranca", idempotencyKey: "x" }));
   assertEquals(r.status, 422);
   assertEquals(e.rpc, 0);
+});
+
+// ── convidar_participante (T046-T048, US6/ADR-0018) ─────────────────────────────────────────
+
+Deno.test("convidar_participante: papel fora do enum Zod é 422 antes de chegar na RPC", async () => {
+  const { h, e } = montar();
+  const r = await h(req({ ...CONVIDAR_PARTICIPANTE, papel: "advogado" }));
+  assertEquals(r.status, 422);
+  assertEquals(e.rpc, 0);
+});
+
+Deno.test(
+  "convidar_participante: RPC recusa com 22023 (papel fora do conjunto do programa) → 422, mensagem genérica",
+  async () => {
+    const { h } = montar({
+      rpcErro: { code: "22023", message: "papel fora do conjunto do programa" },
+    });
+    const r = await h(req(CONVIDAR_PARTICIPANTE));
+    assertEquals(r.status, 422);
+    const corpo = await r.json();
+    assertEquals(corpo, { erro: "Dados inválidos para esta operação" });
+  },
+);
+
+Deno.test("convidar_participante: fluxo de sucesso chama a RPC certa com parâmetros snake_case", async () => {
+  const { h, e } = montar({ rpcResultado: { id: "participante-novo", estado: "ativo", authUserId: null } });
+  const r = await h(req(CONVIDAR_PARTICIPANTE));
+  assertEquals(r.status, 201);
+  assertEquals(e.chamadas.length, 1);
+  assertEquals(e.chamadas[0].nome, "convidar_participante");
+  assertEquals(e.chamadas[0].params, {
+    p_cliente_id: CLIENTE_ID,
+    p_papel: "aplicante",
+    p_sujeito_tipo: "titular",
+    p_familiar_id: null,
+    p_organizacao_id: null,
+    p_nome_exibicao: "Fulano Aplicante",
+    p_email: "fulano@teste.com",
+    p_autor_id: ADMIN_ID, // nunca aceito do corpo — sempre o userId da sessão
+  });
+});
+
+// ── revogar_participante (T046-T048, FR-020) ────────────────────────────────────────────────
+
+Deno.test("revogar_participante: fake de RPC confirma que só participanteId é passado — nada mais", async () => {
+  const { h, e } = montar({ rpcResultado: { id: PARTICIPANTE_ID, estado: "revogado" } });
+  const r = await h(req(REVOGAR_PARTICIPANTE));
+  assertEquals(r.status, 200);
+  assertEquals(e.chamadas.length, 1);
+  assertEquals(e.chamadas[0].nome, "revogar_participante");
+  assertEquals(e.chamadas[0].params, {
+    p_participante_id: PARTICIPANTE_ID,
+    p_autor_id: ADMIN_ID,
+  });
+  // Nenhum outro campo (ex.: clienteId, papel) chega à RPC — revogação é só por participante,
+  // nunca por caso/papel (não afeta os demais participantes do mesmo caso).
+  assertEquals(Object.keys(e.chamadas[0].params).sort(), ["p_autor_id", "p_participante_id"]);
+});
+
+Deno.test("revogar_participante: participanteId que não é UUID é 422, RPC nunca chamada", async () => {
+  const { h, e } = montar();
+  const r = await h(req({ ...REVOGAR_PARTICIPANTE, participanteId: "não-é-uuid" }));
+  assertEquals(r.status, 422);
+  assertEquals(e.rpc, 0);
+});
+
+// ── solicitar_documento (T046-T048, FR-016/FR-017/FR-018) ───────────────────────────────────
+
+Deno.test(
+  "solicitar_documento: corpo com papelDirigido/restrito/envioConjunto é 422 (.strict() recusa — " +
+    "essas marcas só podem vir do catálogo do programa, nunca do corpo da requisição)",
+  async () => {
+    const { h, e } = montar();
+    const r1 = await h(req({ ...SOLICITAR_DOCUMENTO, papelDirigido: "aplicante" }));
+    assertEquals(r1.status, 422);
+    const r2 = await h(req({ ...SOLICITAR_DOCUMENTO, restrito: true }));
+    assertEquals(r2.status, 422);
+    const r3 = await h(req({ ...SOLICITAR_DOCUMENTO, envioConjunto: true }));
+    assertEquals(r3.status, 422);
+    assertEquals(e.rpc, 0);
+  },
+);
+
+Deno.test(
+  "solicitar_documento: sujeito de outro caso — RPC fake retorna 22023 → 422",
+  async () => {
+    const { h } = montar({
+      rpcErro: { code: "22023", message: "sujeito nao pertence ao caso" },
+    });
+    const r = await h(req({ ...SOLICITAR_DOCUMENTO, sujeitoParticipanteId: OUTRO_PARTICIPANTE_ID }));
+    assertEquals(r.status, 422);
+  },
+);
+
+Deno.test("solicitar_documento: fluxo de sucesso chama a RPC certa com parâmetros snake_case corretos", async () => {
+  const { h, e } = montar({ rpcResultado: { id: "documento-novo", status: "pendente" } });
+  const r = await h(req(SOLICITAR_DOCUMENTO));
+  assertEquals(r.status, 201);
+  assertEquals(e.chamadas.length, 1);
+  assertEquals(e.chamadas[0].nome, "solicitar_documento");
+  assertEquals(e.chamadas[0].params, {
+    p_cliente_id: CLIENTE_ID,
+    p_fase_id: FASE_ID,
+    p_requisito_tipo: "passaporte",
+    p_sujeito_tipo: "participante",
+    p_sujeito_participante_id: PARTICIPANTE_ID,
+    p_sujeito_familiar_id: null,
+    p_titulo: "Envie seu passaporte",
+    p_prazo_em: "2026-12-01",
+    p_instrucao: "Enviar cópia colorida",
+    p_autor_id: ADMIN_ID,
+  });
+});
+
+Deno.test("solicitar_documento sem prazoEm/instrucao: p_prazo_em e p_instrucao vão null (nunca omitidos)", async () => {
+  const { h, e } = montar({ rpcResultado: { id: "documento-novo" } });
+  const { prazoEm: _p, instrucao: _i, ...semOpcionais } = SOLICITAR_DOCUMENTO;
+  await h(req({ ...semOpcionais, idempotencyKey: "chave-outra-doc" }));
+  assertEquals(e.chamadas[0].params.p_prazo_em, null);
+  assertEquals(e.chamadas[0].params.p_instrucao, null);
 });

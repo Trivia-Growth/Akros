@@ -6,11 +6,11 @@
 // arquivo toca Postgres real — isso é feito manualmente contra `crm_test` (ver task-031-032-
 // report.md), não pelo Deno test.
 //
-// Só `registrar_contrato` e `preparar_caso` nesta task (T031/T032). As outras seis ações da
-// tabela de design-tecnico.md §2 (`convidar_participante`, `revogar_participante`,
-// `solicitar_documento`, `vincular_pasta`, `registrar_nota`, `cadastrar_cobranca`) são de tasks
-// futuras (T046/T056/T092) — o `switch` abaixo já está em forma de acomodar casos novos sem
-// reescrever os dois já feitos.
+// `registrar_contrato`/`preparar_caso` (T031/T032) e, a partir desta task,
+// `convidar_participante`/`revogar_participante`/`solicitar_documento` (T046-T048, US6,
+// ADR-0018, migration 0024). As três ações restantes da tabela de design-tecnico.md §2
+// (`vincular_pasta`, `registrar_nota`, `cadastrar_cobranca`) são de tasks futuras (T056/T092) —
+// o `switch` abaixo já está em forma de acomodar casos novos sem reescrever os já feitos.
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { HttpError } from "./auth.ts";
 import { corsHeaders } from "./cors.ts";
@@ -57,11 +57,75 @@ export const PrepararCasoSchema = z
   })
   .strict();
 
-// União discriminada por `acao` — novas ações futuras (T046/T056/T092) entram como mais um
-// elemento desta lista, sem tocar nos dois `case` já implementados no switch abaixo.
+// Espelha `PapelParticipante` (apps/web/src/shared/contracts/caso.ts) — declarado inline porque
+// esta é uma função Deno (Edge Function), não importa de `apps/web`. Mudar este conjunto exige
+// mudar os dois lugares (nenhum import cruzado entre os dois runtimes).
+const PapelParticipanteSchema = z.enum([
+  "aplicante",
+  "beneficiario",
+  "organizacao_aplicante",
+  "familiar_apoio",
+]);
+
+export const ConvidarParticipanteSchema = z
+  .object({
+    acao: z.literal("convidar_participante"),
+    clienteId: z.string().uuid(),
+    papel: PapelParticipanteSchema,
+    // Espelha `crm.participantes.sujeito_tipo` (migration 0017) — conjunto distinto do
+    // `SujeitoDocumento` usado em `solicitarDocumento` (abaixo), que espelha
+    // `documentos.documentos.sujeito_tipo` (0019): são colunas de tabelas diferentes, com
+    // valores permitidos diferentes ("organizacao" aqui, "caso" lá).
+    sujeitoTipo: z.enum(["titular", "familiar", "organizacao"]),
+    familiarId: z.string().min(1).optional(),
+    organizacaoId: z.string().uuid().optional(),
+    nomeExibicao: z.string().min(1).max(200),
+    email: z.string().email().optional(),
+    idempotencyKey: z.string().min(1),
+  })
+  .strict();
+
+export const RevogarParticipanteSchema = z
+  .object({
+    acao: z.literal("revogar_participante"),
+    participanteId: z.string().uuid(),
+    idempotencyKey: z.string().min(1),
+  })
+  .strict();
+
+export const SolicitarDocumentoSchema = z
+  .object({
+    acao: z.literal("solicitar_documento"),
+    clienteId: z.string().uuid(),
+    faseId: z.string().uuid(),
+    requisitoTipo: z.string().min(1),
+    // Espelha `SujeitoDocumento` (apps/web/src/shared/contracts/caso.ts) /
+    // `documentos.documentos.sujeito_tipo` (migration 0019).
+    sujeitoTipo: z.enum(["caso", "participante", "familiar"]),
+    sujeitoParticipanteId: z.string().uuid().optional(),
+    sujeitoFamiliarId: z.string().min(1).optional(),
+    titulo: z.string().min(1).max(200),
+    prazoEm: z.string().min(1).optional(), // ISO date — o CHECK/tipo da coluna valida de novo
+    instrucao: z.string().max(2000).optional(),
+    idempotencyKey: z.string().min(1),
+    // NUNCA adicione `papelDirigido`/`restrito`/`envioConjunto` aqui: essas três marcas são
+    // copiadas do catálogo do programa DENTRO da RPC (`crm.solicitar_documento`, migration
+    // 0024), nunca do corpo da requisição — design-tecnico.md §2 / contracts/operacoes.md
+    // ("marca de restrito é copiada do programa, não digitada livremente"). Se o schema
+    // aceitasse esses campos do body, quem chama a API poderia se auto-declarar não-restrita.
+    // `.strict()` abaixo também recusa esses campos como "não declarados", em dobro com a
+    // ausência deles aqui.
+  })
+  .strict();
+
+// União discriminada por `acao` — novas ações futuras (T056/T092) entram como mais um elemento
+// desta lista, sem tocar nos `case` já implementados no switch abaixo.
 export const EntradaCasoComandos = z.discriminatedUnion("acao", [
   RegistrarContratoSchema,
   PrepararCasoSchema,
+  ConvidarParticipanteSchema,
+  RevogarParticipanteSchema,
+  SolicitarDocumentoSchema,
 ]);
 export type EntradaCasoComandos = z.infer<typeof EntradaCasoComandos>;
 
@@ -84,7 +148,12 @@ export interface IOCasoComandos {
   autenticarAdmin(req: Request): Promise<{ userId: string }>;
   idempotencia: IOIdempotencia;
   rpc(
-    nome: "registrar_contrato" | "preparar_caso",
+    nome:
+      | "registrar_contrato"
+      | "preparar_caso"
+      | "convidar_participante"
+      | "revogar_participante"
+      | "solicitar_documento",
     params: Record<string, unknown>,
   ): Promise<RespostaRpc<unknown>>;
 }
@@ -108,10 +177,15 @@ function erroDeNegocio(error: ErroRpc): HttpError {
   return new HttpError(500, "Não foi possível concluir agora");
 }
 
-/** Status de sucesso por ação: `registrar_contrato` cria um recurso novo (201); `preparar_caso`
- *  cria ou atualiza uma jornada existente, então 200 — mesmo valor em replay de idempotência. */
+/** Status de sucesso por ação: `registrar_contrato`/`convidar_participante`/
+ *  `solicitar_documento` criam um recurso novo (201); `preparar_caso`/`revogar_participante`
+ *  criam-ou-atualizam ou atualizam um recurso existente, então 200 — mesmo valor em replay de
+ *  idempotência. */
 function statusDeSucesso(acao: EntradaCasoComandos["acao"]): number {
-  return acao === "registrar_contrato" ? 201 : 200;
+  if (acao === "registrar_contrato" || acao === "convidar_participante" || acao === "solicitar_documento") {
+    return 201;
+  }
+  return 200;
 }
 
 export function criarManipuladorCasoComandos(io: IOCasoComandos) {
@@ -183,6 +257,44 @@ export function criarManipuladorCasoComandos(io: IOCasoComandos) {
                 p_cliente_id: entrada.clienteId,
                 p_contrato_id: entrada.contratoId,
                 p_levantamento_estado: entrada.levantamentoEstado ?? null,
+                p_autor_id: userId,
+              });
+              if (error) throw erroDeNegocio(error);
+              return data;
+            }
+            case "convidar_participante": {
+              const { data, error } = await io.rpc("convidar_participante", {
+                p_cliente_id: entrada.clienteId,
+                p_papel: entrada.papel,
+                p_sujeito_tipo: entrada.sujeitoTipo,
+                p_familiar_id: entrada.familiarId ?? null,
+                p_organizacao_id: entrada.organizacaoId ?? null,
+                p_nome_exibicao: entrada.nomeExibicao,
+                p_email: entrada.email ?? null,
+                p_autor_id: userId,
+              });
+              if (error) throw erroDeNegocio(error);
+              return data;
+            }
+            case "revogar_participante": {
+              const { data, error } = await io.rpc("revogar_participante", {
+                p_participante_id: entrada.participanteId,
+                p_autor_id: userId,
+              });
+              if (error) throw erroDeNegocio(error);
+              return data;
+            }
+            case "solicitar_documento": {
+              const { data, error } = await io.rpc("solicitar_documento", {
+                p_cliente_id: entrada.clienteId,
+                p_fase_id: entrada.faseId,
+                p_requisito_tipo: entrada.requisitoTipo,
+                p_sujeito_tipo: entrada.sujeitoTipo,
+                p_sujeito_participante_id: entrada.sujeitoParticipanteId ?? null,
+                p_sujeito_familiar_id: entrada.sujeitoFamiliarId ?? null,
+                p_titulo: entrada.titulo,
+                p_prazo_em: entrada.prazoEm ?? null,
+                p_instrucao: entrada.instrucao ?? null,
                 p_autor_id: userId,
               });
               if (error) throw erroDeNegocio(error);
