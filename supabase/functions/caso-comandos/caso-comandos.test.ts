@@ -56,10 +56,10 @@ function montar(a: {
   return { h: criarManipuladorCasoComandos(io), e };
 }
 
-const req = (corpo: unknown) =>
+const req = (corpo: unknown, headersExtra: Record<string, string> = { "x-akros-csrf": "1" }) =>
   new Request("https://p.supabase.co/functions/v1/caso-comandos", {
     method: "POST",
-    headers: { Origin: "http://localhost:5173", Authorization: "Bearer token-de-teste" },
+    headers: { Origin: "http://localhost:5173", Authorization: "Bearer token-de-teste", ...headersExtra },
     body: typeof corpo === "string" ? corpo : JSON.stringify(corpo),
   });
 
@@ -83,6 +83,13 @@ const PREPARAR_CASO = {
   levantamentoEstado: "conferido",
   idempotencyKey: "chave-2",
 };
+
+Deno.test("CSRF ausente é 401, antes de autenticar; RPC nunca chamada", async () => {
+  const { h, e } = montar();
+  const r = await h(req(REGISTRAR_CONTRATO, {}));
+  assertEquals(r.status, 401);
+  assertEquals(e.rpc, 0);
+});
 
 Deno.test("chamador sem papel admin: 401/403, RPC nunca chamada", async () => {
   const a = montar({ admin: "401" });
@@ -139,6 +146,12 @@ Deno.test("RPC retorna erro simulado com code 22023: resposta HTTP é 422", asyn
   const { h } = montar({ rpcErro: { code: "22023", message: "contrato inexistente ou nao pertence ao cliente" } });
   const r = await h(req(PREPARAR_CASO));
   assertEquals(r.status, 422);
+});
+
+Deno.test("RPC retorna erro simulado com code 23505 (unique_violation): resposta HTTP é 409", async () => {
+  const { h } = montar({ rpcErro: { code: "23505", message: "duplicate key value violates unique constraint" } });
+  const r = await h(req(REGISTRAR_CONTRATO));
+  assertEquals(r.status, 409);
 });
 
 Deno.test("RPC retorna erro de banco sem code conhecido: 500 genérico, sem vazar a mensagem", async () => {

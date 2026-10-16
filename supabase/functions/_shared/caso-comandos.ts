@@ -14,6 +14,7 @@
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { HttpError } from "./auth.ts";
 import { corsHeaders } from "./cors.ts";
+import { requireCsrfHeader } from "./csrf.ts";
 import { comIdempotencia, type IOIdempotencia } from "./idempotencia.ts";
 
 const FN = "caso-comandos";
@@ -95,11 +96,15 @@ function json(corpo: unknown, status: number, cors: Record<string, string>, extr
   });
 }
 
-/** Mapeia o ERRCODE da guarda de papel/validação SQL (ver migration 0022) para status HTTP —
- *  nunca vaza a mensagem de constraint/erro de banco ao cliente (RFC 7807 sanitizado). */
+/** Mapeia o ERRCODE da guarda de papel/validação SQL (ver migrations 0022/0023) para status
+ *  HTTP — nunca vaza a mensagem de constraint/erro de banco ao cliente (RFC 7807 sanitizado). */
 function erroDeNegocio(error: ErroRpc): HttpError {
   if (error.code === "42501") return new HttpError(403, "Operação não autorizada");
   if (error.code === "22023") return new HttpError(422, "Dados inválidos para esta operação");
+  // unique_violation — ex.: dois admins registrando o primeiro contrato do mesmo cliente novo
+  // ao mesmo tempo (crm_contratos_um_ativo_por_cliente, 0023). "Vínculo conflitante", categoria
+  // 409 de design-tecnico.md §2 — não é 500 genérico, é um conflito real para o admin retentar.
+  if (error.code === "23505") return new HttpError(409, "Conflito: já existe um registro equivalente");
   return new HttpError(500, "Não foi possível concluir agora");
 }
 
@@ -129,6 +134,11 @@ export function criarManipuladorCasoComandos(io: IOCasoComandos) {
 
     const reqId = crypto.randomUUID().slice(0, 8);
     try {
+      // Mesma posição de playground.ts: logo no início do try, antes de autenticar — mesmo
+      // critério 2-por-2 já estabelecido no repositório para endpoint admin autenticado por
+      // Bearer token (agente-playground, integracoes-ia-salvar), independente da sessão usar
+      // cookie ou não.
+      requireCsrfHeader(req);
       // Nunca confia em identidade vinda do body — userId sempre resolvido pela sessão.
       const { userId } = await io.autenticarAdmin(req);
 
