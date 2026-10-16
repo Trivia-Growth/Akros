@@ -454,6 +454,13 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
+# caso-comandos (E03-S07): admin é validado dentro da função (Auth + role, via requireAdmin);
+# gateway aberto para o navegador conseguir o preflight CORS, mesmo critério de
+# integracoes-ia-salvar/agente-playground.
+[functions.caso-comandos]
+enabled = true
+verify_jwt = false
+
 # pg-delta is the schema diff engine for db diff / db pull / db remote commit.
 # Set enabled = false to fall back to the legacy migra engine.
 [experimental.pgdelta]

@@ -142,4 +142,8 @@ export const TETOS = {
   // recusar tráfego legítimo, e fail-closed: sem limitador, endpoint público grava no banco.
   "meta-whatsapp-webhook": { teto: 600, janelaSegundos: 60 },
   "meta-instagram-webhook": { teto: 600, janelaSegundos: 60 },
+  // Painel administrativo (E03-S07): registrar contrato/preparar caso são gravações pontuais de
+  // equipe, não tráfego de alto volume — teto baixo por hora, fail-closed (mesmo critério de
+  // "integracoes-ia-salvar": sem limitador, endpoint admin de escrita fica aberto).
+  "caso-comandos": { teto: 60, janelaSegundos: 3600 },
 } as const;
