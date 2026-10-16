@@ -13,6 +13,12 @@ export const programaEb2Niw: Programa = {
   categoria: "imigrante",
   sujeito: "individuo",
   versao: "1.0",
+  // E03-S07 (US6) / ADR-0018: aplicante e beneficiário são a mesma pessoa no EB-2 NIW;
+  // cônjuge pode participar como apoio, mas não é obrigatório.
+  papeis: [
+    { papel: "aplicante", obrigatorio: true },
+    { papel: "familiar_apoio", obrigatorio: false },
+  ],
   ativo: true,
   fasesTemplate: [
     {

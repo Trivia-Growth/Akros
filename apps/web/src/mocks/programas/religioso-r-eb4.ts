@@ -13,6 +13,12 @@ export const programaReligiosoREb4: Programa = {
   categoria: "imigrante",
   sujeito: "organizacao",
   versao: "1.0",
+  // E03-S07 (US6) / ADR-0018: a igreja é a aplicante, o indivíduo é o beneficiário — ambos
+  // obrigatórios, documentos pedidos a um e a outro.
+  papeis: [
+    { papel: "organizacao_aplicante", obrigatorio: true },
+    { papel: "beneficiario", obrigatorio: true },
+  ],
   ativo: true,
   fasesTemplate: [
     {

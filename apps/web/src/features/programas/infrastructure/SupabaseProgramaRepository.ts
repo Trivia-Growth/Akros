@@ -156,6 +156,12 @@ export function paraDominio(linha: LinhaProgramaSupabase): Programa {
     documentosExigidos: linha.documentos_exigidos.map((requisito, indice) =>
       paraRequisito(requisito, linha.id, fasesTemplate[0]?.id, indice),
     ),
+    // E03-S07 (US6)/ADR-0018: `programas.programas` ainda não tem coluna `papeis` no banco
+    // (fica para a task de infra desta fase); até lá, todo programa lido do Supabase chega
+    // sem papel declarado. Não é mock — é lacuna real de dado, sinalizada aqui em vez de
+    // silenciosa (CLAUDE.md § Divergência da spec).
+    // SPEC_DEVIATION (ADR-0018): coluna `papeis` pendente de migration própria desta fase.
+    papeis: [],
   };
 }
 
