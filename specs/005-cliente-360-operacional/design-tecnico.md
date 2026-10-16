@@ -472,9 +472,14 @@ BEGIN
   --    audit.eventos gerado por esta feature teria autor NULL, quebrando FR-010. `is_local =
   --    true` (3º argumento) expira automaticamente ao fim da transação implícita da função —
   --    nunca precisa de UNSET.
+  -- 'role: service_role' entra no claim junto com 'sub' — achado empírico contra Postgres real
+  -- (T031-T032): se o claim carregar só 'sub', toda chamada SEGUINTE a auth.role() dentro da
+  -- MESMA transação (ex.: uma função que chama outra, como crm.preparar_caso chamando
+  -- jornada.instanciar_a_partir_de_programa) cai no fallback current_user e falha a guarda da
+  -- função aninhada. Sem este detalhe, "transação única com duas funções" quebra na segunda.
   PERFORM set_config(
     'request.jwt.claims',
-    jsonb_build_object('sub', p_autor_id::text)::text,
+    jsonb_build_object('sub', p_autor_id::text, 'role', 'service_role')::text,
     true
   );
 
