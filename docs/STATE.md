@@ -8,13 +8,31 @@ alwaysApply: false
 
 ## Agora
 
-- **Cliente 360 operacional (E03-S07): implementação iniciada em 2026-10-11.** Branch
-  `feat/E03-S07-cliente-360-operacional`, worktree própria. Spec, refinamento, plano,
-  `design-tecnico.md` (nomes de tabela/policy/função/Edge Function) e `tasks.md` (140 tarefas,
-  fases 1–11) em `specs/005-cliente-360-operacional/`; ADR-0018 (participantes por papel) e
-  ADR-0019 (OneDrive OAuth delegado) aceitos. Execução via subagent-driven-development, fase por
-  fase a partir do Setup/Foundational. Fase 11 (rollout) é exclusiva do `@devops`.
-- **Data:** 2026-10-01
+- **Cliente 360 operacional (E03-S07): implementação em andamento desde 2026-10-11, progresso em
+  2026-10-16.** Branch `feat/E03-S07-cliente-360-operacional`, worktree própria, **não enviada**
+  (push/PR é do @devops). Execução via subagent-driven-development: um implementador por task,
+  revisão adversarial depois de cada uma, verificação **real** contra Postgres 17 local (não só
+  leitura) + Deno + vitest. **Fases 1–3 de `tasks.md` concluídas e aprovadas**:
+  - Fase 2 (Foundational): `crm.participantes`/`crm.contratos`/`crm.contrato_condicoes` com
+    visibilidade por papel (ADR-0018, helper `SECURITY DEFINER` de escopo mínimo — ADR-0020 —
+    provado sem recursão de RLS contra banco real); A-02 fechado (cliente/admin não alteram
+    documento/pagamento/etapa por UPDATE direto); schema `arquivos` + bucket `envios` do OneDrive
+    (0020, ADR-0019); pagamentos ligados ao contrato (0021); libs compartilhadas de Edge Function
+    (autorização por participação, idempotência, revisão otimista).
+  - Fase 3 (US1): contrato registrado deriva cadastro/jornada via RPC transacional
+    (`caso-comandos`, padrão `SECURITY DEFINER` + `set_config` para autoria no audit — fixado em
+    `design-tecnico.md` §2 pra toda a feature); corrida de concorrência fechada (migration 0023);
+    `ContratoFormulario` + cabeçalho operacional no Cliente 360, com selo de cadastro incompleto
+    (FR-013 provado no render, não só no domínio).
+  - Achados reais de segurança na revisão adversarial, todos corrigidos e reverificados: 2 bugs
+    de recursão de RLS, vínculo legado autorizando papel que RLS depois negaria, corrida de
+    concorrência duplicando jornada/contrato, CSRF ausente contra o próprio precedente do repo.
+  - **Gap conhecido, não bloqueia**: `crm.preparar_caso` ainda não distingue histórico importado
+    de caso novo — registrado como `T041a`/`T041b` em `tasks.md`; impede considerar a US1
+    isoladamente "Converged", não trava a fase 4 (US6, em andamento).
+  - Specs: `spec.md`, `design-tecnico.md`, `tasks.md` (140+ tarefas) em
+    `specs/005-cliente-360-operacional/`; ADR-0018/0019/0020 aceitos.
+- **Data:** 2026-10-16
 - **Story ativa:** `E00-S07` 🟨 — Spec Kit como SDD + gates enxutos, na branch
   `chore/E00-S07-spec-kit-sdd` (worktree `~/GitHub/Akros-sdd`). Implementada e verificada
   localmente; **não commitada nem enviada**. Spec em `specs/001-spec-kit-sdd-gates-enxutos/`.
