@@ -159,6 +159,10 @@ BEGIN
 
   -- Trava a linha do contrato ativo (se houver) para a duração da transação: evita dois admins
   -- registrando alteração do mesmo cliente ao mesmo tempo e os dois virando "o" contrato ativo.
+  -- Só trava quando HÁ uma linha ativa anterior — cliente sem nenhum contrato ainda não tem
+  -- linha pra travar; esse caso (primeiro contrato) é fechado por
+  -- crm_contratos_um_ativo_por_cliente (0023, índice único em (cliente_id) WHERE ativo), não
+  -- por lock.
   SELECT id INTO v_contrato_anterior_id
   FROM crm.contratos
   WHERE cliente_id = p_cliente_id AND ativo = true
@@ -166,6 +170,11 @@ BEGIN
 
   -- p_prazo_resposta_dias_uteis fora de 1–60 é recusado pelo próprio CHECK da tabela (0017) —
   -- a exceção de constraint propaga; a Edge Function já valida isso via Zod antes de chamar.
+  -- Dois admins registrando o PRIMEIRO contrato do MESMO cliente novo ao mesmo tempo (sem linha
+  -- ativa anterior para travar acima) colidem no índice único de 0023 — unique_violation
+  -- (SQLSTATE 23505) propaga de propósito, sem catch aqui: isso é um conflito real que o admin
+  -- deve ver e tentar de novo, não convergência silenciosa (diferente do caso de
+  -- crm.preparar_caso, que converge por natureza). A Edge Function mapeia 23505 → 409.
   INSERT INTO crm.contratos (
     cliente_id, programa_id, programa_versao, prazo_resposta_dias_uteis,
     prioridade, observacao, registrado_por, substitui_contrato_id
@@ -221,6 +230,7 @@ DECLARE
   v_programa_id     uuid;
   v_jornada         jornada.jornadas%ROWTYPE;
   v_fase_minima_id  uuid;
+  v_jornada_nova    boolean := false;
 BEGIN
   IF auth.role() <> 'service_role' THEN
     RAISE EXCEPTION 'preparacao de caso negada' USING ERRCODE = '42501';
@@ -256,16 +266,31 @@ BEGIN
 
   SELECT * INTO v_jornada FROM jornada.jornadas WHERE cliente_id = p_cliente_id;
 
+  -- Esta SELECT não trava nada (não há linha prévia para FOR UPDATE quando a jornada ainda não
+  -- existe) — sob READ COMMITTED, duas chamadas concorrentes para o MESMO cliente novo podem as
+  -- duas cair aqui em NOT FOUND. A corrida é fechada pelo UNIQUE (cliente_id) de
+  -- jornada.jornadas (0023), não por lock: quem perder a corrida do INSERT recebe
+  -- unique_violation abaixo, relê a linha vencedora e converge no mesmo resultado de quem já
+  -- achou a jornada existente — "alguém já fez" não é erro aqui, é o comportamento
+  -- idempotente-por natureza que admin re-executando preparar_caso espera.
   IF NOT FOUND THEN
-    INSERT INTO jornada.jornadas (
-      cliente_id, contrato_id, programa_id, programa_versao,
-      levantamento_estado, conferido_por, conferido_em, origem_situacao_inicial
-    ) VALUES (
-      p_cliente_id, p_contrato_id, v_contrato.programa_id, v_contrato.programa_versao,
-      COALESCE(p_levantamento_estado, 'incompleto'), p_autor_id, now(), 'nascido_na_plataforma'
-    )
-    RETURNING * INTO v_jornada;
+    BEGIN
+      INSERT INTO jornada.jornadas (
+        cliente_id, contrato_id, programa_id, programa_versao,
+        levantamento_estado, conferido_por, conferido_em, origem_situacao_inicial
+      ) VALUES (
+        p_cliente_id, p_contrato_id, v_contrato.programa_id, v_contrato.programa_versao,
+        COALESCE(p_levantamento_estado, 'incompleto'), p_autor_id, now(), 'nascido_na_plataforma'
+      )
+      RETURNING * INTO v_jornada;
+      v_jornada_nova := true;
+    EXCEPTION WHEN unique_violation THEN
+      SELECT * INTO v_jornada FROM jornada.jornadas WHERE cliente_id = p_cliente_id;
+      v_jornada_nova := false;
+    END;
+  END IF;
 
+  IF v_jornada_nova THEN
     PERFORM jornada.instanciar_a_partir_de_programa(v_jornada.id, v_programa_id);
 
     SELECT id INTO v_fase_minima_id
@@ -279,8 +304,9 @@ BEGIN
     WHERE id = v_jornada.id
     RETURNING * INTO v_jornada;
   ELSE
-    -- Jornada já existe: nunca reinstancia fases/etapas (duplicaria). Só atualiza o vínculo com
-    -- o contrato e o estado de levantamento, se informado.
+    -- Jornada já existe (ou acabou de ser criada por quem venceu a corrida acima): nunca
+    -- reinstancia fases/etapas (duplicaria). Só atualiza o vínculo com o contrato e o estado de
+    -- levantamento, se informado.
     UPDATE jornada.jornadas
     SET
       contrato_id = p_contrato_id,
