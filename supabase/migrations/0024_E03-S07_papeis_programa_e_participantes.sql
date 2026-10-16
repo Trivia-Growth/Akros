@@ -30,12 +30,18 @@
 --
 --              `crm.solicitar_documento` copia `papel_dirigido`/`restrito_ao_papel`/
 --              `envio_conjunto` do catalogo do programa (`programas.programas.
---              documentos_exigidos`, filtrando o requisito por `tipo`), nunca do parametro
---              recebido -- regra explicita de design-tecnico.md Sec2 e de
---              contracts/operacoes.md ("marca de restrito e copiada do programa, nao digitada
---              livremente"). Requisito e localizado pelo campo `tipo` dentro do array JSONB
---              (mesmo shape de `RequisitoDocumento`, programas/domain/types.ts) -- forma mais
---              simples que nao exige o chamador adivinhar um id interno do template.
+--              documentos_exigidos`), nunca do parametro recebido -- regra explicita de
+--              design-tecnico.md Sec2 e de contracts/operacoes.md ("marca de restrito e copiada
+--              do programa, nao digitada livremente"). Requisito e localizado pelo campo `id`
+--              (unico dentro do array, `RequisitoDocumento.id`, programas/domain/types.ts) --
+--              **correcao em 2026-10-16 (revisao adversarial)**: a primeira versao desta
+--              migration localizava por `tipo`, que NAO e unico -- um programa pode legitimamente
+--              ter dois requisitos do mesmo `tipo` (ex.: "passaporte" generico + "passaporte"
+--              dirigido e restrito a `organizacao_aplicante`, caso do visto R). Com `tipo`, a
+--              busca pegava o primeiro elemento do array que casasse, copiando silenciosamente a
+--              marca de restricao do requisito ERRADO -- exatamente o vazamento que US6/ADR-0018
+--              existe para impedir. `id` e unico por construcao (gerado pelo editor do catalogo),
+--              sem essa ambiguidade.
 -- Story: E03-S07
 -- Created: 2026-10-16
 
@@ -226,7 +232,7 @@ GRANT EXECUTE ON FUNCTION crm.revogar_participante(uuid, uuid) TO service_role;
 CREATE OR REPLACE FUNCTION crm.solicitar_documento(
   p_cliente_id uuid,
   p_fase_id uuid,
-  p_requisito_tipo text,
+  p_requisito_id text,
   p_sujeito_tipo text,
   p_sujeito_participante_id uuid,
   p_sujeito_familiar_id text,
@@ -246,6 +252,7 @@ DECLARE
   v_programa_versao    text;
   v_documentos_exigidos jsonb;
   v_requisito          jsonb;
+  v_requisito_tipo      text;
   v_papel_dirigido      text;
   v_restrito_ao_papel   boolean;
   v_envio_conjunto      boolean;
@@ -296,23 +303,30 @@ BEGIN
     RAISE EXCEPTION 'programa do caso nao encontrado no catalogo' USING ERRCODE = '22023';
   END IF;
 
-  -- Localiza o requisito pelo campo `tipo` (RequisitoDocumento.tipo, programas/domain/types.ts)
-  -- -- forma mais simples que não exige o chamador conhecer o id interno do template. Primeiro
-  -- elemento que casar: o catálogo de um programa não é esperado a repetir o mesmo `tipo` em
-  -- requisitos com marcas de restrição diferentes (duplicidade de tipo é dado malformado do
-  -- catálogo, fora do escopo desta RPC resolver).
+  -- Localiza o requisito pelo campo `id` (RequisitoDocumento.id, programas/domain/types.ts) --
+  -- único dentro do array, ao contrário de `tipo`. **Correção em 2026-10-16 (revisão
+  -- adversarial)**: a versão anterior buscava por `tipo` e pegava o primeiro elemento que
+  -- casasse -- um programa com dois requisitos do mesmo `tipo` (ex.: visto R: "passaporte"
+  -- genérico + "passaporte" da organização, restrito e dirigido a `organizacao_aplicante`)
+  -- fazia a RPC copiar silenciosamente a marca de restrição do requisito ERRADO. `id` não tem
+  -- essa ambiguidade.
   SELECT elem INTO v_requisito
   FROM jsonb_array_elements(v_documentos_exigidos) AS elem
-  WHERE elem ->> 'tipo' = p_requisito_tipo
+  WHERE elem ->> 'id' = p_requisito_id
   LIMIT 1;
 
   IF v_requisito IS NULL THEN
     RAISE EXCEPTION 'requisito nao encontrado no catalogo do programa' USING ERRCODE = '22023';
   END IF;
 
-  -- Copiados do catálogo, NUNCA de parâmetro do chamador -- design-tecnico.md §2 /
-  -- contracts/operacoes.md ("marca de restrito é copiada do programa, não digitada
-  -- livremente").
+  -- `tipo`/`papel_dirigido`/`restrito_ao_papel`/`envio_conjunto` -- todos copiados do
+  -- REQUISITO JÁ RESOLVIDO POR ID do catálogo, NUNCA de parâmetro do chamador --
+  -- design-tecnico.md §2 / contracts/operacoes.md ("marca de restrito é copiada do programa,
+  -- não digitada livremente"). `tipo` em particular deixou de vir de parâmetro nesta correção:
+  -- como a busca agora é por `id`, não haveria mais um `p_requisito_tipo` para gravar -- grava-
+  -- se o `tipo` do PRÓPRIO requisito encontrado, que é consistente por construção com o `id`
+  -- que o motivou.
+  v_requisito_tipo := v_requisito ->> 'tipo';
   v_papel_dirigido := v_requisito ->> 'papelDirigido';
   v_restrito_ao_papel := COALESCE((v_requisito ->> 'restrito')::boolean, false);
   v_envio_conjunto := COALESCE((v_requisito ->> 'envioConjunto')::boolean, false);
@@ -323,7 +337,7 @@ BEGIN
     papel_dirigido, restrito_ao_papel, envio_conjunto,
     prazo_em, instrucao
   ) VALUES (
-    p_cliente_id, p_fase_id, v_jornada_id, p_titulo, p_requisito_tipo, 'pendente',
+    p_cliente_id, p_fase_id, v_jornada_id, p_titulo, v_requisito_tipo, 'pendente',
     p_sujeito_tipo, p_sujeito_participante_id, p_sujeito_familiar_id,
     v_papel_dirigido, v_restrito_ao_papel, v_envio_conjunto,
     p_prazo_em, p_instrucao

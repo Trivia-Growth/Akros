@@ -109,7 +109,7 @@ const SOLICITAR_DOCUMENTO = {
   acao: "solicitar_documento",
   clienteId: CLIENTE_ID,
   faseId: FASE_ID,
-  requisitoTipo: "passaporte",
+  requisitoId: "req-passaporte-generico",
   sujeitoTipo: "participante",
   sujeitoParticipanteId: PARTICIPANTE_ID,
   titulo: "Envie seu passaporte",
@@ -195,6 +195,20 @@ Deno.test("RPC retorna erro de banco sem code conhecido: 500 genérico, sem vaza
   const corpo = await r.text();
   assertEquals(corpo.includes("xyz"), false);
 });
+
+Deno.test(
+  "RPC retorna erro simulado com code 23514 (check_violation): resposta HTTP é 422, não 500 " +
+    "(backstop do superRefine — revisão adversarial 2026-10-16)",
+  async () => {
+    const { h } = montar({
+      rpcErro: { code: "23514", message: "new row violates check constraint \"participante_sujeito_coerente\"" },
+    });
+    const r = await h(req(CONVIDAR_PARTICIPANTE));
+    assertEquals(r.status, 422);
+    const corpo = await r.text();
+    assertEquals(corpo.includes("participante_sujeito_coerente"), false);
+  },
+);
 
 Deno.test("registrar_contrato: fluxo de sucesso chama a RPC certa com p_autor_id = userId resolvido por requireAdmin", async () => {
   const { h, e } = montar({ rpcResultado: { id: "contrato-novo" } });
@@ -313,6 +327,27 @@ Deno.test("convidar_participante: fluxo de sucesso chama a RPC certa com parâme
   });
 });
 
+Deno.test(
+  "convidar_participante: sujeitoTipo 'titular' com familiarId preenchido é 422 (superRefine, " +
+    "antes da RPC — mesma regra de crm.participante_sujeito_coerente, 0017)",
+  async () => {
+    const { h, e } = montar();
+    const r = await h(req({ ...CONVIDAR_PARTICIPANTE, sujeitoTipo: "titular", familiarId: "filho-1" }));
+    assertEquals(r.status, 422);
+    assertEquals(e.rpc, 0);
+  },
+);
+
+Deno.test(
+  "convidar_participante: sujeitoTipo 'organizacao' sem organizacaoId é 422 (superRefine, antes da RPC)",
+  async () => {
+    const { h, e } = montar();
+    const r = await h(req({ ...CONVIDAR_PARTICIPANTE, sujeitoTipo: "organizacao" }));
+    assertEquals(r.status, 422);
+    assertEquals(e.rpc, 0);
+  },
+);
+
 // ── revogar_participante (T046-T048, FR-020) ────────────────────────────────────────────────
 
 Deno.test("revogar_participante: fake de RPC confirma que só participanteId é passado — nada mais", async () => {
@@ -374,7 +409,7 @@ Deno.test("solicitar_documento: fluxo de sucesso chama a RPC certa com parâmetr
   assertEquals(e.chamadas[0].params, {
     p_cliente_id: CLIENTE_ID,
     p_fase_id: FASE_ID,
-    p_requisito_tipo: "passaporte",
+    p_requisito_id: "req-passaporte-generico",
     p_sujeito_tipo: "participante",
     p_sujeito_participante_id: PARTICIPANTE_ID,
     p_sujeito_familiar_id: null,
@@ -392,3 +427,28 @@ Deno.test("solicitar_documento sem prazoEm/instrucao: p_prazo_em e p_instrucao v
   assertEquals(e.chamadas[0].params.p_prazo_em, null);
   assertEquals(e.chamadas[0].params.p_instrucao, null);
 });
+
+Deno.test(
+  "solicitar_documento: sujeitoTipo 'caso' com sujeitoParticipanteId preenchido é 422 " +
+    "(superRefine, antes da RPC — mesma regra de documento_sujeito_coerente, 0019)",
+  async () => {
+    const { h, e } = montar();
+    const r = await h(
+      req({ ...SOLICITAR_DOCUMENTO, sujeitoTipo: "caso", sujeitoFamiliarId: undefined }),
+    );
+    assertEquals(r.status, 422);
+    assertEquals(e.rpc, 0);
+  },
+);
+
+Deno.test(
+  "solicitar_documento: sujeitoTipo 'familiar' sem sujeitoFamiliarId é 422 (superRefine, antes da RPC)",
+  async () => {
+    const { h, e } = montar();
+    const r = await h(
+      req({ ...SOLICITAR_DOCUMENTO, sujeitoTipo: "familiar", sujeitoParticipanteId: undefined }),
+    );
+    assertEquals(r.status, 422);
+    assertEquals(e.rpc, 0);
+  },
+);

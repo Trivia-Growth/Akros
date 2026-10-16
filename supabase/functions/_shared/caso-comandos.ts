@@ -98,7 +98,12 @@ export const SolicitarDocumentoSchema = z
     acao: z.literal("solicitar_documento"),
     clienteId: z.string().uuid(),
     faseId: z.string().uuid(),
-    requisitoTipo: z.string().min(1),
+    // `id` do requisito no catálogo (`RequisitoDocumento.id`, programas/domain/types.ts) — NÃO
+    // `tipo`. Correção em 2026-10-16 (revisão adversarial): um programa pode ter dois
+    // requisitos do mesmo `tipo` com marcas de restrição diferentes (ex.: visto R —
+    // "passaporte" genérico e "passaporte" da organização, restrito); `tipo` não identifica o
+    // requisito de forma única, `id` sim (ver migration 0024, `crm.solicitar_documento`).
+    requisitoId: z.string().min(1),
     // Espelha `SujeitoDocumento` (apps/web/src/shared/contracts/caso.ts) /
     // `documentos.documentos.sujeito_tipo` (migration 0019).
     sujeitoTipo: z.enum(["caso", "participante", "familiar"]),
@@ -120,13 +125,57 @@ export const SolicitarDocumentoSchema = z
 
 // União discriminada por `acao` — novas ações futuras (T056/T092) entram como mais um elemento
 // desta lista, sem tocar nos `case` já implementados no switch abaixo.
-export const EntradaCasoComandos = z.discriminatedUnion("acao", [
+const UniaoCasoComandos = z.discriminatedUnion("acao", [
   RegistrarContratoSchema,
   PrepararCasoSchema,
   ConvidarParticipanteSchema,
   RevogarParticipanteSchema,
   SolicitarDocumentoSchema,
 ]);
+
+// Validação cruzada `sujeitoTipo` ↔ campo companheiro, ANTES de a requisição chegar na RPC —
+// correção em 2026-10-16 (revisão adversarial): sem isto, uma combinação incoerente (ex.:
+// `sujeitoTipo: "titular"` com `familiarId` preenchido) só era pega pelo CHECK do banco
+// (`crm.participante_sujeito_coerente`/0017, `documento_sujeito_coerente`/0019), que levanta
+// `23514` — ERRCODE que `erroDeNegocio()` não mapeava, caindo no 500 genérico sem sinal útil
+// para quem chama. `superRefine` (não dá para usar `.refine()` por schema individual: um membro
+// de `z.discriminatedUnion` precisa continuar sendo `ZodObject` puro, não `ZodEffects`) replica
+// aqui a MESMA regra dos dois CHECKs, para responder 422 com mensagem clara antes do INSERT.
+// O CHECK do banco continua como garantia final (defesa em profundidade) — ver também o branch
+// `23514` novo em `erroDeNegocio()`, abaixo, como cinto-e-suspensório caso este `superRefine`
+// tenha um bug.
+export const EntradaCasoComandos = UniaoCasoComandos.superRefine((entrada, ctx) => {
+  if (entrada.acao === "convidar_participante") {
+    const { sujeitoTipo, familiarId, organizacaoId } = entrada;
+    const coerente =
+      (sujeitoTipo === "organizacao" && organizacaoId !== undefined && familiarId === undefined) ||
+      (sujeitoTipo === "familiar" && familiarId !== undefined && organizacaoId === undefined) ||
+      (sujeitoTipo === "titular" && familiarId === undefined && organizacaoId === undefined);
+    if (!coerente) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "sujeitoTipo incompatível com familiarId/organizacaoId informados",
+        path: ["sujeitoTipo"],
+      });
+    }
+  }
+  if (entrada.acao === "solicitar_documento") {
+    const { sujeitoTipo, sujeitoParticipanteId, sujeitoFamiliarId } = entrada;
+    const coerente =
+      (sujeitoTipo === "participante" &&
+        sujeitoParticipanteId !== undefined &&
+        sujeitoFamiliarId === undefined) ||
+      (sujeitoTipo === "familiar" && sujeitoFamiliarId !== undefined && sujeitoParticipanteId === undefined) ||
+      (sujeitoTipo === "caso" && sujeitoParticipanteId === undefined && sujeitoFamiliarId === undefined);
+    if (!coerente) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "sujeitoTipo incompatível com sujeitoParticipanteId/sujeitoFamiliarId informados",
+        path: ["sujeitoTipo"],
+      });
+    }
+  }
+});
 export type EntradaCasoComandos = z.infer<typeof EntradaCasoComandos>;
 
 /** Erro devolvido por `.rpc()` (shape do supabase-js: `{ code, message }`, `code` é o ERRCODE do
@@ -170,6 +219,12 @@ function json(corpo: unknown, status: number, cors: Record<string, string>, extr
 function erroDeNegocio(error: ErroRpc): HttpError {
   if (error.code === "42501") return new HttpError(403, "Operação não autorizada");
   if (error.code === "22023") return new HttpError(422, "Dados inválidos para esta operação");
+  // check_violation — backstop (cinto-e-suspensório) do `superRefine` em `EntradaCasoComandos`:
+  // se a combinação `sujeitoTipo`/campo companheiro escapar da validação Zod e estourar o CHECK
+  // do banco (`crm.participante_sujeito_coerente`/0017, `documento_sujeito_coerente`/0019),
+  // responde 422 sanitizado em vez de 500 genérico — correção em 2026-10-16 (revisão
+  // adversarial).
+  if (error.code === "23514") return new HttpError(422, "Dados inválidos para esta operação");
   // unique_violation — ex.: dois admins registrando o primeiro contrato do mesmo cliente novo
   // ao mesmo tempo (crm_contratos_um_ativo_por_cliente, 0023). "Vínculo conflitante", categoria
   // 409 de design-tecnico.md §2 — não é 500 genérico, é um conflito real para o admin retentar.
@@ -288,7 +343,7 @@ export function criarManipuladorCasoComandos(io: IOCasoComandos) {
               const { data, error } = await io.rpc("solicitar_documento", {
                 p_cliente_id: entrada.clienteId,
                 p_fase_id: entrada.faseId,
-                p_requisito_tipo: entrada.requisitoTipo,
+                p_requisito_id: entrada.requisitoId,
                 p_sujeito_tipo: entrada.sujeitoTipo,
                 p_sujeito_participante_id: entrada.sujeitoParticipanteId ?? null,
                 p_sujeito_familiar_id: entrada.sujeitoFamiliarId ?? null,
