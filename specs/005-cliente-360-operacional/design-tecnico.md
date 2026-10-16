@@ -438,6 +438,58 @@ desenho, não `createClient()` chamado direto de dentro da função de autoriza�
 | `arquivo-processar` | interno (Cron + segredo) | adquire lease, transfere, reconcilia |
 | `onedrive-oauth` | admin | `GET /iniciar`, `GET /callback` (state + PKCE) |
 
+**Correção em 2026-10-15 — "transação única" vira RPC `SECURITY DEFINER`, mesmo precedente de
+`crm.criar_cliente_a_partir_de_lead` (0013) e `comunicacao.registrar_entrada_canal` (0016).**
+Supabase-js chamado de dentro de uma Edge Function não dá transação entre dois `.insert()`
+separados — cada chamada é sua própria transação implícita no Postgres. "Transação única por
+comando" (acima) só é alcançável com **uma função plpgsql** fazendo todos os `INSERT`/`UPDATE`
+relacionados, chamada via `.rpc()` **uma vez** pela Edge Function. Toda ação de `caso-comandos`/
+`revisao-comandos` que grava em mais de uma tabela segue este padrão — não dois `.from().insert()`
+soltos esperando que "dê certo os dois".
+
+Forma obrigatória da função RPC:
+
+```sql
+CREATE OR REPLACE FUNCTION <schema>.<nome_da_acao>(..., p_autor_id uuid)
+RETURNS <tipo>
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = <schemas tocados>, pg_temp
+AS $$
+BEGIN
+  -- 1) Guarda de autorização SEMPRE primeiro, antes de qualquer outra coisa — SECURITY DEFINER
+  --    sem isto é elevação de privilégio (mesmo comentário de 0013/0016).
+  IF auth.role() <> 'service_role' THEN
+    RAISE EXCEPTION '<ação> negada' USING ERRCODE = '42501';
+  END IF;
+  IF p_autor_id IS NULL THEN
+    RAISE EXCEPTION 'autor obrigatório' USING ERRCODE = '22023';
+  END IF;
+
+  -- 2) SÓ DEPOIS da guarda: injeta o autor real na sessão desta transação, para que
+  --    audit.registrar_mudanca() (trigger genérico, 0008) capture auth.uid() correto em vez de
+  --    NULL. Chamada por `service_role` não carrega JWT de usuário final — sem este passo, todo
+  --    audit.eventos gerado por esta feature teria autor NULL, quebrando FR-010. `is_local =
+  --    true` (3º argumento) expira automaticamente ao fim da transação implícita da função —
+  --    nunca precisa de UNSET.
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object('sub', p_autor_id::text)::text,
+    true
+  );
+
+  -- 3) Lógica de negócio (INSERT/UPDATE), uma transação, autor correto no audit automático.
+  ...
+END;
+$$;
+```
+
+A ordem dos passos 1→2 é invariável: se o `set_config` rodar antes da guarda, `auth.role()` passa
+a cair no fallback `current_user` (dono da função, não o chamador real) e a guarda vira teatro.
+Colunas de autoria explícitas da entidade (`crm.contratos.registrado_por`,
+`jornada.jornadas.conferido_por`) recebem `p_autor_id` diretamente — não dependem do passo 2, que
+existe só para o trigger genérico de auditoria.
+
 Regras transversais:
 
 - **Idempotência**: `registrar_contrato`, `cadastrar_cobranca`, `finalizar_envio`, `revisar_documento`,
