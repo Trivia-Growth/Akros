@@ -8,6 +8,13 @@ interface LinhaJornada {
   fase_atual_id: string | null;
   programa_id: string | null;
   programa_versao: string | null;
+  /** E03-S07 (migration 0019) — campos novos, opcionais aqui para não quebrar quem monta
+   * `LinhaJornada` manualmente antes desta migration existir no fixture/teste. */
+  contrato_id?: string | null;
+  levantamento_estado?: "incompleto" | "conferido" | null;
+  conferido_por?: string | null;
+  conferido_em?: string | null;
+  origem_situacao_inicial?: string | null;
 }
 
 interface LinhaFase {
@@ -71,6 +78,13 @@ export function paraJornada(
     })),
     ...(jornada.programa_id ? { programaId: jornada.programa_id } : {}),
     ...(jornada.programa_versao ? { programaVersao: jornada.programa_versao } : {}),
+    ...(jornada.contrato_id ? { contratoId: jornada.contrato_id } : {}),
+    ...(jornada.levantamento_estado ? { levantamentoEstado: jornada.levantamento_estado } : {}),
+    ...(jornada.conferido_por ? { conferidoPor: jornada.conferido_por } : {}),
+    ...(jornada.conferido_em ? { conferidoEm: jornada.conferido_em } : {}),
+    ...(jornada.origem_situacao_inicial
+      ? { origemSituacaoInicial: jornada.origem_situacao_inicial }
+      : {}),
   };
 }
 

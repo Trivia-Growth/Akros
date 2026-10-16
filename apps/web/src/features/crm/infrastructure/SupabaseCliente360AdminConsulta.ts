@@ -14,6 +14,7 @@ import type { Pagamento } from "@/features/pagamentos/domain/types";
 import { paraPagamento } from "@/features/pagamentos/infrastructure/SupabasePagamentosConsulta";
 import { getSupabase } from "@/shared/supabase/client";
 import type { Cliente360AdminConsulta } from "../application/ports";
+import type { Contrato, ContratoCondicao, Prioridade } from "../domain/contrato";
 import type { Cliente, PerfilImigratorio } from "../domain/types";
 
 interface LinhaCliente {
@@ -51,6 +52,61 @@ export function paraCliente360(linha: LinhaCliente): Cliente {
   };
 }
 
+interface LinhaContrato {
+  id: string;
+  cliente_id: string;
+  programa_id: string;
+  programa_versao: string;
+  assinado_em: string | null;
+  prazo_resposta_dias_uteis: number;
+  prioridade: Prioridade;
+  observacao: string | null;
+  registrado_por: string;
+  registrado_em: string;
+  ativo: boolean;
+}
+
+interface LinhaContratoCondicao {
+  id: string;
+  contrato_id: string;
+  descricao: string;
+  tipo: ContratoCondicao["tipo"];
+  valor: number;
+  moeda: ContratoCondicao["moeda"];
+  vencimento: string;
+  ordem: number;
+}
+
+/** Mesmo estilo de `paraCliente360`/`recomporJornadasAdmin`: domínio puro de `crm/domain/contrato.ts`
+ *  a partir das linhas de `crm.contratos`/`crm.contrato_condicoes` (migration 0017). */
+export function paraContrato(linha: LinhaContrato, condicoes: LinhaContratoCondicao[]): Contrato {
+  return {
+    id: linha.id,
+    clienteId: linha.cliente_id,
+    programaId: linha.programa_id,
+    programaVersao: linha.programa_versao,
+    assinadoEm: linha.assinado_em ?? undefined,
+    prazoRespostaDiasUteis: linha.prazo_resposta_dias_uteis,
+    prioridade: linha.prioridade,
+    observacao: linha.observacao ?? undefined,
+    condicoes: condicoes
+      .filter((condicao) => condicao.contrato_id === linha.id)
+      .sort((a, b) => a.ordem - b.ordem)
+      .map((condicao) => ({
+        id: condicao.id,
+        descricao: condicao.descricao,
+        tipo: condicao.tipo,
+        valor: condicao.valor,
+        moeda: condicao.moeda,
+        vencimento: condicao.vencimento,
+        ordem: condicao.ordem,
+      })),
+    registradoPor: linha.registrado_por,
+    registradoEm: linha.registrado_em,
+    ativo: linha.ativo,
+  };
+}
+
 export function recomporJornadasAdmin({
   jornadas,
   fases,
@@ -85,6 +141,8 @@ export class SupabaseCliente360AdminConsulta implements Cliente360AdminConsulta 
       conversas,
       emails,
       eventos,
+      contratos,
+      contratoCondicoes,
     ] = await Promise.all([
       getSupabase().schema("crm").from("clientes").select(),
       getSupabase().schema("jornada").from("jornadas").select(),
@@ -112,6 +170,8 @@ export class SupabaseCliente360AdminConsulta implements Cliente360AdminConsulta 
         .from("eventos")
         .select()
         .order("ocorrido_em", { ascending: false }),
+      getSupabase().schema("crm").from("contratos").select().eq("ativo", true),
+      getSupabase().schema("crm").from("contrato_condicoes").select(),
     ]);
     for (const resposta of [
       clientes,
@@ -124,9 +184,13 @@ export class SupabaseCliente360AdminConsulta implements Cliente360AdminConsulta 
       conversas,
       emails,
       eventos,
+      contratos,
+      contratoCondicoes,
     ]) {
       if (resposta.error) throw resposta.error;
     }
+
+    const linhasCondicoes = contratoCondicoes.data as LinhaContratoCondicao[];
 
     return {
       clientes: (clientes.data as LinhaCliente[]).map(paraCliente360),
@@ -143,6 +207,9 @@ export class SupabaseCliente360AdminConsulta implements Cliente360AdminConsulta 
       eventos: (eventos.data as Parameters<typeof paraEvento>[0][])
         .map(paraEvento)
         .filter((evento): evento is EventoComunicacao => evento !== null),
+      contratos: (contratos.data as LinhaContrato[]).map((linha) =>
+        paraContrato(linha, linhasCondicoes),
+      ),
     } satisfies {
       clientes: Cliente[];
       jornadas: Jornada[];
@@ -152,6 +219,7 @@ export class SupabaseCliente360AdminConsulta implements Cliente360AdminConsulta 
       conversas: Conversa[];
       emails: EmailThread[];
       eventos: EventoComunicacao[];
+      contratos: Contrato[];
     };
   }
 }

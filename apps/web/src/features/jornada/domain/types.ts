@@ -41,4 +41,14 @@ export interface Jornada {
   /** E06-S01: programa que originou esta jornada. Versão congelada — ADR-0004. */
   programaId?: string;
   programaVersao?: string;
+  /** E03-S07/FR-022: contrato que originou esta jornada (`crm.contratos.id`). */
+  contratoId?: string;
+  /** E03-S07/FR-013: estado do levantamento inicial — "incompleto" nunca pode aparecer como
+   * "tudo em dia" (cadastro incompleto é distinto de ausência de pendência). */
+  levantamentoEstado?: "incompleto" | "conferido";
+  conferidoPor?: string;
+  conferidoEm?: string;
+  /** E03-S07: origem da situação inicial quando o cliente entra em andamento (histórico
+   * importado, distinto de evento novo). */
+  origemSituacaoInicial?: string;
 }

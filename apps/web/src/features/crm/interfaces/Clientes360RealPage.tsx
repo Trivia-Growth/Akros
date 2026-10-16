@@ -5,6 +5,7 @@ import type { Pagamento } from "@/features/pagamentos/domain/types";
 import {
   Avatar,
   Badge,
+  Button,
   Card,
   Stepper,
   type StepperItem,
@@ -21,18 +22,23 @@ import {
   CalendarDays,
   CircleAlert,
   Clock3,
+  Compass,
+  FileSignature,
   FileText,
   Mail,
   MessageCircle,
   Search,
-  ShieldCheck,
+  UserRound,
   UsersRound,
   WalletCards,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCliente360AdminSupabase } from "../application/useCliente360AdminSupabase";
+import { type SituacaoCaso, calcularProximaAcao } from "../domain/caso";
 import type { Cliente } from "../domain/types";
+import { ContratoFormulario } from "./ContratoFormulario";
 
 const SAUDE_VARIANT = { em_dia: "success", atencao: "warning", atrasado: "danger" } as const;
 const DOCUMENTO_VARIANT = {
@@ -52,7 +58,7 @@ const PAGAMENTO_VARIANT = {
 
 export function Clientes360RealPage() {
   const { t } = useTranslation("admin");
-  const { dados, carregando, erro } = useCliente360AdminSupabase();
+  const { dados, carregando, erro, refetch } = useCliente360AdminSupabase();
   const [busca, setBusca] = useState("");
   const [filtroSaude, setFiltroSaude] = useState<"todos" | keyof typeof SAUDE_VARIANT>("todos");
   const [clienteId, setClienteId] = useState<string>();
@@ -68,6 +74,7 @@ export function Clientes360RealPage() {
         cliente={clienteSelecionado}
         dados={dados}
         onBack={() => setClienteId(undefined)}
+        refetch={refetch}
       />
     );
   }
@@ -222,22 +229,26 @@ function ClienteLinha({
   );
 }
 
-function Cliente360Real({
+export function Cliente360Real({
   cliente,
   dados,
   onBack,
+  refetch,
 }: {
   cliente: Cliente;
   dados: NonNullable<ReturnType<typeof useCliente360AdminSupabase>["dados"]>;
   onBack: () => void;
+  refetch: () => void | Promise<void>;
 }) {
   const { t } = useTranslation("admin");
+  const [contratoModalAberto, setContratoModalAberto] = useState(false);
   const jornada = dados.jornadas.find((item) => item.clienteId === cliente.id);
   const documentos = dados.documentos.filter((item) => item.clienteId === cliente.id);
   const pagamentos = dados.pagamentos.filter((item) => item.clienteId === cliente.id);
   const reunioes = dados.reunioes.filter((item) => item.clienteId === cliente.id);
   const conversas = dados.conversas.filter((item) => item.clienteId === cliente.id);
   const emails = dados.emails.filter((item) => item.clienteOuLeadId === cliente.id);
+  const contrato = dados.contratos.find((item) => item.clienteId === cliente.id);
   const eventos = useMemo(
     () => [...dados.eventos.filter((item) => item.clienteOuLeadId === cliente.id)].reverse(),
     [cliente.id, dados.eventos],
@@ -248,12 +259,74 @@ function Cliente360Real({
   const proximaReuniao = [...reunioes]
     .filter((item) => new Date(item.inicio).getTime() >= Date.now())
     .sort((a, b) => a.inicio.localeCompare(b.inicio))[0];
+  // FR-002/US1 cenário 3 — pendências separadas por tipo (documento × pagamento). Aproximação
+  // razoável desta fase (ver brief T036-041): carteira com critério uniforme é fase 8/9 futura.
   const documentosEmAcao = documentos.filter((item) =>
-    ["pendente", "ajustes", "em_analise"].includes(item.status),
+    ["pendente", "ajustes"].includes(item.status),
   ).length;
-  const pagamentosEmAberto = pagamentos.filter((item) => item.status !== "pago").length;
+  const documentosEmRevisaoAkros = documentos.filter((item) => item.status === "em_analise").length;
+  const pagamentosEmAbertoCliente = pagamentos.filter((item) =>
+    ["pendente", "atrasado"].includes(item.status),
+  ).length;
+  const pagamentosEmConferenciaAkros = pagamentos.filter(
+    (item) => item.status === "em_conferencia",
+  ).length;
+  const documentosEmAcaoTotal = documentosEmAcao + documentosEmRevisaoAkros;
+  const pagamentosEmAbertoTotal = pagamentosEmAbertoCliente + pagamentosEmConferenciaAkros;
   const steps: StepperItem[] =
     jornada?.fases.map((fase) => ({ id: fase.id, title: fase.titulo, status: fase.status })) ?? [];
+
+  // FR-013 — ausência de jornada/levantamento não pode "parecer" tudo em dia: trata como
+  // "incompleto" até a equipe conferir, em vez de assumir "conferido" por falta de dado.
+  const levantamentoEstado = jornada?.levantamentoEstado ?? "incompleto";
+  const cadastroIncompleto = !contrato || levantamentoEstado === "incompleto";
+  const situacao: SituacaoCaso = {
+    clienteId: cliente.id,
+    contrato,
+    levantamentoEstado,
+    faseAtualTitulo: faseAtual?.titulo,
+    responsavel: cliente.caseManager,
+    pendenciasCliente: documentosEmAcao + pagamentosEmAbertoCliente,
+    pendenciasAkros: documentosEmRevisaoAkros + pagamentosEmConferenciaAkros,
+    pendenciasTerceiro: 0,
+  };
+  const proximaAcao = calcularProximaAcao(situacao);
+  const RESPONSAVEL_LABEL = {
+    cliente: cliente.nome,
+    akros: cliente.caseManager,
+    terceiro: t("case.responsible"),
+  } as const;
+  const responsavelExibido = proximaAcao
+    ? RESPONSAVEL_LABEL[proximaAcao.responsavel]
+    : cliente.caseManager;
+
+  const itensAtencao: { id: string; label: string; action?: ReactNode }[] = [];
+  if (!contrato) {
+    itensAtencao.push({
+      id: "contrato",
+      label: t("case.attentionContractMissing"),
+      action: (
+        <Button size="sm" variant="secondary" onClick={() => setContratoModalAberto(true)}>
+          {t("case.registerContractCta")}
+        </Button>
+      ),
+    });
+  }
+  if (levantamentoEstado === "incompleto") {
+    itensAtencao.push({ id: "levantamento", label: t("case.attentionAssessmentIncomplete") });
+  }
+  if (documentosEmAcaoTotal > 0) {
+    itensAtencao.push({
+      id: "documentos",
+      label: t("case.attentionDocumentsPending", { count: documentosEmAcaoTotal }),
+    });
+  }
+  if (pagamentosEmAbertoTotal > 0) {
+    itensAtencao.push({
+      id: "pagamentos",
+      label: t("case.attentionPaymentsPending", { count: pagamentosEmAbertoTotal }),
+    });
+  }
 
   return (
     <div className="flex flex-col gap-6" data-testid="cliente-360-real">
@@ -282,20 +355,47 @@ function Cliente360Real({
               </p>
             </div>
           </div>
-          <Badge variant={SAUDE_VARIANT[cliente.saude]}>
-            {t(`clientes.health_${cliente.saude}`)}
-          </Badge>
+          <div className="flex flex-col items-end gap-2.5">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Badge variant={SAUDE_VARIANT[cliente.saude]}>
+                {t(`clientes.health_${cliente.saude}`)}
+              </Badge>
+              {/* FR-013 — cadastro incompleto nunca pode "parecer" tudo em dia: selo sempre
+               * visível no cabeçalho, nunca escondido numa aba. */}
+              {cadastroIncompleto && (
+                <Badge variant="warning" data-testid="selo-cadastro-incompleto">
+                  {t("case.registeredIncomplete")}
+                </Badge>
+              )}
+            </div>
+            <Button size="sm" variant="gold" onClick={() => setContratoModalAberto(true)}>
+              {contrato ? t("case.newContractCta") : t("case.registerContractCta")}
+            </Button>
+          </div>
         </div>
         <div className="grid divide-y divide-white/10 border-t border-white/10 bg-white/[0.045] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           <Sinal
+            icon={FileSignature}
+            label={t("case.contractProgram")}
+            value={
+              contrato
+                ? `${contrato.programaId} · ${contrato.programaVersao}`
+                : t("case.noActiveContract")
+            }
+          />
+          <Sinal icon={UserRound} label={t("case.responsible")} value={responsavelExibido} />
+          <Sinal icon={Compass} label={t("case.nextAction")} value={proximaAcao?.texto ?? "—"} />
+        </div>
+        <div className="grid divide-y divide-white/10 border-t border-white/10 bg-white/[0.03] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <Sinal
             icon={FileText}
             label="Documentos em ação"
-            value={documentosEmAcao ? `${documentosEmAcao} pendente(s)` : "Em dia"}
+            value={documentosEmAcaoTotal ? `${documentosEmAcaoTotal} pendente(s)` : "Em dia"}
           />
           <Sinal
             icon={WalletCards}
             label="Financeiro"
-            value={pagamentosEmAberto ? `${pagamentosEmAberto} em aberto` : "Regular"}
+            value={pagamentosEmAbertoTotal ? `${pagamentosEmAbertoTotal} em aberto` : "Regular"}
           />
           <Sinal
             icon={CalendarDays}
@@ -304,13 +404,33 @@ function Cliente360Real({
           />
         </div>
       </section>
-      <Card className="flex gap-3 border-gold-200 bg-gold-50/45 text-sm text-ink-soft">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold-700" />
-        <p>
-          Visão somente leitura. Transições, upload, pagamentos e respostas exigem RPC/Edge Function
-          segura; navegador não grava dados diretamente.
-        </p>
+      <Card className="flex flex-col gap-3" data-testid="fila-atencao">
+        <p className="text-sm font-semibold text-navy">{t("case.attentionTitle")}</p>
+        {itensAtencao.length === 0 ? (
+          <p className="text-sm text-ink-muted">{t("case.attentionEmpty")}</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {itensAtencao.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50/60 px-3.5 py-2.5"
+              >
+                <div className="flex items-center gap-2.5">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                  <p className="text-sm text-ink-soft">{item.label}</p>
+                </div>
+                {item.action}
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
+      <ContratoFormulario
+        open={contratoModalAberto}
+        onClose={() => setContratoModalAberto(false)}
+        clienteId={cliente.id}
+        onSalvo={() => void refetch()}
+      />
       <Tabs defaultValue="data">
         <TabsList className="flex max-w-full overflow-x-auto whitespace-nowrap">
           <TabsTrigger value="data">{t("clientes.tabs.data")}</TabsTrigger>

@@ -49,6 +49,7 @@ import { MockConteudoRepository } from "@/features/site/infrastructure/MockConte
 import { MockLeadRepository } from "@/shared/contracts/MockLeadRepository";
 import { SupabaseLeadRepository } from "@/shared/contracts/SupabaseLeadRepository";
 import { isDemoMode } from "@/shared/lib/env";
+import { obterCasoComandosReal } from "./real-repositories";
 
 const mockLeads = new MockLeadRepository();
 
@@ -94,6 +95,11 @@ export const container = {
    * container, porque a regra de dependência (interfaces → application → domain ← infrastructure)
    * vale igual: `application/` nunca importa `infrastructure/` direto. */
   sessao: sessaoService,
+  /** E03-S07 (T039): comandos de contrato/caso contra `caso-comandos` — mesmo caso de `sessao`,
+   * sem variante Mock (registrar contrato fictício fora do Postgres não teria o que demonstrar).
+   * `obterCasoComandosReal()` mora em `real-repositories.ts` para reaproveitar o mesmo padrão
+   * de singleton preguiçoso usado pelas demais consultas Supabase desta feature. */
+  casoComandos: obterCasoComandosReal(),
 } as const;
 
 export type Container = typeof container;

@@ -61,6 +61,8 @@ export interface Cliente360AdminConsulta {
     conversas: Conversa[];
     emails: EmailThread[];
     eventos: EventoComunicacao[];
+    /** E03-S07/FR-022: contratos ativos — ausência para um cliente é cadastro incompleto. */
+    contratos: Contrato[];
   }>;
 }
 

@@ -14,12 +14,14 @@ import { SupabaseComunicacaoConsulta } from "@/features/comunicacao/infrastructu
 import type { ConfiguracoesConsulta } from "@/features/configuracoes/application/ports";
 import { SupabaseConfiguracoesConsulta } from "@/features/configuracoes/infrastructure/SupabaseConfiguracoesConsulta";
 import type {
+  CasoComandos,
   Cliente360AdminConsulta,
   ClienteRepository,
   DashboardAdminConsulta,
   PerfilClienteConsulta,
 } from "@/features/crm/application/ports";
 import type { PropostasConsulta } from "@/features/crm/application/ports";
+import { SupabaseCasoComandos } from "@/features/crm/infrastructure/SupabaseCasoComandos";
 import { SupabaseCliente360AdminConsulta } from "@/features/crm/infrastructure/SupabaseCliente360AdminConsulta";
 import { SupabaseClienteRepository } from "@/features/crm/infrastructure/SupabaseClienteRepository";
 import { SupabaseDashboardAdminConsulta } from "@/features/crm/infrastructure/SupabaseDashboardAdminConsulta";
@@ -62,6 +64,7 @@ let dashboardAdminReal: DashboardAdminConsulta | undefined;
 let operacaoAdminReal: OperacaoAdminConsulta | undefined;
 let cliente360AdminReal: Cliente360AdminConsulta | undefined;
 let perfilClienteReal: PerfilClienteConsulta | undefined;
+let casoComandosReal: CasoComandos | undefined;
 
 export function obterConsultaAgendaReal(): AgendaConsulta {
   if (!agendaReal) agendaReal = new SupabaseAgendaConsulta();
@@ -126,6 +129,14 @@ export function obterConsultaCliente360AdminReal(): Cliente360AdminConsulta {
 export function obterConsultaPerfilClienteReal(): PerfilClienteConsulta {
   if (!perfilClienteReal) perfilClienteReal = new SupabasePerfilClienteConsulta();
   return perfilClienteReal;
+}
+
+/** E03-S07 (T039) — comandos de contrato/preparo de caso contra a Edge Function `caso-comandos`
+ *  (T031-035, já aprovados). Sem variante Mock: como `sessao` em `di.ts`, este comando é real
+ *  desde o dia 1 (não há o que "demonstrar" registrando contrato fictício fora do Postgres). */
+export function obterCasoComandosReal(): CasoComandos {
+  if (!casoComandosReal) casoComandosReal = new SupabaseCasoComandos();
+  return casoComandosReal;
 }
 
 export async function obterRepositorioClientes(): Promise<ClienteRepository> {
