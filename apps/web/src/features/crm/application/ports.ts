@@ -3,6 +3,7 @@ import type { Conversa, EmailThread, EventoComunicacao } from "@/features/comuni
 import type { Documento } from "@/features/documentos/domain/types";
 import type { Jornada } from "@/features/jornada/domain/types";
 import type { Pagamento } from "@/features/pagamentos/domain/types";
+import type { Contrato } from "../domain/contrato";
 import type { Cliente, Proposta } from "../domain/types";
 
 export interface ClienteRepository {
@@ -61,4 +62,51 @@ export interface Cliente360AdminConsulta {
     emails: EmailThread[];
     eventos: EventoComunicacao[];
   }>;
+}
+
+/**
+ * E03-S07 (T033) — erro de comando contra a Edge Function `caso-comandos`. `status` é o HTTP
+ * status devolvido pelo servidor (403/422/409/413/429/500), sempre fiel ao que veio de lá; quem
+ * decide a mensagem i18n final a partir dele é a camada de `interfaces/` (T037/T038, futuras),
+ * não o adapter.
+ */
+export class CasoComandoError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** Uma condição financeira do contrato, no formato de entrada (sem `id` — gerado pelo servidor). */
+export interface CondicaoContratoInput {
+  descricao: string;
+  tipo: "entrada" | "parcela" | "taxa_federal" | "outro";
+  valor: number;
+  moeda: "BRL" | "USD";
+  vencimento: string;
+  ordem: number;
+}
+
+/** Porta dos dois comandos transacionais já aprovados em `_shared/caso-comandos.ts`
+ * (T031/T032): registrar o contrato do caso e preparar a jornada a partir dele. */
+export interface CasoComandos {
+  registrarContrato(input: {
+    clienteId: string;
+    programaId: string;
+    programaVersao: string;
+    prazoRespostaDiasUteis: number;
+    prioridade: "padrao" | "prioritaria";
+    observacao?: string;
+    condicoes: CondicaoContratoInput[];
+    idempotencyKey: string;
+  }): Promise<Contrato>;
+
+  prepararCaso(input: {
+    clienteId: string;
+    contratoId: string;
+    levantamentoEstado?: "incompleto" | "conferido";
+    idempotencyKey: string;
+  }): Promise<{ id: string; clienteId: string; faseAtualId: string | null }>;
 }
