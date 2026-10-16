@@ -52,6 +52,77 @@ describe("SupabaseProgramaRepository — mapeamento", () => {
     );
   });
 
+  it("E03-S07 (US6)/ADR-0018: mapeia papelDirigido/envioConjunto/restrito de uma linha real", () => {
+    const programa = paraDominio({
+      ...linha,
+      documentos_exigidos: [
+        {
+          id: "req-restrito",
+          titulo: "Demonstrativo fiscal da organização",
+          obrigatorio: true,
+          papelDirigido: "organizacao_aplicante",
+          envioConjunto: true,
+          restrito: true,
+        },
+        {
+          id: "req-comum",
+          titulo: "Passaporte",
+          obrigatorio: true,
+        },
+      ],
+    });
+
+    expect(programa.documentosExigidos[0]).toMatchObject({
+      papelDirigido: "organizacao_aplicante",
+      envioConjunto: true,
+      restrito: true,
+    });
+    // Requisito sem os campos novos não ganha chaves com `undefined`/`false` artificiais —
+    // ausente continua ausente.
+    expect(programa.documentosExigidos[1]).not.toHaveProperty("papelDirigido");
+    expect(programa.documentosExigidos[1]).not.toHaveProperty("envioConjunto");
+    expect(programa.documentosExigidos[1]).not.toHaveProperty("restrito");
+  });
+
+  it("E03-S07 (US6)/ADR-0018: papelDirigido com valor fora do enum é descartado (dado externo não confiável)", () => {
+    const programa = paraDominio({
+      ...linha,
+      documentos_exigidos: [
+        {
+          id: "req-invalido",
+          titulo: "Documento qualquer",
+          obrigatorio: true,
+          papelDirigido: "papel-que-nao-existe",
+        },
+      ],
+    });
+
+    expect(programa.documentosExigidos[0]).not.toHaveProperty("papelDirigido");
+  });
+
+  it("E03-S07 (US6)/ADR-0018: paraColunas persiste o requisito restrito inteiro como JSONB", () => {
+    const programa = paraDominio({
+      ...linha,
+      documentos_exigidos: [
+        {
+          id: "req-restrito",
+          titulo: "Demonstrativo fiscal da organização",
+          obrigatorio: true,
+          papelDirigido: "organizacao_aplicante",
+          envioConjunto: true,
+          restrito: true,
+        },
+      ],
+    });
+
+    const colunas = paraColunas(programa);
+    expect(colunas.documentos_exigidos[0]).toMatchObject({
+      papelDirigido: "organizacao_aplicante",
+      envioConjunto: true,
+      restrito: true,
+    });
+  });
+
   it("normaliza a linha legada real sem usar seed ou mock", () => {
     const programa = paraDominio({
       ...linha,

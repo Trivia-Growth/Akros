@@ -5,6 +5,7 @@ import type {
   EmissorDocumento,
   EtapaTemplate,
   FaseTemplate,
+  PapelPrograma,
   Programa,
   RequisitoDocumento,
   ResponsavelEtapa,
@@ -31,6 +32,16 @@ const EMISSORES: EmissorDocumento[] = [
   "empregador",
   "instituicao",
   "terceiro_certificado",
+];
+// E03-S07 (US6)/ADR-0018: mesmos quatro valores de PapelParticipante — `documentos_exigidos`
+// já é JSONB hoje, então `papelDirigido` pode chegar de um banco real antes da migration de
+// `programas.papeis` existir. Dado externo (JSONB) nunca é aceito sem validar contra o enum,
+// igual já se faz com `emitidoPor`/EMISSORES.
+const PAPEIS_PROGRAMA: PapelPrograma[] = [
+  "aplicante",
+  "beneficiario",
+  "organizacao_aplicante",
+  "familiar_apoio",
 ];
 
 function ehObjeto(valor: unknown): valor is JsonObjeto {
@@ -121,6 +132,9 @@ function paraRequisito(
           : {}),
       }
     : undefined;
+  const papelDirigido = PAPEIS_PROGRAMA.includes(valor.papelDirigido as PapelPrograma)
+    ? (valor.papelDirigido as PapelPrograma)
+    : undefined;
 
   return {
     id: texto(valor.id, `${programaId}-documento-${indice + 1}`),
@@ -134,6 +148,10 @@ function paraRequisito(
       ? { aceitaSubstituto: listaDeTextos(valor.aceitaSubstituto) }
       : {}),
     ...(analiseIA ? { analiseIA } : {}),
+    // E03-S07 (US6)/ADR-0018 — ver PAPEIS_PROGRAMA acima.
+    ...(papelDirigido ? { papelDirigido } : {}),
+    ...(valor.envioConjunto === true ? { envioConjunto: true } : {}),
+    ...(valor.restrito === true ? { restrito: true } : {}),
   };
 }
 
