@@ -21,7 +21,9 @@ export function corsHeaders(origin: string | null): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-akros-csrf",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    // GET entra em 2026-10-21 (E03-S07/Fase 5): `arquivo-baixar` é a primeira função desta lista
+    // chamada por GET (download com `?versaoId=`, não cabe em POST) — aditivo, não remove POST.
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     Vary: "Origin",
   };
 }
