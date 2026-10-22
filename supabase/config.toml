@@ -461,6 +461,33 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
+# onedrive-oauth (E03-S07, ADR-0019): admin é validado dentro da função (requireAdmin). `GET
+# /callback` é redirecionamento do consentimento da Microsoft, não pode carregar Bearer do
+# Supabase — por isso o gateway fica aberto, mesmo critério de caso-comandos.
+[functions.onedrive-oauth]
+enabled = true
+verify_jwt = false
+
+# envio-comandos (E03-S07, ADR-0019): participante ou admin, validado dentro da função
+# (requireAuth + exigirPapel) — não é admin-only como caso-comandos, então não pode reusar
+# requireAdmin, mas o critério de gateway aberto é o mesmo (preflight CORS do navegador).
+[functions.envio-comandos]
+enabled = true
+verify_jwt = false
+
+# arquivo-baixar (E03-S07, ADR-0019): participante ou admin, validado dentro da função
+# (requireAuth + exigirPapel), mesmo critério de envio-comandos.
+[functions.arquivo-baixar]
+enabled = true
+verify_jwt = false
+
+# arquivo-processar (E03-S07, ADR-0019): função interna, nunca chamada por sessão de usuário —
+# só Cron com segredo (requireServiceRole), mesmo critério das integrações Auvo
+# (ver _shared/auth.ts, requireServiceRole).
+[functions.arquivo-processar]
+enabled = true
+verify_jwt = false
+
 # pg-delta is the schema diff engine for db diff / db pull / db remote commit.
 # Set enabled = false to fall back to the legacy migra engine.
 [experimental.pgdelta]

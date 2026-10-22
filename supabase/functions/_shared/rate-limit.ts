@@ -146,4 +146,16 @@ export const TETOS = {
   // equipe, não tráfego de alto volume — teto baixo por hora, fail-closed (mesmo critério de
   // "integracoes-ia-salvar": sem limitador, endpoint admin de escrita fica aberto).
   "caso-comandos": { teto: 60, janelaSegundos: 3600 },
+  // E03-S07 (Fase 5, ADR-0019): conectar/reconectar conta Microsoft é ação rara de admin —
+  // teto baixo por hora, fail-closed (mesmo critério de "caso-comandos").
+  "onedrive-oauth": { teto: 20, janelaSegundos: 3600 },
+  // Envio de documento pelo portal: participante pode reservar/finalizar/reenviar em rajada
+  // curta (retomada TUS), mas não é tráfego de alto volume — teto por hora, fail-closed.
+  "envio-comandos": { teto: 120, janelaSegundos: 3600 },
+  // Download de arquivo: participante pode abrir vários documentos da própria pasta em sequência
+  // — teto mais largo que os de escrita, ainda fail-closed (endpoint que fala com o Graph).
+  "arquivo-baixar": { teto: 120, janelaSegundos: 3600 },
+  // Processador interno (Cron + segredo, nunca chamado por sessão de usuário): teto alto só como
+  // cinto-e-suspensório contra reentrância/loop de retry, fail-closed.
+  "arquivo-processar": { teto: 600, janelaSegundos: 60 },
 } as const;
