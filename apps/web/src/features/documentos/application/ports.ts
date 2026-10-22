@@ -3,6 +3,7 @@ import type {
   Documento,
   SolicitacaoAssinatura,
   TipoDocumento,
+  VersaoDocumento,
 } from "../domain/types";
 
 /** Leitura de documentos e assinaturas já limitada por RLS ao cliente autenticado. */
@@ -16,6 +17,41 @@ export interface DocumentosConsulta {
 /** Fila de revisão admin: todos documentos e nomes autorizados por RLS, sem mutação browser. */
 export interface DocumentosAdminConsulta {
   carregarAdmin(): Promise<{ documentos: Documento[]; nomesClientes: Record<string, string> }>;
+}
+
+export interface EnvioDocumentoComandos {
+  reservar(input: {
+    solicitacaoId: string;
+    nomeArquivo: string;
+    tamanhoBytes: number;
+    mime: string;
+  }): Promise<{ versaoId: string; objetoPermitido: string; expiraEm: string }>;
+  finalizar(input: {
+    versaoId: string;
+    idempotencyKey: string;
+    revisaoEsperada: number;
+  }): Promise<{ versaoId: string; recebidoEm: string; estadoArmazenamento: string }>;
+}
+
+export interface VersoesConsulta {
+  listarPorDocumento(documentoId: string): Promise<VersaoDocumento[]>;
+}
+
+export interface EnvioArquivoPort {
+  enviar(input: {
+    objetoPermitido: string;
+    arquivo: Blob;
+    onProgress: (bytesEnviados: number, bytesTotais: number) => void;
+  }): Promise<void>;
+}
+
+export class EnvioDocumentoError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
 }
 
 export interface DocumentoRepository {

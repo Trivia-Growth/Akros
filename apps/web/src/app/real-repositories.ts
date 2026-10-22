@@ -32,9 +32,14 @@ import { SupabasePropostasConsulta } from "@/features/crm/infrastructure/Supabas
 import type {
   DocumentosAdminConsulta,
   DocumentosConsulta,
+  EnvioArquivoPort,
+  EnvioDocumentoComandos,
+  VersoesConsulta,
 } from "@/features/documentos/application/ports";
 import { SupabaseDocumentosAdminConsulta } from "@/features/documentos/infrastructure/SupabaseDocumentosAdminConsulta";
 import { SupabaseDocumentosConsulta } from "@/features/documentos/infrastructure/SupabaseDocumentosConsulta";
+import { SupabaseEnvioComandos } from "@/features/documentos/infrastructure/SupabaseEnvioComandos";
+import { SupabaseVersoesConsulta } from "@/features/documentos/infrastructure/SupabaseVersoesConsulta";
 import type { JornadaConsulta, OperacaoAdminConsulta } from "@/features/jornada/application/ports";
 import { SupabaseJornadaConsulta } from "@/features/jornada/infrastructure/SupabaseJornadaConsulta";
 import { SupabaseOperacaoAdminConsulta } from "@/features/jornada/infrastructure/SupabaseOperacaoAdminConsulta";
@@ -46,6 +51,7 @@ import type {
 } from "@/features/programas/application/ports";
 import { SupabaseProgramaRepository } from "@/features/programas/infrastructure/SupabaseProgramaRepository";
 import { isDemoMode } from "@/shared/lib/env";
+import { enviarArquivoAoBucket } from "@/shared/supabase/envio-tus";
 
 let clientesReais: ClienteRepository | undefined;
 let clientesDemo: ClienteRepository | undefined;
@@ -58,6 +64,9 @@ let agendaReal: AgendaConsulta | undefined;
 let jornadaReal: JornadaConsulta | undefined;
 let documentosReal: DocumentosConsulta | undefined;
 let documentosAdminReal: DocumentosAdminConsulta | undefined;
+let envioDocumentoReal: EnvioDocumentoComandos | undefined;
+let versoesDocumentoReal: VersoesConsulta | undefined;
+let envioArquivoReal: EnvioArquivoPort | undefined;
 let pagamentosReal: PagamentosConsulta | undefined;
 let comunicacaoReal: ComunicacaoConsulta | undefined;
 let comunicacaoAdminReal: ComunicacaoAdminConsulta | undefined;
@@ -92,6 +101,27 @@ export function obterConsultaDocumentosReal(): DocumentosConsulta {
 export function obterConsultaDocumentosAdminReal(): DocumentosAdminConsulta {
   if (!documentosAdminReal) documentosAdminReal = new SupabaseDocumentosAdminConsulta();
   return documentosAdminReal;
+}
+
+export function obterComandosEnvioDocumento(): EnvioDocumentoComandos {
+  if (!envioDocumentoReal) envioDocumentoReal = new SupabaseEnvioComandos();
+  return envioDocumentoReal;
+}
+
+export function obterConsultaVersoesDocumento(): VersoesConsulta {
+  if (!versoesDocumentoReal) versoesDocumentoReal = new SupabaseVersoesConsulta();
+  return versoesDocumentoReal;
+}
+
+export function obterEnvioArquivoReal(): EnvioArquivoPort {
+  if (!envioArquivoReal) {
+    envioArquivoReal = {
+      async enviar(input) {
+        await enviarArquivoAoBucket(input).promessa;
+      },
+    };
+  }
+  return envioArquivoReal;
 }
 
 export function obterConsultaPagamentosReal(): PagamentosConsulta {

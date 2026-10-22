@@ -1,5 +1,5 @@
 import { Badge, Card, Progress, Stepper, type StepperItem } from "@/shared/ui";
-import { CalendarClock, CheckCircle2, CircleAlert, Clock, Lock, ShieldCheck } from "lucide-react";
+import { CalendarClock, CheckCircle2, CircleAlert, Clock, Lock } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { calcularProgresso, obterFaseAtual } from "../application/calculos";
@@ -17,13 +17,20 @@ export function JornadaRealPage() {
 
   const faseAtual = obterFaseAtual(jornada);
   const progresso = calcularProgresso(jornada);
-  const stepperItems: StepperItem[] = jornada.fases.map((fase) => ({
+  // Fases futuras ficam fora do Stepper até a fase corrente concluir (FR-021).
+  const primeiraFaseAberta = jornada.fases.findIndex((fase) => fase.status !== "concluida");
+  const fasesVisiveis =
+    primeiraFaseAberta < 0 ? jornada.fases : jornada.fases.slice(0, primeiraFaseAberta + 1);
+  const stepperItems: StepperItem[] = fasesVisiveis.map((fase) => ({
     id: fase.id,
     title: fase.titulo,
     status: fase.status,
   }));
   const faseSelecionada =
-    jornada.fases.find((fase) => fase.id === faseSelecionadaId) ?? faseAtual ?? jornada.fases[0];
+    fasesVisiveis.find((fase) => fase.id === faseSelecionadaId) ?? faseAtual ?? fasesVisiveis[0];
+  const pendencias = fasesVisiveis.flatMap((fase) =>
+    fase.etapas.filter((etapa) => etapa.status === "pendente" && etapa.responsavel === "cliente"),
+  );
 
   return (
     <div className="flex flex-col gap-8" data-testid="jornada-real">
@@ -58,12 +65,20 @@ export function JornadaRealPage() {
         <Progress value={progresso} className="mt-4" />
       </Card>
 
-      <Card className="flex gap-3 border-gold-200 bg-gold-50/45 text-sm text-ink-soft">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold-700" aria-hidden />
-        <p>
-          Envio para análise permanece indisponível até existir um fluxo seguro de arquivo e RPC de
-          transição. Esta tela não grava status diretamente no navegador.
-        </p>
+      <Card
+        className="border-gold-200 bg-gold-50/45 text-sm text-ink-soft"
+        data-testid="pendencias-participante"
+      >
+        <h2 className="font-medium text-navy">{t("journey.whatToDoNow")}</h2>
+        {pendencias.length === 0 ? (
+          <p className="mt-2">{t("journey.nothingToDo")}</p>
+        ) : (
+          <ul className="mt-2 list-inside list-disc">
+            {pendencias.map((etapa) => (
+              <li key={etapa.id}>{etapa.titulo}</li>
+            ))}
+          </ul>
+        )}
       </Card>
 
       {jornada.fases.length === 0 ? (

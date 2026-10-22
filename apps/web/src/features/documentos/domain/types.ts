@@ -84,3 +84,14 @@ export interface SolicitacaoAssinatura {
   assinadoPor?: string;
   assinadoEm?: string;
 }
+
+/** Versão efetivamente recebida no bucket e fila de transferência, exposta pelo RLS. */
+export interface VersaoDocumento {
+  id: string;
+  numeroVersao: number;
+  nomeOriginal: string;
+  estadoRecebimento: "reservada" | "recebida" | "rejeitada";
+  estadoArmazenamento: "pendente" | "transferindo" | "armazenado" | "falhou";
+  recebidoEm?: string;
+  criadaEm: string;
+}

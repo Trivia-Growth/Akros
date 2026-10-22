@@ -39,6 +39,8 @@
     "requiredDocs": "Required documents",
     "phaseCompleted": "Phase completed! Waiting for your case manager to unlock the next step.",
     "selectPhase": "Select a phase above to see the details",
+    "whatToDoNow": "What I need to do now",
+    "nothingToDo": "You have no pending tasks in this phase. Wait for the next update from the team.",
     "responsible": {
       "cliente": "With you",
       "akros": "With Akros",
@@ -158,6 +160,9 @@
     "retry": "Try again",
     "blockedPhase": "This request belongs to a phase that is not yet unlocked",
     "notYourRole": "This document is directed to another participant of the case",
-    "newVersion": "New version submitted"
+    "newVersion": "New version submitted",
+    "versions": "Submitted versions",
+    "version": "Version {{number}}",
+    "rejected": "Upload not completed"
   }
 }

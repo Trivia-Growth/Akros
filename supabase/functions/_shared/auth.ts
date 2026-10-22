@@ -58,6 +58,31 @@ export async function requireAuth(req: Request): Promise<{ userId: string }> {
   return { userId: data.user.id };
 }
 
+/**
+ * Valida o Bearer token e devolve userId + se o usuário é admin (`app_metadata.role`).
+ * E03-S07 (`envio-comandos`) — função "participante ou admin": `requireAuth` sozinho não
+ * distingue os dois perfis, e `requireAdmin` rejeitaria o participante. O booleano `admin` aqui
+ * é o que uma Edge Function/RPC usa para decidir um bypass explícito (ex.: `p_eh_admin` em
+ * `arquivos.reservar_envio`/`finalizar_envio`, migration 0027) — nunca inferido depois de
+ * `set_config` dentro de uma função `SECURITY DEFINER`: aquele `set_config` substitui o JWT
+ * inteiro por um claim sintético (`sub`/`role: service_role`), que não carrega mais
+ * `app_metadata`, então `crm.e_admin()` sempre devolveria falso ali — a decisão de "é admin?"
+ * só existe ANTES disso, com o token original do chamador.
+ */
+export async function requireAuthComPapel(req: Request): Promise<{ userId: string; admin: boolean }> {
+  const token = req.headers.get("Authorization")?.replace("Bearer ", "");
+  if (!token) throw unauthorized("Token ausente");
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    { global: { headers: { Authorization: `Bearer ${token}` } } },
+  );
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw unauthorized("Token inválido");
+  return { userId: data.user.id, admin: data.user.app_metadata?.role === "admin" };
+}
+
 /** Checa papel no usuário validado pelo Auth; nunca confia em claim enviado no body. */
 export async function requireAdmin(req: Request): Promise<{ userId: string }> {
   const token = req.headers.get("Authorization")?.replace("Bearer ", "");
