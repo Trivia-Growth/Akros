@@ -159,8 +159,14 @@ function ParticipanteLinha({
         </p>
         {participante.convidadoPor && participante.convidadoEm && (
           <p className="mt-1 text-xs text-ink-muted">
+            {/* FR-020 exige registrar quem convidou e quando — o dado fica em
+                participante.convidadoPor (auth.uid() do admin, auditável no banco). Não há,
+                nesta fase do protótipo, resolução de uuid de admin para nome de exibição
+                (configuracoes.equipe não tem auth_user_id vinculado) — mostrar o uuid cru aqui
+                pareceria um valor quebrado, não um nome. Achado da revisão adversarial de
+                T049-053: corrigido removendo a interpolação de {{author}} em vez de inventar
+                um lookup fora de escopo. */}
             {t("participants.invitedBy", {
-              author: participante.convidadoPor,
               date: formatarData(participante.convidadoEm),
             })}
           </p>
@@ -168,7 +174,6 @@ function ParticipanteLinha({
         {!ativo && participante.revogadoPor && participante.revogadoEm && (
           <p className="mt-1 text-xs text-ink-muted">
             {t("participants.revokedBy", {
-              author: participante.revogadoPor,
               date: formatarData(participante.revogadoEm),
             })}
           </p>
