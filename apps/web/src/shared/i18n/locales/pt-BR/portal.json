@@ -39,6 +39,8 @@
     "requiredDocs": "Documentos necessários",
     "phaseCompleted": "Fase concluída! Aguardando liberação da próxima etapa pelo seu case manager.",
     "selectPhase": "Selecione uma fase acima para ver os detalhes",
+    "whatToDoNow": "O que preciso fazer agora",
+    "nothingToDo": "Nenhuma pendência sua nesta fase. Aguarde a próxima atualização da equipe.",
     "responsible": {
       "cliente": "Com você",
       "akros": "Com a Akros",
@@ -158,6 +160,9 @@
     "retry": "Tentar novamente",
     "blockedPhase": "Esta solicitação pertence a uma fase ainda não liberada",
     "notYourRole": "Este documento é dirigido a outro participante do caso",
-    "newVersion": "Nova versão enviada"
+    "newVersion": "Nova versão enviada",
+    "versions": "Versões enviadas",
+    "version": "Versão {{number}}",
+    "rejected": "Envio não concluído"
   }
 }
