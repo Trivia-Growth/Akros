@@ -367,5 +367,29 @@
     "errorValidation": "Dados inválidos para este participante.",
     "errorConflict": "Conflito: já existe um registro equivalente.",
     "errorGeneric": "Não foi possível concluir a ação. Tente novamente."
+  },
+  "oneDrive": {
+    "title": "Conta Microsoft / OneDrive",
+    "description": "Conexão corporativa única, usada para guardar os documentos recebidos de todos os casos. Nenhum cliente conecta conta própria.",
+    "notConnected": "Nenhuma conta Microsoft conectada ainda.",
+    "connect": "Conectar",
+    "reconnect": "Reconectar",
+    "accountLabel": "Conta",
+    "rootFolderLabel": "ID da pasta raiz autorizada",
+    "connectedOn": "Conectada em {{date}}",
+    "stateConnected": "Conectada",
+    "stateExpired": "Expirada",
+    "stateRevoked": "Revogada",
+    "formTitle": "Conectar conta Microsoft",
+    "formEmailLabel": "E-mail da conta corporativa",
+    "formDriveIdLabel": "ID do drive (OneDrive)",
+    "formRootFolderIdLabel": "ID da pasta raiz autorizada",
+    "formHint": "Esses três dados identificam onde os arquivos dos casos serão guardados — confirme com o time técnico antes de conectar.",
+    "formCancel": "Cancelar",
+    "formSubmit": "Continuar para a Microsoft",
+    "successRedirectConnected": "Conta Microsoft conectada com sucesso.",
+    "errorRedirectFailed": "Não foi possível concluir a conexão com a Microsoft. Tente de novo.",
+    "errorStartFailed": "Não foi possível iniciar a conexão com a Microsoft.",
+    "errorLoadFailed": "Não foi possível carregar a conexão com o OneDrive."
   }
 }

@@ -127,3 +127,21 @@ export interface AgenteIAIntegracao {
   modelo: string;
   ativo: boolean;
 }
+
+/** E03-S07 Fase 5 (T058, ADR-0019). Espelha `arquivos.integracoes_microsoft.estado` (migration
+ *  0020) — conexão única, admin-only, com a conta Microsoft corporativa. */
+export type EstadoIntegracaoOneDrive = "conectada" | "expirada" | "revogada";
+
+/** Conexão corporativa com o OneDrive (ADR-0019) — cartão "Conta Microsoft / OneDrive" em
+ *  `ConfiguracoesRealPage.tsx`. Nunca carrega token/refresh token: o schema `arquivos` já
+ *  restringe a leitura dessas colunas de segredo a lugar nenhum (o Vault, não a tabela) —
+ *  aqui só o que já é metadado público na linha. `pastaRaizId` é o id opaco do item no Graph
+ *  (`pasta_raiz_item_id`), não um caminho legível — a tabela não tem uma coluna de exibição para
+ *  a pasta raiz (só `arquivos.vinculos_pasta.caminho_exibicao`, que é por CASO, não por conexão). */
+export interface IntegracaoOneDrive {
+  id: string;
+  contaEmail: string;
+  pastaRaizId: string;
+  estado: EstadoIntegracaoOneDrive;
+  conectadoEm: string;
+}

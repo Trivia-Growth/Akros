@@ -1,8 +1,10 @@
 // caso-comandos.test.ts — E03-S07 (T032, estendido em T046-T048 para
-// convidar_participante/revogar_participante/solicitar_documento). Deno test, só fakes: nenhum
-// teste aqui toca Postgres real (a prova contra Postgres real das cinco ações está em
-// task-031-032-report.md e task-046-048-report.md, rodada manualmente contra `crm_test`). Mesmo
-// estilo de `_shared/playground.test.ts`.
+// convidar_participante/revogar_participante/solicitar_documento, e em T056-T057 para
+// vincular_pasta). Deno test, só fakes: nenhum teste aqui toca Postgres real nem Microsoft Graph
+// de verdade (a prova contra Postgres real das ações anteriores está em task-031-032-report.md e
+// task-046-048-report.md, rodada manualmente contra `crm_test`; `vincular_pasta` em
+// task-A-report.md desta task — ver "Honestidade obrigatória" no brief: este sandbox não tem app
+// registration real no Azure AD nem tenant Microsoft). Mesmo estilo de `_shared/playground.test.ts`.
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { HttpError } from "../_shared/auth.ts";
 import {
@@ -17,11 +19,16 @@ const CONTRATO_ID = "33333333-3333-4333-8333-333333333333";
 const PARTICIPANTE_ID = "44444444-4444-4444-8444-444444444444";
 const FASE_ID = "55555555-5555-4555-8555-555555555555";
 const OUTRO_PARTICIPANTE_ID = "66666666-6666-4666-8666-666666666666";
+const JORNADA_ID = "77777777-7777-4777-8777-777777777777";
+const INTEGRACAO_ID = "88888888-8888-4888-8888-888888888888";
+const PASTA_RAIZ_ID = "pasta-raiz-item-id";
 
 interface Espiao {
   rpc: number;
   chamadas: Array<{ nome: string; params: Record<string, unknown> }>;
   gravacoes: number;
+  listarAncestrais: number;
+  prepararAcessoMicrosoft: number;
 }
 
 function montar(a: {
@@ -29,8 +36,16 @@ function montar(a: {
   limite?: boolean;
   rpcErro?: { code?: string; message: string } | null;
   rpcResultado?: unknown;
+  integracaoInexistente?: boolean;
+  ancestrais?: string[] | "erro";
 } = {}): { h: (req: Request) => Promise<Response>; e: Espiao } {
-  const e: Espiao = { rpc: 0, chamadas: [], gravacoes: 0 };
+  const e: Espiao = {
+    rpc: 0,
+    chamadas: [],
+    gravacoes: 0,
+    listarAncestrais: 0,
+    prepararAcessoMicrosoft: 0,
+  };
   const idempotenciaMapa = new Map<string, { hashConteudo: string; resultado: unknown }>();
 
   const io: IOCasoComandos = {
@@ -56,6 +71,22 @@ function montar(a: {
         data: a.rpcResultado ?? { id: "contrato-novo", ok: true },
         error: null,
       });
+    },
+    prepararAcessoMicrosoft: (integracaoId) => {
+      e.prepararAcessoMicrosoft++;
+      if (a.integracaoInexistente) return Promise.resolve(null);
+      return Promise.resolve({
+        accessToken: "access-token-fake",
+        driveId: "drive-1",
+        pastaRaizItemId: PASTA_RAIZ_ID,
+      });
+    },
+    graph: {
+      listarAncestrais: () => {
+        e.listarAncestrais++;
+        if (a.ancestrais === "erro") return Promise.reject(new Error("item inexistente no Graph"));
+        return Promise.resolve(a.ancestrais ?? [PASTA_RAIZ_ID, "ancestral-mais-acima"]);
+      },
     },
   };
   return { h: criarManipuladorCasoComandos(io), e };
@@ -116,6 +147,16 @@ const SOLICITAR_DOCUMENTO = {
   prazoEm: "2026-12-01",
   instrucao: "Enviar cópia colorida",
   idempotencyKey: "chave-5",
+};
+
+const VINCULAR_PASTA = {
+  acao: "vincular_pasta",
+  clienteId: CLIENTE_ID,
+  jornadaId: JORNADA_ID,
+  integracaoId: INTEGRACAO_ID,
+  folderItemId: "pasta-do-caso-item-id",
+  caminhoExibicao: "Casos/Fulano de Tal",
+  idempotencyKey: "chave-6",
 };
 
 Deno.test("CSRF ausente é 401, antes de autenticar; RPC nunca chamada", async () => {
@@ -452,3 +493,92 @@ Deno.test(
     assertEquals(e.rpc, 0);
   },
 );
+
+// ── vincular_pasta (T056-T057, Fase 5/ADR-0019) ─────────────────────────────────────────────
+
+Deno.test(
+  "vincular_pasta: pasta dentro da raiz autorizada — fluxo de sucesso chama listarAncestrais e a RPC certa",
+  async () => {
+    const { h, e } = montar({ rpcResultado: { id: "vinculo-novo", estado: "ativo" } });
+    const r = await h(req(VINCULAR_PASTA));
+    assertEquals(r.status, 201);
+    assertEquals(e.prepararAcessoMicrosoft, 1);
+    assertEquals(e.listarAncestrais, 1);
+    assertEquals(e.chamadas.length, 1);
+    assertEquals(e.chamadas[0].nome, "vincular_pasta");
+    assertEquals(e.chamadas[0].params, {
+      p_cliente_id: CLIENTE_ID,
+      p_jornada_id: JORNADA_ID,
+      p_integracao_id: INTEGRACAO_ID,
+      p_folder_item_id: "pasta-do-caso-item-id",
+      p_caminho_exibicao: "Casos/Fulano de Tal",
+      p_autor_id: ADMIN_ID,
+    });
+  },
+);
+
+Deno.test("vincular_pasta sem caminhoExibicao: p_caminho_exibicao vai null (nunca omitido)", async () => {
+  const { h, e } = montar({ rpcResultado: { id: "vinculo-novo" } });
+  const { caminhoExibicao: _omitido, ...semCaminho } = VINCULAR_PASTA;
+  await h(req({ ...semCaminho, idempotencyKey: "chave-outra-pasta" }));
+  assertEquals(e.chamadas[0].params.p_caminho_exibicao, null);
+});
+
+Deno.test(
+  "vincular_pasta: pasta fora da raiz autorizada (ancestrais não incluem a raiz) é 422, RPC nunca chamada",
+  async () => {
+    const { h, e } = montar({ ancestrais: ["outra-pasta-qualquer", "raiz-de-outro-drive"] });
+    const r = await h(req(VINCULAR_PASTA));
+    assertEquals(r.status, 422);
+    assertEquals(e.rpc, 0);
+  },
+);
+
+Deno.test(
+  "vincular_pasta: Graph indica pasta inexistente (404 simulado) — 422 com mensagem legível, sem vazar erro técnico",
+  async () => {
+    const { h, e } = montar({ ancestrais: "erro" });
+    const r = await h(req(VINCULAR_PASTA));
+    assertEquals(r.status, 422);
+    assertEquals(e.rpc, 0);
+    const corpo = await r.json();
+    assertEquals(corpo, { erro: "Pasta inexistente ou inacessível no OneDrive" });
+  },
+);
+
+Deno.test("vincular_pasta: integração Microsoft inexistente é 422, Graph nunca chamado", async () => {
+  const { h, e } = montar({ integracaoInexistente: true });
+  const r = await h(req(VINCULAR_PASTA));
+  assertEquals(r.status, 422);
+  assertEquals(e.listarAncestrais, 0);
+  assertEquals(e.rpc, 0);
+});
+
+Deno.test(
+  "vincular_pasta: RPC recusa com 23505 (pasta já vinculada a outro caso) — 409, não 500",
+  async () => {
+    const { h } = montar({
+      rpcErro: { code: "23505", message: "duplicate key value violates vinculos_pasta_folder_unico_idx" },
+    });
+    const r = await h(req(VINCULAR_PASTA));
+    assertEquals(r.status, 409);
+    const corpo = await r.text();
+    assertEquals(corpo.includes("vinculos_pasta_folder_unico_idx"), false);
+  },
+);
+
+Deno.test("vincular_pasta: integracaoId que não é UUID é 422, Graph/RPC nunca chamados", async () => {
+  const { h, e } = montar();
+  const r = await h(req({ ...VINCULAR_PASTA, integracaoId: "não-é-uuid" }));
+  assertEquals(r.status, 422);
+  assertEquals(e.prepararAcessoMicrosoft, 0);
+  assertEquals(e.rpc, 0);
+});
+
+Deno.test("vincular_pasta: corpo com campo extra (.strict()) é 422, Graph/RPC nunca chamados", async () => {
+  const { h, e } = montar();
+  const r = await h(req({ ...VINCULAR_PASTA, campoNaoDeclarado: "x" }));
+  assertEquals(r.status, 422);
+  assertEquals(e.prepararAcessoMicrosoft, 0);
+  assertEquals(e.rpc, 0);
+});

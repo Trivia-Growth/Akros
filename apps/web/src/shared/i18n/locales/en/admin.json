@@ -367,5 +367,29 @@
     "errorValidation": "Invalid data for this participant.",
     "errorConflict": "Conflict: an equivalent record already exists.",
     "errorGeneric": "Could not complete the action. Try again."
+  },
+  "oneDrive": {
+    "title": "Microsoft Account / OneDrive",
+    "description": "Single corporate connection, used to store documents received from every case. No client ever connects their own account.",
+    "notConnected": "No Microsoft account connected yet.",
+    "connect": "Connect",
+    "reconnect": "Reconnect",
+    "accountLabel": "Account",
+    "rootFolderLabel": "Authorized root folder ID",
+    "connectedOn": "Connected on {{date}}",
+    "stateConnected": "Connected",
+    "stateExpired": "Expired",
+    "stateRevoked": "Revoked",
+    "formTitle": "Connect Microsoft account",
+    "formEmailLabel": "Corporate account email",
+    "formDriveIdLabel": "Drive ID (OneDrive)",
+    "formRootFolderIdLabel": "Authorized root folder ID",
+    "formHint": "These three values identify where case files will be stored — confirm with the technical team before connecting.",
+    "formCancel": "Cancel",
+    "formSubmit": "Continue to Microsoft",
+    "successRedirectConnected": "Microsoft account connected successfully.",
+    "errorRedirectFailed": "Could not complete the connection with Microsoft. Try again.",
+    "errorStartFailed": "Could not start the connection with Microsoft.",
+    "errorLoadFailed": "Could not load the OneDrive connection."
   }
 }

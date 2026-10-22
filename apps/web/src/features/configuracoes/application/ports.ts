@@ -4,6 +4,7 @@ import type {
   ContaConectada,
   CredenciaisContaAgenda,
   IntegracaoExterna,
+  IntegracaoOneDrive,
   ProvedorAgenda,
   ProvedorCanal,
   UsuarioAkros,
@@ -18,6 +19,14 @@ export interface ConfiguracoesConsulta {
     contasCanal: ContaCanalConectada[];
     agentesIA: AgenteIAIntegracao[];
   }>;
+}
+
+/** E03-S07 Fase 5 (T058, ADR-0019) — leitura só de `arquivos.integracoes_microsoft`, separada
+ *  da porta acima: schema/tabela diferentes, sem relação com `configuracoes.contas_agenda`
+ *  (mock de E04-S12, provedor "microsoft" genérico de agenda/e-mail, NÃO é esta conexão). `null`
+ *  quando nenhuma conta Microsoft jamais foi conectada (cartão mostra "conectar"). */
+export interface IntegracaoOneDriveConsulta {
+  carregar(): Promise<IntegracaoOneDrive | null>;
 }
 
 /** E12-S01 — primeira porta do contexto `configuracoes` (antes só existia a UI). */

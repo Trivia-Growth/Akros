@@ -6,15 +6,17 @@
 // arquivo toca Postgres real — isso é feito manualmente contra `crm_test` (ver task-031-032-
 // report.md), não pelo Deno test.
 //
-// `registrar_contrato`/`preparar_caso` (T031/T032) e, a partir desta task,
-// `convidar_participante`/`revogar_participante`/`solicitar_documento` (T046-T048, US6,
-// ADR-0018, migration 0024). As três ações restantes da tabela de design-tecnico.md §2
-// (`vincular_pasta`, `registrar_nota`, `cadastrar_cobranca`) são de tasks futuras (T056/T092) —
-// o `switch` abaixo já está em forma de acomodar casos novos sem reescrever os já feitos.
+// `registrar_contrato`/`preparar_caso` (T031/T032), `convidar_participante`/
+// `revogar_participante`/`solicitar_documento` (T046-T048, US6, ADR-0018, migration 0024) e, a
+// partir desta task, `vincular_pasta` (T056, Fase 5, ADR-0019, migration 0026). As duas ações
+// restantes da tabela de design-tecnico.md §2 (`registrar_nota`, `cadastrar_cobranca`) são de
+// task futura (T092) — o `switch` abaixo já está em forma de acomodar casos novos sem reescrever
+// os já feitos.
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { HttpError } from "./auth.ts";
 import { corsHeaders } from "./cors.ts";
 import { requireCsrfHeader } from "./csrf.ts";
+import type { IOGraphMicrosoft } from "./graph-microsoft.ts";
 import { comIdempotencia, type IOIdempotencia } from "./idempotencia.ts";
 
 const FN = "caso-comandos";
@@ -123,14 +125,31 @@ export const SolicitarDocumentoSchema = z
   })
   .strict();
 
-// União discriminada por `acao` — novas ações futuras (T056/T092) entram como mais um elemento
-// desta lista, sem tocar nos `case` já implementados no switch abaixo.
+// T056, Fase 5 (ADR-0019). Vínculo da pasta do caso no OneDrive corporativo — a ancestralidade
+// de `folderItemId` sob a `pasta_raiz_item_id` da integração é validada em
+// `criarManipuladorCasoComandos` via `IOGraphMicrosoft.listarAncestrais` (chamada viva ao Graph,
+// que plpgsql não faz), ANTES de chamar a RPC `arquivos.vincular_pasta` (migration 0026).
+export const VincularPastaSchema = z
+  .object({
+    acao: z.literal("vincular_pasta"),
+    clienteId: z.string().uuid(),
+    jornadaId: z.string().uuid(),
+    integracaoId: z.string().uuid(),
+    folderItemId: z.string().min(1),
+    caminhoExibicao: z.string().max(500).optional(),
+    idempotencyKey: z.string().min(1),
+  })
+  .strict();
+
+// União discriminada por `acao` — novas ações futuras (T092) entram como mais um elemento desta
+// lista, sem tocar nos `case` já implementados no switch abaixo.
 const UniaoCasoComandos = z.discriminatedUnion("acao", [
   RegistrarContratoSchema,
   PrepararCasoSchema,
   ConvidarParticipanteSchema,
   RevogarParticipanteSchema,
   SolicitarDocumentoSchema,
+  VincularPastaSchema,
 ]);
 
 // Validação cruzada `sujeitoTipo` ↔ campo companheiro, ANTES de a requisição chegar na RPC —
@@ -196,13 +215,21 @@ export interface IOCasoComandos {
    *  sessão validada (ver auth.ts `requireAdmin`). */
   autenticarAdmin(req: Request): Promise<{ userId: string }>;
   idempotencia: IOIdempotencia;
+  /** Usado só por `vincular_pasta` (T056): acesso Graph pronto para uso (access token fresco via
+   *  refresh do Vault + o `driveId`/`pastaRaizItemId` públicos da integração). `null` se a
+   *  integração não existir — vira 422 (não é a RPC que checa isso, é esta leitura prévia). */
+  prepararAcessoMicrosoft(
+    integracaoId: string,
+  ): Promise<{ accessToken: string; driveId: string; pastaRaizItemId: string } | null>;
+  graph: Pick<IOGraphMicrosoft, "listarAncestrais">;
   rpc(
     nome:
       | "registrar_contrato"
       | "preparar_caso"
       | "convidar_participante"
       | "revogar_participante"
-      | "solicitar_documento",
+      | "solicitar_documento"
+      | "vincular_pasta",
     params: Record<string, unknown>,
   ): Promise<RespostaRpc<unknown>>;
 }
@@ -237,7 +264,12 @@ function erroDeNegocio(error: ErroRpc): HttpError {
  *  criam-ou-atualizam ou atualizam um recurso existente, então 200 — mesmo valor em replay de
  *  idempotência. */
 function statusDeSucesso(acao: EntradaCasoComandos["acao"]): number {
-  if (acao === "registrar_contrato" || acao === "convidar_participante" || acao === "solicitar_documento") {
+  if (
+    acao === "registrar_contrato" ||
+    acao === "convidar_participante" ||
+    acao === "solicitar_documento" ||
+    acao === "vincular_pasta"
+  ) {
     return 201;
   }
   return 200;
@@ -350,6 +382,44 @@ export function criarManipuladorCasoComandos(io: IOCasoComandos) {
                 p_titulo: entrada.titulo,
                 p_prazo_em: entrada.prazoEm ?? null,
                 p_instrucao: entrada.instrucao ?? null,
+                p_autor_id: userId,
+              });
+              if (error) throw erroDeNegocio(error);
+              return data;
+            }
+            case "vincular_pasta": {
+              // Ancestralidade é validada AQUI (Deno), com uma chamada viva ao Microsoft Graph —
+              // plpgsql não faz HTTP (design-tecnico.md §2, T056). Caminho arbitrário fora da
+              // raiz autorizada é recusado com 422 ANTES de chegar à RPC.
+              const acesso = await io.prepararAcessoMicrosoft(entrada.integracaoId);
+              if (!acesso) throw new HttpError(422, "Integração Microsoft inexistente");
+
+              let ancestrais: string[];
+              try {
+                ancestrais = await io.graph.listarAncestrais({
+                  accessToken: acesso.accessToken,
+                  driveId: acesso.driveId,
+                  itemId: entrada.folderItemId,
+                });
+              } catch {
+                // "pasta inexistente → erro legível": nunca vaza o erro técnico do Graph (pode
+                // incluir detalhe de rede/HTTP) — mensagem genérica, 422.
+                throw new HttpError(422, "Pasta inexistente ou inacessível no OneDrive");
+              }
+
+              const dentroDaRaiz =
+                entrada.folderItemId === acesso.pastaRaizItemId ||
+                ancestrais.includes(acesso.pastaRaizItemId);
+              if (!dentroDaRaiz) {
+                throw new HttpError(422, "Pasta fora da raiz autorizada para esta integração");
+              }
+
+              const { data, error } = await io.rpc("vincular_pasta", {
+                p_cliente_id: entrada.clienteId,
+                p_jornada_id: entrada.jornadaId,
+                p_integracao_id: entrada.integracaoId,
+                p_folder_item_id: entrada.folderItemId,
+                p_caminho_exibicao: entrada.caminhoExibicao ?? null,
                 p_autor_id: userId,
               });
               if (error) throw erroDeNegocio(error);

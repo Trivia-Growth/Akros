@@ -21,7 +21,21 @@ export function corsHeaders(origin: string | null): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-akros-csrf",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    // GET, não só POST: achado empírico desta task (E03-S07, onedrive-oauth, T054) — `GET
+    // /iniciar` é chamado por `fetch` (não navegação de topo) com header custom
+    // (x-akros-csrf), então o browser faz preflight mesmo sendo GET; a allowlist de métodos
+    // sendo só "POST, OPTIONS" fazia o preflight passar mas o browser bloquear a requisição
+    // real por método não anunciado. Ampliar aqui é seguro: a allowlist de métodos é só o que o
+    // preflight anuncia, cada função continua recusando por si (405) o método que não implementa.
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    // Achado empírico desta task: `onedrive-oauth GET /iniciar` grava um cookie httpOnly de
+    // estado (state+PKCE) na resposta a um `fetch` cross-origin (API do projeto Supabase é
+    // origem diferente do front-end). Sem `Allow-Credentials`, o browser recusa até GUARDAR o
+    // Set-Cookie de uma resposta cross-origin a um fetch com `credentials: "include"` — o cookie
+    // nunca chegaria no navegador para `/callback` ler de volta. Só funciona porque `allow`
+    // acima NUNCA é "*" (sempre a origem específica da allowlist) — Allow-Credentials com
+    // Allow-Origin "*" é combinação que o browser rejeita.
+    "Access-Control-Allow-Credentials": "true",
     Vary: "Origin",
   };
 }

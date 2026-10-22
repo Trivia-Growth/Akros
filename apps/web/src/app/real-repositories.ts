@@ -11,8 +11,12 @@ import type {
 } from "@/features/comunicacao/application/ports";
 import { SupabaseComunicacaoAdminConsulta } from "@/features/comunicacao/infrastructure/SupabaseComunicacaoAdminConsulta";
 import { SupabaseComunicacaoConsulta } from "@/features/comunicacao/infrastructure/SupabaseComunicacaoConsulta";
-import type { ConfiguracoesConsulta } from "@/features/configuracoes/application/ports";
+import type {
+  ConfiguracoesConsulta,
+  IntegracaoOneDriveConsulta,
+} from "@/features/configuracoes/application/ports";
 import { SupabaseConfiguracoesConsulta } from "@/features/configuracoes/infrastructure/SupabaseConfiguracoesConsulta";
+import { SupabaseIntegracaoOneDriveConsulta } from "@/features/configuracoes/infrastructure/SupabaseIntegracaoOneDriveConsulta";
 import type {
   CasoComandos,
   Cliente360AdminConsulta,
@@ -54,6 +58,7 @@ let programasDemo: ProgramaRepository | undefined;
 let requisitosReais: RequisitoDocumentoRepository | undefined;
 let requisitosDemo: RequisitoDocumentoRepository | undefined;
 let configuracoesReais: ConfiguracoesConsulta | undefined;
+let integracaoOneDriveReal: IntegracaoOneDriveConsulta | undefined;
 let agendaReal: AgendaConsulta | undefined;
 let jornadaReal: JornadaConsulta | undefined;
 let documentosReal: DocumentosConsulta | undefined;
@@ -77,6 +82,14 @@ export function obterConsultaAgendaReal(): AgendaConsulta {
 export function obterConsultaConfiguracoesReais(): ConfiguracoesConsulta {
   if (!configuracoesReais) configuracoesReais = new SupabaseConfiguracoesConsulta();
   return configuracoesReais;
+}
+
+/** E03-S07 Fase 5 (T058) — leitura da conexão Microsoft/OneDrive, separada da consulta agregada
+ *  acima (schema/tabela diferentes — ver `IntegracaoOneDriveConsulta`). Sem variante Mock, mesmo
+ *  critério das demais consultas reais desta feature. */
+export function obterConsultaIntegracaoOneDriveReal(): IntegracaoOneDriveConsulta {
+  if (!integracaoOneDriveReal) integracaoOneDriveReal = new SupabaseIntegracaoOneDriveConsulta();
+  return integracaoOneDriveReal;
 }
 
 export function obterConsultaJornadaReal(): JornadaConsulta {

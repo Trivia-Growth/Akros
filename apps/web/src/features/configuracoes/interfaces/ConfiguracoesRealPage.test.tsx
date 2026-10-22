@@ -1,11 +1,19 @@
 // E13-S13 — formulário de canal e agente: campos por tipo de canal, corpo enviado à Edge Function
 // e nenhuma credencial na tela depois de salvar.
 // @vitest-environment jsdom
+import i18n from "@/shared/i18n/config";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const invoke = vi.fn();
-vi.mock("@/shared/supabase/client", () => ({ getSupabase: () => ({ functions: { invoke } }) }));
+const getSession = vi
+  .fn()
+  .mockResolvedValue({ data: { session: { access_token: "token-admin" } }, error: null });
+const { navegarPara } = vi.hoisted(() => ({ navegarPara: vi.fn() }));
+vi.mock("@/shared/supabase/client", () => ({
+  getSupabase: () => ({ functions: { invoke }, auth: { getSession } }),
+}));
+vi.mock("@/shared/lib/navegacao", () => ({ navegarPara }));
 vi.mock("../application/hooks", () => ({
   useConfiguracoesReais: () => ({
     equipe: [],
@@ -17,6 +25,11 @@ vi.mock("../application/hooks", () => ({
     erro: null,
     refetch: () => Promise.resolve(),
   }),
+}));
+
+const useIntegracaoOneDriveMock = vi.fn();
+vi.mock("../application/useIntegracaoOneDrive", () => ({
+  useIntegracaoOneDrive: () => useIntegracaoOneDriveMock(),
 }));
 
 import { ToastViewport } from "@/shared/ui";
@@ -47,6 +60,12 @@ function preencher(dialogo: HTMLElement, rotulo: string | RegExp, valor: string)
 describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
   beforeEach(() => {
     invoke.mockReset();
+    useIntegracaoOneDriveMock.mockReturnValue({
+      integracao: null,
+      carregando: false,
+      erro: null,
+      refetch: () => Promise.resolve(),
+    });
   });
   afterEach(() => {
     cleanup();
@@ -178,5 +197,171 @@ describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
     expect(screen.queryByTestId("resultado-meta")).toBeNull();
     expect(screen.getByRole("dialog")).toBeTruthy();
+  });
+});
+
+// E03-S07 Fase 5 (T058, ADR-0019) — cartão "Conta Microsoft / OneDrive": estados (não
+// conectada/conectada/expirada/revogada) e o fluxo de "conectar" chamando GET
+// onedrive-oauth/iniciar (nunca token na tela, nunca em localStorage).
+describe("ConfiguracoesRealPage — Conta Microsoft / OneDrive (E03-S07 Fase 5)", () => {
+  function renderPagina() {
+    return render(
+      <>
+        <ConfiguracoesRealPage />
+        <ToastViewport />
+      </>,
+    );
+  }
+
+  beforeEach(async () => {
+    invoke.mockReset();
+    navegarPara.mockReset();
+    getSession.mockResolvedValue({
+      data: { session: { access_token: "token-admin" } },
+      error: null,
+    });
+    // Determinístico independente do idioma detectado no ambiente (navigator/locale da
+    // máquina que roda o teste) — o detector de i18next pode resolver "en" fora do pt-BR
+    // configurado como fallback.
+    await i18n.changeLanguage("pt-BR");
+  });
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("não conectada: mostra aviso e botão 'Conectar', sem botão 'Reconectar'", () => {
+    useIntegracaoOneDriveMock.mockReturnValue({
+      integracao: null,
+      carregando: false,
+      erro: null,
+      refetch: () => Promise.resolve(),
+    });
+    renderPagina();
+    expect(screen.getByText(/Nenhuma conta Microsoft conectada/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Conectar" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Reconectar" })).toBeNull();
+  });
+
+  it("conectada: mostra e-mail, pasta raiz e badge de estado, sem botão 'Reconectar'", () => {
+    useIntegracaoOneDriveMock.mockReturnValue({
+      integracao: {
+        id: "1",
+        contaEmail: "onedrive@akros.exemplo",
+        pastaRaizId: "item-raiz-1",
+        estado: "conectada",
+        conectadoEm: "2026-10-01T10:00:00Z",
+      },
+      carregando: false,
+      erro: null,
+      refetch: () => Promise.resolve(),
+    });
+    renderPagina();
+    expect(screen.getByText("onedrive@akros.exemplo")).toBeTruthy();
+    expect(screen.getByText("item-raiz-1")).toBeTruthy();
+    expect(screen.getByText("Conectada")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Reconectar" })).toBeNull();
+  });
+
+  it("expirada: mostra badge 'Expirada' e botão 'Reconectar'", () => {
+    useIntegracaoOneDriveMock.mockReturnValue({
+      integracao: {
+        id: "1",
+        contaEmail: "onedrive@akros.exemplo",
+        pastaRaizId: "item-raiz-1",
+        estado: "expirada",
+        conectadoEm: "2026-10-01T10:00:00Z",
+      },
+      carregando: false,
+      erro: null,
+      refetch: () => Promise.resolve(),
+    });
+    renderPagina();
+    expect(screen.getByText("Expirada")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Reconectar" })).toBeTruthy();
+  });
+
+  it("revogada: mostra badge 'Revogada' e botão 'Reconectar'", () => {
+    useIntegracaoOneDriveMock.mockReturnValue({
+      integracao: {
+        id: "1",
+        contaEmail: "onedrive@akros.exemplo",
+        pastaRaizId: "item-raiz-1",
+        estado: "revogada",
+        conectadoEm: "2026-10-01T10:00:00Z",
+      },
+      carregando: false,
+      erro: null,
+      refetch: () => Promise.resolve(),
+    });
+    renderPagina();
+    expect(screen.getByText("Revogada")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Reconectar" })).toBeTruthy();
+  });
+
+  it("erro ao carregar: mostra mensagem de erro, não quebra o resto da página", () => {
+    useIntegracaoOneDriveMock.mockReturnValue({
+      integracao: null,
+      carregando: false,
+      erro: new Error("falhou"),
+      refetch: () => Promise.resolve(),
+    });
+    renderPagina();
+    expect(screen.getByText(/Não foi possível carregar a conexão com o OneDrive/i)).toBeTruthy();
+  });
+
+  it("conectar: chama GET onedrive-oauth/iniciar com Bearer + x-akros-csrf e navega para a " +
+    "authorizeUrl devolvida — nunca um token na tela", async () => {
+    useIntegracaoOneDriveMock.mockReturnValue({
+      integracao: null,
+      carregando: false,
+      erro: null,
+      refetch: () => Promise.resolve(),
+    });
+    vi.stubEnv("VITE_SUPABASE_URL", "https://p.supabase.co");
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          authorizeUrl:
+            "https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize?state=abc",
+        }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderPagina();
+    fireEvent.click(screen.getByRole("button", { name: "Conectar" }));
+    const dialogo = screen.getByRole("dialog");
+    fireEvent.change(within(dialogo).getByLabelText(/E-mail da conta corporativa/i), {
+      target: { value: "ops@akros.exemplo" },
+    });
+    fireEvent.change(within(dialogo).getByLabelText(/ID do drive \(OneDrive\)/i), {
+      target: { value: "drive-1" },
+    });
+    fireEvent.change(within(dialogo).getByLabelText(/ID da pasta raiz autorizada/i), {
+      target: { value: "pasta-raiz-1" },
+    });
+    fireEvent.submit(dialogo.querySelector("form") as HTMLFormElement);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const [urlChamada, opcoes] = fetchMock.mock.calls[0];
+    expect(String(urlChamada)).toContain("/functions/v1/onedrive-oauth/iniciar");
+    expect(String(urlChamada)).toContain("contaEmail=ops%40akros.exemplo");
+    expect(String(urlChamada)).toContain("driveId=drive-1");
+    expect(String(urlChamada)).toContain("pastaRaizItemId=pasta-raiz-1");
+    expect(opcoes.headers.Authorization).toBe("Bearer token-admin");
+    expect(opcoes.headers["x-akros-csrf"]).toBe("1");
+    expect(opcoes.credentials).toBe("include");
+
+    await waitFor(() =>
+      expect(navegarPara).toHaveBeenCalledWith(
+        "https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize?state=abc",
+      ),
+    );
+    // Nunca um token/segredo em lugar nenhum do documento.
+    expect(document.body.innerHTML).not.toContain("token-admin");
   });
 });

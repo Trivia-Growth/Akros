@@ -1,4 +1,5 @@
 import { erroDetalhado } from "@/shared/lib/http/edge-function-error";
+import { navegarPara } from "@/shared/lib/navegacao";
 import { getSupabase } from "@/shared/supabase/client";
 import { Badge, Button, Card, Checkbox, Input, Modal, Select, Textarea, toast } from "@/shared/ui";
 import {
@@ -6,6 +7,7 @@ import {
   CalendarClock,
   CheckCircle2,
   CircleAlert,
+  Cloud,
   FileAudio,
   KeyRound,
   LockKeyhole,
@@ -14,7 +16,8 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useConfiguracoesReais } from "../application/hooks";
 import {
   AGENTE_INICIAL,
@@ -26,10 +29,12 @@ import {
   limparSegredos,
   urlWebhookConta,
 } from "../application/integracao-canal";
+import { useIntegracaoOneDrive } from "../application/useIntegracaoOneDrive";
 import type {
   AgenteIAIntegracao,
   ContaCanalConectada,
   EscopoConta,
+  EstadoIntegracaoOneDrive,
   ProvedorAgenda,
   ProvedorCanal,
 } from "../domain/types";
@@ -125,6 +130,7 @@ export function ConfiguracoesRealPage() {
       </Secao>
 
       <IntegracaoAgentes contasCanal={contasCanal} agentesIA={agentesIA} aoSalvar={refetch} />
+      <IntegracaoMicrosoftCard />
     </div>
   );
 }
@@ -639,6 +645,220 @@ function IntegracaoAgentes({
             </Button>
             <Button type="submit" loading={enviando}>
               Salvar com segurança
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </Secao>
+  );
+}
+
+const ESTADO_ONEDRIVE_BADGE: Record<EstadoIntegracaoOneDrive, "success" | "warning" | "danger"> = {
+  conectada: "success",
+  expirada: "warning",
+  revogada: "danger",
+};
+
+const ESTADO_ONEDRIVE_LABEL_KEY: Record<EstadoIntegracaoOneDrive, string> = {
+  conectada: "oneDrive.stateConnected",
+  expirada: "oneDrive.stateExpired",
+  revogada: "oneDrive.stateRevoked",
+};
+
+interface FormularioConexaoOneDrive {
+  contaEmail: string;
+  driveId: string;
+  pastaRaizItemId: string;
+}
+
+const CONEXAO_ONEDRIVE_INICIAL: FormularioConexaoOneDrive = {
+  contaEmail: "",
+  driveId: "",
+  pastaRaizItemId: "",
+};
+
+/** E03-S07 Fase 5 (T058, ADR-0019) — cartão "Conta Microsoft / OneDrive": conectar (admin
+ *  informa e-mail/drive/pasta raiz, redireciona ao consentimento da Microsoft),
+ *  reconectar quando expirada/revogada, e exibir só metadado público (nunca token/segredo —
+ *  ver `IntegracaoOneDrive`, domain/types.ts). `onedrive-oauth GET /iniciar` é chamado por
+ *  `fetch` (precisa do Bearer do admin e do header x-akros-csrf) e devolve `{ authorizeUrl }` no
+ *  corpo, nunca um 302 bruto — ver decisão em `_shared/onedrive-oauth.ts`. */
+function IntegracaoMicrosoftCard() {
+  const { t } = useTranslation("admin");
+  const { integracao, carregando, erro, refetch } = useIntegracaoOneDrive();
+  const [aberto, setAberto] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [form, setForm] = useState<FormularioConexaoOneDrive>(CONEXAO_ONEDRIVE_INICIAL);
+
+  // Mensagem de retorno do redirecionamento da Microsoft (/callback), lida uma única vez e
+  // removida da URL — nunca carrega token, só a flag (?onedrive=conectado|erro, ver
+  // _shared/onedrive-oauth.ts).
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const retorno = url.searchParams.get("onedrive");
+    if (!retorno) return;
+    if (retorno === "conectado") {
+      toast.success(t("oneDrive.successRedirectConnected"));
+      void refetch();
+    } else if (retorno === "erro") {
+      toast.error(t("oneDrive.errorRedirectFailed"));
+    }
+    url.searchParams.delete("onedrive");
+    window.history.replaceState({}, "", url.toString());
+    // A URL limpa a flag depois do primeiro processamento, então rerenders seguintes não repetem o toast.
+  }, [refetch, t]);
+
+  function alterarForm<K extends keyof FormularioConexaoOneDrive>(
+    chave: K,
+    valor: FormularioConexaoOneDrive[K],
+  ) {
+    setForm((atual) => ({ ...atual, [chave]: valor }));
+  }
+
+  async function conectar(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    setEnviando(true);
+    try {
+      const { data: sessao, error: erroSessao } = await getSupabase().auth.getSession();
+      const token = sessao.session?.access_token;
+      if (erroSessao || !token) throw new Error(t("oneDrive.errorStartFailed"));
+
+      const urlProjeto = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+      if (!urlProjeto) throw new Error(t("oneDrive.errorStartFailed"));
+
+      const url = new URL(`${urlProjeto}/functions/v1/onedrive-oauth/iniciar`);
+      url.searchParams.set("contaEmail", form.contaEmail);
+      url.searchParams.set("driveId", form.driveId);
+      url.searchParams.set("pastaRaizItemId", form.pastaRaizItemId);
+
+      const resposta = await fetch(url, {
+        method: "GET",
+        credentials: "include", // precisa chegar o Set-Cookie do state+PKCE para /callback ler.
+        headers: { Authorization: `Bearer ${token}`, "x-akros-csrf": "1" },
+      });
+      if (!resposta.ok) throw new Error(t("oneDrive.errorStartFailed"));
+
+      const corpo = (await resposta.json()) as { authorizeUrl?: string };
+      if (!corpo.authorizeUrl) throw new Error(t("oneDrive.errorStartFailed"));
+
+      // Navegação de topo permite que o cookie SameSite=Lax chegue ao callback Microsoft.
+      navegarPara(corpo.authorizeUrl);
+    } catch (causa) {
+      toast.error(causa instanceof Error ? causa.message : t("oneDrive.errorStartFailed"));
+      setEnviando(false);
+    }
+  }
+
+  if (carregando) {
+    return (
+      <Secao titulo={t("oneDrive.title")} icone={Cloud}>
+        <p className="px-5 py-6 text-sm text-ink-muted">{t("oneDrive.description")}</p>
+      </Secao>
+    );
+  }
+  if (erro) {
+    return (
+      <Secao titulo={t("oneDrive.title")} icone={Cloud}>
+        <p className="flex items-center gap-2 px-5 py-6 text-sm text-red-700">
+          <CircleAlert className="h-4 w-4" aria-hidden />
+          {t("oneDrive.errorLoadFailed")}
+        </p>
+      </Secao>
+    );
+  }
+
+  const precisaReconectar = integracao?.estado === "expirada" || integracao?.estado === "revogada";
+
+  return (
+    <Secao titulo={t("oneDrive.title")} icone={Cloud}>
+      <div className="flex flex-col gap-4 px-5 py-5">
+        <p className="max-w-2xl text-sm text-ink-soft">{t("oneDrive.description")}</p>
+
+        {integracao ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-navy">{integracao.contaEmail}</p>
+                <Badge variant={ESTADO_ONEDRIVE_BADGE[integracao.estado]}>
+                  {t(ESTADO_ONEDRIVE_LABEL_KEY[integracao.estado])}
+                </Badge>
+              </div>
+              <p className="mt-0.5 text-sm text-ink-soft">
+                {t("oneDrive.rootFolderLabel")}: <code>{integracao.pastaRaizId}</code>
+              </p>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                {t("oneDrive.connectedOn", {
+                  date: new Date(integracao.conectadoEm).toLocaleDateString(),
+                })}
+              </p>
+            </div>
+            {precisaReconectar ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setForm(CONEXAO_ONEDRIVE_INICIAL);
+                  setAberto(true);
+                }}
+              >
+                {t("oneDrive.reconnect")}
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-ink-muted">{t("oneDrive.notConnected")}</p>
+            <Button
+              size="sm"
+              onClick={() => {
+                setForm(CONEXAO_ONEDRIVE_INICIAL);
+                setAberto(true);
+              }}
+            >
+              <Cloud className="h-4 w-4" aria-hidden />
+              {t("oneDrive.connect")}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <Modal
+        open={aberto}
+        onClose={() => !enviando && setAberto(false)}
+        title={t("oneDrive.formTitle")}
+        description={t("oneDrive.formHint")}
+      >
+        <form className="flex flex-col gap-4" onSubmit={conectar}>
+          <Input
+            required
+            type="email"
+            label={t("oneDrive.formEmailLabel")}
+            value={form.contaEmail}
+            onChange={(evento) => alterarForm("contaEmail", evento.target.value)}
+          />
+          <Input
+            required
+            label={t("oneDrive.formDriveIdLabel")}
+            value={form.driveId}
+            onChange={(evento) => alterarForm("driveId", evento.target.value)}
+          />
+          <Input
+            required
+            label={t("oneDrive.formRootFolderIdLabel")}
+            value={form.pastaRaizItemId}
+            onChange={(evento) => alterarForm("pastaRaizItemId", evento.target.value)}
+          />
+          <div className="flex justify-end gap-3 border-t border-border pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setAberto(false)}
+              disabled={enviando}
+            >
+              {t("oneDrive.formCancel")}
+            </Button>
+            <Button type="submit" loading={enviando}>
+              {t("oneDrive.formSubmit")}
             </Button>
           </div>
         </form>
