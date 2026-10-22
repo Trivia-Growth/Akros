@@ -130,7 +130,23 @@ export function paraSolicitacaoAssinatura(linha: LinhaAssinatura): SolicitacaoAs
   };
 }
 
-/** Leitura do portal sem ID de fixture; RLS define documentos e assinaturas acessíveis. */
+/**
+ * Leitura do portal sem ID de fixture; RLS define documentos e assinaturas acessíveis.
+ *
+ * E03-S07 (T051, US6/ADR-0018) — investigado e CONFIRMADO: `.select()` abaixo não tem (e não
+ * deve ter) nenhum filtro de papel em JavaScript. A visibilidade por papel/restrição já é
+ * imposta inteiramente pela RLS de `documentos.documentos`
+ * (policy `participante_ve_documento_do_caso_no_seu_papel`, migration 0019 — "restrito_ao_papel
+ * = false OR papel_dirigido IS NULL OR crm.tenho_papel(cliente_id, papel_dirigido)"), com
+ * `FORCE ROW LEVEL SECURITY` e sem caminho de `service_role`/bypass neste arquivo. O Postgres
+ * nunca devolve ao PostgREST uma linha que a sessão do participante não deveria ver — não há
+ * linha "escondida depois" por este adapter para esconder de novo. Duplicar aqui a mesma regra
+ * em JavaScript criaria uma segunda fonte de verdade que diverge da RLS com o tempo (ex.: a RLS
+ * muda numa migration futura e este filtro client-side fica desatualizado, ou vice-versa) — por
+ * isso NENHUM filtro foi adicionado. Ver `SupabaseDocumentosConsulta.test.ts` pelo teste que
+ * documenta esta invariante (nenhuma lógica própria de esconder/mostrar campo, nenhuma contagem
+ * client-side sobre dado que a RLS já filtrou).
+ */
 export class SupabaseDocumentosConsulta implements DocumentosConsulta {
   async carregarCliente() {
     const { data, error } = await getSupabase()

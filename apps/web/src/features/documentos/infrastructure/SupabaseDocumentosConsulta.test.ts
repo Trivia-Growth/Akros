@@ -1,6 +1,46 @@
 import { describe, expect, it } from "vitest";
 import { paraDocumento, paraSolicitacaoAssinatura } from "./SupabaseDocumentosConsulta";
 
+describe("SupabaseDocumentosConsulta — invariante de visibilidade por papel (T051, US6/ADR-0018)", () => {
+  // Prova que `paraDocumento` não esconde nem revela nada por conta própria: a mesma linha
+  // "restrita" mapeia exatamente igual, não importa quem a esteja lendo. Isso é o que garante
+  // que `carregarCliente()` (que não filtra nada em JavaScript) pode confiar inteiramente na RLS
+  // de `documentos.documentos` (policy `participante_ve_documento_do_caso_no_seu_papel`,
+  // migration 0019): se o Postgres já não devolveu a linha pro PostgREST, `paraDocumento` nunca
+  // chega a vê-la; se devolveu, é porque a RLS já autorizou — não há um segundo portão aqui.
+  const linhaRestrita = {
+    id: "11111111-1111-1111-1111-111111111111",
+    cliente_id: "22222222-2222-2222-2222-222222222222",
+    fase_id: null,
+    nome: "Demonstrativo fiscal da organização",
+    tipo: "outro" as const,
+    status: "pendente" as const,
+    url_mock: null,
+    enviado_em: null,
+    requisito_id: "requisito-fiscal-organizacao",
+    analise: null,
+    enviado_apesar_do_alerta: null,
+    decisao: null,
+  };
+
+  it("mapeia a mesma linha da mesma forma, sem lógica própria de papel/restrição — a marca de restrição não existe no DTO retornado ao cliente, só na RLS do servidor", () => {
+    const documento = paraDocumento(linhaRestrita);
+    expect(documento).toMatchObject({
+      id: linhaRestrita.id,
+      clienteId: linhaRestrita.cliente_id,
+      requisitoId: linhaRestrita.requisito_id,
+    });
+    // `restritoAoPapel`/`papelDirigido` (colunas de controle da RLS, migration 0019) não fazem
+    // parte do shape de `Documento` (domain/types.ts) nem de `paraDocumento` — não há como este
+    // mapeamento decidir "esconder" ou "revelar" um campo por papel, porque ele não enxerga essas
+    // colunas. Se um dia alguém adicionar essas colunas ao SELECT/DTO para decidir visibilidade
+    // NO CLIENTE, este teste para de proteger a invariante — é o sinal de que a regra migrou
+    // para o lugar errado.
+    expect(documento).not.toHaveProperty("restritoAoPapel");
+    expect(documento).not.toHaveProperty("papelDirigido");
+  });
+});
+
 describe("SupabaseDocumentosConsulta — mapeamento", () => {
   it("E13-S11 AC-2: preserva UUID e JSONB de análise válido", () => {
     expect(
