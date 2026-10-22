@@ -30,6 +30,25 @@ alwaysApply: false
   - **Gap conhecido, não bloqueia**: `crm.preparar_caso` ainda não distingue histórico importado
     de caso novo — registrado como `T041a`/`T041b` em `tasks.md`; impede considerar a US1
     isoladamente "Converged", não trava a fase 4 (US6, em andamento).
+  - **Fase 4 (US6) concluída em 2026-10-21 (T042–T053)**: domínio `Participante`/papéis do
+    programa (T042-045); ações `convidar_participante`/`revogar_participante`/
+    `solicitar_documento` na Edge Function `caso-comandos`, com o fix do catálogo por
+    `requisitoId` (não `tipo`) e `superRefine` espelhando os CHECKs do banco (T046-048, 126
+    testes Deno); UI `ParticipantesPainel.tsx` — lista por papel, convite (idempotency key
+    fresca por abertura do modal, nunca reusada entre convites diferentes) e revogação
+    (confirmação + idempotency key fresca por clique), nova aba "Participantes" no Cliente 360
+    (T049-050). **T051 investigado, sem mudança de código**: a RLS de `documentos.documentos`
+    (migration 0019, policy `participante_ve_documento_do_caso_no_seu_papel`) já garante a
+    visibilidade por papel sozinha — um filtro redundante em JavaScript seria uma segunda fonte
+    de verdade; documentado em comentário + teste dedicado em vez disso. `apps/web/e2e/papel-
+    visibilidade.spec.ts` (T052) escrito e pronto, **não executado** nesta sessão (sem
+    `.env.test.local`/fixture de dois participantes + documento restrito neste ambiente —
+    `test.skip` documentado, mesmo padrão de `auth-matrix.spec.ts` AC-6). Evidência dos 6
+    cenários de aceite da US6 em `specs/005-cliente-360-operacional/evidencias/us6.md`, com os
+    testes SQL `01`-`09` revalidados contra Postgres 17 local recriado do zero (24 migrations,
+    `EXIT:0` em todos). Gates: `ci:local` (lint/typecheck/vitest 256/256, 53 arquivos),
+    `arch:check` (252 módulos, 924 dependências, 0 violações) e `test:functions` (Deno, 126/126)
+    verdes.
   - Specs: `spec.md`, `design-tecnico.md`, `tasks.md` (140+ tarefas) em
     `specs/005-cliente-360-operacional/`; ADR-0018/0019/0020 aceitos.
 - **Data:** 2026-10-16

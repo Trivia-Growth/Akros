@@ -118,18 +118,18 @@ a outro papel. **Depende de US1** (contrato declara os participantes).
 **Teste independente**: caso R com dois participantes, uma solicitação para cada papel, leitura
 cruzada do requisito restrito recusada — provada em SQL e pela API, não só na tela.
 
-- [ ] T042 [P] [US6] Escrever `apps/web/src/features/crm/domain/participante.test.ts`: papel fora do conjunto do programa recusado, papel não concede autoridade de equipe, participante sem acesso é válido, revogação não afeta os demais
-- [ ] T043 [US6] Criar `apps/web/src/features/crm/domain/participante.ts` com `Participante`, `PapelParticipante` (de `shared/contracts/caso.ts`) e as regras puras
-- [ ] T044 [US6] Estender o template de programa em `apps/web/src/features/programas/domain/types.ts` com `papeis` (existentes, obrigatórios), `papelDirigido`, `envioConjunto` e `restrito` por `RequisitoDocumento`, mantendo a versão congelada do caso (ADR-0004/0014)
-- [ ] T045 [P] [US6] Escrever `apps/web/src/features/programas/domain/papeis.test.ts` provando que alterar o catálogo não muda caso em andamento (congelamento por `programaVersao`)
-- [ ] T046 [US6] Adicionar as ações `convidar_participante`, `revogar_participante` e `solicitar_documento` em `supabase/functions/caso-comandos/index.ts`, recusando papel fora do programa (422) e copiando `restrito`/`papel_dirigido`/`envio_conjunto` do requisito do programa, nunca do body
-- [ ] T047 [US6] Integrar o convite com o fluxo de E12-S04 em `supabase/functions/caso-comandos/index.ts`, criando o vínculo por **participante e papel** e registrando quem convidou e quando
-- [ ] T048 [US6] Estender `supabase/functions/caso-comandos/caso-comandos.test.ts` com: papel inválido 422; convite de participante em caso alheio 403; revogação de um participante não atinge o outro; solicitação com sujeito de outro caso 422
-- [ ] T049 [US6] Criar `apps/web/src/features/crm/application/useParticipantesComandos.ts` e `apps/web/src/features/crm/infrastructure/SupabaseParticipantesConsulta.ts` (+ `.test.ts`)
-- [ ] T050 [US6] Criar `apps/web/src/features/crm/interfaces/ParticipantesPainel.tsx` (lista por papel, convidar, revogar, estado do acesso) com i18n e `impeccable`
-- [ ] T051 [US6] Ajustar `apps/web/src/features/documentos/infrastructure/SupabaseDocumentosConsulta.ts` para que o DTO do portal **não** inclua requisito restrito a outro papel nem contagem dele, e atualizar `SupabaseDocumentosConsulta.test.ts`
-- [ ] T052 [US6] Escrever `apps/web/e2e/papel-visibilidade.spec.ts`: dois participantes do mesmo caso, cada um vê só o seu; requisito restrito responde 404 por ID; download recusado; revogado perde upload, download e retomada
-- [ ] T053 [US6] Rodar os testes SQL T015/T018 outra vez contra o estado real e registrar evidência dos 6 cenários da US6 em `specs/005-cliente-360-operacional/evidencias/us6.md`
+- [x] T042 [P] [US6] Escrever `apps/web/src/features/crm/domain/participante.test.ts`: papel fora do conjunto do programa recusado, papel não concede autoridade de equipe, participante sem acesso é válido, revogação não afeta os demais
+- [x] T043 [US6] Criar `apps/web/src/features/crm/domain/participante.ts` com `Participante`, `PapelParticipante` (de `shared/contracts/caso.ts`) e as regras puras
+- [x] T044 [US6] Estender o template de programa em `apps/web/src/features/programas/domain/types.ts` com `papeis` (existentes, obrigatórios), `papelDirigido`, `envioConjunto` e `restrito` por `RequisitoDocumento`, mantendo a versão congelada do caso (ADR-0004/0014)
+- [x] T045 [P] [US6] Escrever `apps/web/src/features/programas/domain/papeis.test.ts` provando que alterar o catálogo não muda caso em andamento (congelamento por `programaVersao`)
+- [x] T046 [US6] Adicionar as ações `convidar_participante`, `revogar_participante` e `solicitar_documento` em `supabase/functions/caso-comandos/index.ts`, recusando papel fora do programa (422) e copiando `restrito`/`papel_dirigido`/`envio_conjunto` do requisito do programa, nunca do body
+- [x] T047 [US6] Integrar o convite com o fluxo de E12-S04 em `supabase/functions/caso-comandos/index.ts`, criando o vínculo por **participante e papel** e registrando quem convidou e quando
+- [x] T048 [US6] Estender `supabase/functions/caso-comandos/caso-comandos.test.ts` com: papel inválido 422; convite de participante em caso alheio 403; revogação de um participante não atinge o outro; solicitação com sujeito de outro caso 422
+- [x] T049 [US6] Criar `apps/web/src/features/crm/application/useParticipantesComandos.ts` e `apps/web/src/features/crm/infrastructure/SupabaseParticipantesConsulta.ts` (+ `.test.ts`)
+- [x] T050 [US6] Criar `apps/web/src/features/crm/interfaces/ParticipantesPainel.tsx` (lista por papel, convidar, revogar, estado do acesso) com i18n e `impeccable`
+- [x] T051 [US6] Ajustar `apps/web/src/features/documentos/infrastructure/SupabaseDocumentosConsulta.ts` para que o DTO do portal **não** inclua requisito restrito a outro papel nem contagem dele, e atualizar `SupabaseDocumentosConsulta.test.ts` — **investigado e confirmado sem mudança de código**: RLS (migration 0019) já garante a invariante sozinha; filtro redundante em JavaScript criaria segunda fonte de verdade. Documentado em comentário no arquivo + teste dedicado.
+- [x] T052 [US6] Escrever `apps/web/e2e/papel-visibilidade.spec.ts`: dois participantes do mesmo caso, cada um vê só o seu; requisito restrito responde 404 por ID; download recusado; revogado perde upload, download e retomada — **escrito, não executado** (sem `.env.test.local`/fixture neste ambiente; `test.skip` documentado).
+- [x] T053 [US6] Rodar os testes SQL T015/T018 outra vez contra o estado real e registrar evidência dos 6 cenários da US6 em `specs/005-cliente-360-operacional/evidencias/us6.md`
 
 ---
 
