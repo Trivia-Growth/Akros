@@ -163,15 +163,15 @@ arquivo na pasta do caso, sem acesso a arquivo de outro caso.
 
 ### Transferência ao OneDrive
 
-- [ ] T069 [US2] Criar `supabase/functions/arquivo-processar/index.ts` conforme `design-tecnico.md` §2.2: autenticação por segredo do Vault, `FOR UPDATE SKIP LOCKED`, lease de 5 min, validação de ancestralidade, sessão do Graph com segredo no Vault, fragmentos de 5 MiB, checkpoint em `bytes_enviados`; declarar teto via `checarLimite` (E14-S01 AC-6) mesmo sendo função interna — o gate `check:edge-functions` não distingue
-- [ ] T070 [US2] Implementar em `supabase/functions/arquivo-processar/index.ts` a reconciliação de resposta perdida (procura o item determinístico `<requisito|cobranca>-<versaoId>.pdf` e compara tamanho antes de reenviar) e o backoff `min(2^tentativas min, 60 min)` respeitando `Retry-After`
-- [ ] T071 [US2] Implementar o bloqueio legível em `supabase/functions/arquivo-processar/index.ts`: 401/403 → `bloqueado` com "reconectar conta Microsoft"; quota ou pasta ausente → motivo próprio; nunca marcar `armazenado` sem `item_id` confirmado
-- [ ] T072 [US2] Escrever `supabase/functions/arquivo-processar/arquivo-processar.test.ts`: chamada sem segredo 401; lease impede dois processadores; indisponibilidade da Microsoft mantém versão `recebida` e trabalho `pendente`; resposta perdida reconcilia sem criar segundo item; 401 do Graph bloqueia com motivo
-- [ ] T073 [US2] Criar `supabase/functions/arquivo-baixar/index.ts` (`GET ?versaoId=`): valida sessão, participação e papel, responde `Content-Disposition: attachment`, nunca persiste nem devolve URL do Graph; declarar teto via `checarLimite` (E14-S01 AC-6)
-- [ ] T074 [P] [US2] Escrever `supabase/functions/arquivo-baixar/arquivo-baixar.test.ts`: versão de outro caso 404; versão restrita a outro papel 404; participante revogado 403; resposta sem URL do Graph
-- [ ] T075 [US2] Criar `supabase/migrations/0022_E03-S07_cron_transferencia.sql` com o agendamento de `arquivo-processar` (a cada minuto), `arquivos.liberar_leases_expiradas()` e `arquivos.limpar_temporarios_confirmados()`, sem apagar versão `recebida` com transferência pendente
-- [ ] T076 [US2] Escrever `supabase/tests/11-cron-transferencia_test.sql` provando que lease expirado volta a `pendente`, que temporário confirmado é limpo e que versão recebida pendente **não** é limpa
-- [ ] T077 [US2] Registrar evidência dos 8 cenários da US2 em `specs/005-cliente-360-operacional/evidencias/us2.md`, incluindo a execução real contra a pasta corporativa de teste com arquivos fictícios
+- [x] T069 [US2] Criar `supabase/functions/arquivo-processar/index.ts` conforme `design-tecnico.md` §2.2: autenticação por segredo do Vault, `FOR UPDATE SKIP LOCKED`, lease de 5 min, validação de ancestralidade, sessão do Graph com segredo no Vault, fragmentos de 5 MiB, checkpoint em `bytes_enviados`; declarar teto via `checarLimite` (E14-S01 AC-6) mesmo sendo função interna — o gate `check:edge-functions` não distingue
+- [x] T070 [US2] Implementar em `supabase/functions/arquivo-processar/index.ts` a reconciliação de resposta perdida (procura o item determinístico `<requisito|cobranca>-<versaoId>.pdf` e compara tamanho antes de reenviar) e o backoff `min(2^tentativas min, 60 min)` respeitando `Retry-After`
+- [x] T071 [US2] Implementar o bloqueio legível em `supabase/functions/arquivo-processar/index.ts`: 401/403 → `bloqueado` com "reconectar conta Microsoft"; quota ou pasta ausente → motivo próprio; nunca marcar `armazenado` sem `item_id` confirmado
+- [x] T072 [US2] Escrever `supabase/functions/arquivo-processar/arquivo-processar.test.ts`: chamada sem segredo 401; lease impede dois processadores; indisponibilidade da Microsoft mantém versão `recebida` e trabalho `pendente`; resposta perdida reconcilia sem criar segundo item; 401 do Graph bloqueia com motivo
+- [x] T073 [US2] Criar `supabase/functions/arquivo-baixar/index.ts` (`GET ?versaoId=`): valida sessão, participação e papel, responde `Content-Disposition: attachment`, nunca persiste nem devolve URL do Graph; declarar teto via `checarLimite` (E14-S01 AC-6)
+- [x] T074 [P] [US2] Escrever `supabase/functions/arquivo-baixar/arquivo-baixar.test.ts`: versão de outro caso 404; versão restrita a outro papel 404; participante revogado 403; resposta sem URL do Graph
+- [x] T075 [US2] Criar `supabase/migrations/0022_E03-S07_cron_transferencia.sql` com o agendamento de `arquivo-processar` (a cada minuto), `arquivos.liberar_leases_expiradas()` e `arquivos.limpar_temporarios_confirmados()`, sem apagar versão `recebida` com transferência pendente
+- [x] T076 [US2] Escrever `supabase/tests/11-cron-transferencia_test.sql` provando que lease expirado volta a `pendente`, que temporário confirmado é limpo e que versão recebida pendente **não** é limpa
+- [x] T077 [US2] Registrar evidência dos 8 cenários da US2 em `specs/005-cliente-360-operacional/evidencias/us2.md`, incluindo a execução real contra a pasta corporativa de teste com arquivos fictícios
 
 ---
 

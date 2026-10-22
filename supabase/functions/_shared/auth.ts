@@ -43,8 +43,12 @@ export function getSupabaseServiceKey(): string {
   return serviceKey;
 }
 
-/** Valida o Bearer token e retorna o user. Lança HttpError 401 se inválido. */
-export async function requireAuth(req: Request): Promise<{ userId: string }> {
+/** Valida o Bearer token e retorna o user. Lança HttpError 401 se inválido.
+ *  `ehAdmin` vem do MESMO `app_metadata.role` validado pelo Auth que `requireAdmin` usa (nunca de
+ *  claim enviado no body) — aditivo em 2026-10-21 (E03-S07/Fase 5) para `arquivo-baixar`, que
+ *  precisa de "participante OU admin" numa função só; destruturação existente (`{ userId }`,
+ *  `_template/index.ts`) continua funcionando sem mudança. */
+export async function requireAuth(req: Request): Promise<{ userId: string; ehAdmin: boolean }> {
   const token = req.headers.get("Authorization")?.replace("Bearer ", "");
   if (!token) throw unauthorized("Token ausente");
 
@@ -55,7 +59,7 @@ export async function requireAuth(req: Request): Promise<{ userId: string }> {
   );
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw unauthorized("Token inválido");
-  return { userId: data.user.id };
+  return { userId: data.user.id, ehAdmin: data.user.app_metadata?.role === "admin" };
 }
 
 /**

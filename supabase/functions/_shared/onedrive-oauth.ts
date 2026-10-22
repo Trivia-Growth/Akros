@@ -1,12 +1,12 @@
 // _shared/onedrive-oauth.ts — lógica da Edge Function `onedrive-oauth` (E03-S07, Fase 5, T054,
 // ADR-0019). Mesmo padrão porta/adapter de `_shared/caso-comandos.ts`: toda a decisão mora aqui,
 // testável com um fake de `IOOnedriveOauth`; `onedrive-oauth/index.ts` só monta o adapter real
-// (`requireAdmin`, `clienteServico()`, `criarIOGraphMicrosoftReal()`) e despacha por `serve()`.
+// (`requireAdmin`, `clienteServico()`, `criarIOGraphMicrosoftOAuthReal()`) e despacha por `serve()`.
 // Nenhum teste deste arquivo toca rede nem Postgres real — ver "Honestidade obrigatória" no
 // brief desta task: este sandbox não tem app registration real no Azure AD nem tenant Microsoft.
 //
 // Decisão de implementação (registrada também em tasks.md, "Decisões de implementação"):
-// `IOGraphMicrosoft` (brief, contrato fixado e compartilhado com `vincular_pasta`/T056 e, em
+// `IOGraphMicrosoftOAuth` (brief, contrato fixado e compartilhado com `vincular_pasta`/T056 e, em
 // outra frente, `arquivo-processar`) não tem um método "ler e-mail/drive da conta" — o escopo
 // delegado concedido (`Files.ReadWrite offline_access`) nem pede `openid`/`profile` para haver um
 // ID token com e-mail. `contaEmail`/`driveId`/`pastaRaizItemId` não têm de onde vir de uma
@@ -32,7 +32,7 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { HttpError } from "./auth.ts";
 import { corsHeaders } from "./cors.ts";
 import { requireCsrfHeader } from "./csrf.ts";
-import type { IOGraphMicrosoft } from "./graph-microsoft.ts";
+import type { IOGraphMicrosoftOAuth } from "./graph-microsoft.ts";
 
 const FN = "onedrive-oauth";
 export const COOKIE_NOME = "akros_onedrive_oauth";
@@ -67,7 +67,7 @@ export interface IOOnedriveOauth {
   limite(req: Request): Promise<{ permitido: boolean; reiniciaEm: Date | null }>;
   /** Lança HttpError 401/403 se não for admin autenticado — nunca lê userId do body/query. */
   autenticarAdmin(req: Request): Promise<{ userId: string }>;
-  graph: Pick<IOGraphMicrosoft, "trocarCodigoPorToken">;
+  graph: Pick<IOGraphMicrosoftOAuth, "trocarCodigoPorToken">;
   /** Vault, escopo `microsoft-graph:<integracaoId>` (migration 0025) — via
    *  `configuracoes.salvar_segredo_integracao`, nunca um segundo mecanismo de cofre. */
   salvarSegredoVault(escopo: string, valor: Record<string, string>): Promise<void>;

@@ -16,7 +16,7 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { HttpError } from "./auth.ts";
 import { corsHeaders } from "./cors.ts";
 import { requireCsrfHeader } from "./csrf.ts";
-import type { IOGraphMicrosoft } from "./graph-microsoft.ts";
+import type { IOGraphMicrosoftOAuth } from "./graph-microsoft.ts";
 import { comIdempotencia, type IOIdempotencia } from "./idempotencia.ts";
 
 const FN = "caso-comandos";
@@ -127,7 +127,7 @@ export const SolicitarDocumentoSchema = z
 
 // T056, Fase 5 (ADR-0019). Vínculo da pasta do caso no OneDrive corporativo — a ancestralidade
 // de `folderItemId` sob a `pasta_raiz_item_id` da integração é validada em
-// `criarManipuladorCasoComandos` via `IOGraphMicrosoft.listarAncestrais` (chamada viva ao Graph,
+// `criarManipuladorCasoComandos` via `IOGraphMicrosoftOAuth.listarAncestrais` (chamada viva ao Graph,
 // que plpgsql não faz), ANTES de chamar a RPC `arquivos.vincular_pasta` (migration 0026).
 export const VincularPastaSchema = z
   .object({
@@ -221,7 +221,7 @@ export interface IOCasoComandos {
   prepararAcessoMicrosoft(
     integracaoId: string,
   ): Promise<{ accessToken: string; driveId: string; pastaRaizItemId: string } | null>;
-  graph: Pick<IOGraphMicrosoft, "listarAncestrais">;
+  graph: Pick<IOGraphMicrosoftOAuth, "listarAncestrais">;
   rpc(
     nome:
       | "registrar_contrato"
