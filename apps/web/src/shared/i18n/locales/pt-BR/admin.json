@@ -50,7 +50,8 @@
       "payments": "Pagamentos",
       "meetings": "Reuniões",
       "conversations": "Conversas",
-      "history": "Histórico"
+      "history": "Histórico",
+      "participants": "Participantes"
     },
     "unlockNextPhase": "Liberar próxima fase",
     "unlockConfirmTitle": "Confirmar liberação de fase",
@@ -351,6 +352,20 @@
     "invitedBy": "Convidado por {{author}} em {{date}}",
     "revokedBy": "Revogado por {{author}} em {{date}}",
     "noAccess": "Sem acesso ao portal",
-    "roleNotAllowedForProgram": "Este papel não existe na versão do programa deste caso"
+    "roleNotAllowedForProgram": "Este papel não existe na versão do programa deste caso",
+    "loading": "Carregando participantes…",
+    "loadError": "Não foi possível carregar os participantes.",
+    "empty": "Nenhum participante cadastrado ainda.",
+    "inviteTitle": "Convidar participante",
+    "displayNameLabel": "Nome de exibição",
+    "emailLabel": "E-mail (opcional)",
+    "familiarIdLabel": "ID do familiar",
+    "organizacaoIdLabel": "ID da organização",
+    "successInvited": "Participante convidado com sucesso.",
+    "successRevoked": "Acesso revogado com sucesso.",
+    "errorForbidden": "Sem permissão para esta ação.",
+    "errorValidation": "Dados inválidos para este participante.",
+    "errorConflict": "Conflito: já existe um registro equivalente.",
+    "errorGeneric": "Não foi possível concluir a ação. Tente novamente."
   }
 }

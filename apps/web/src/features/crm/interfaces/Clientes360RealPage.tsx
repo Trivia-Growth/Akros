@@ -39,6 +39,7 @@ import { useCliente360AdminSupabase } from "../application/useCliente360AdminSup
 import { type SituacaoCaso, calcularProximaAcao } from "../domain/caso";
 import type { Cliente } from "../domain/types";
 import { ContratoFormulario } from "./ContratoFormulario";
+import { ParticipantesPainel } from "./ParticipantesPainel";
 
 const SAUDE_VARIANT = { em_dia: "success", atencao: "warning", atrasado: "danger" } as const;
 const DOCUMENTO_VARIANT = {
@@ -439,6 +440,7 @@ export function Cliente360Real({
           <TabsTrigger value="payments">{t("clientes.tabs.payments")}</TabsTrigger>
           <TabsTrigger value="meetings">{t("clientes.tabs.meetings")}</TabsTrigger>
           <TabsTrigger value="conversations">{t("clientes.tabs.conversations")}</TabsTrigger>
+          <TabsTrigger value="participants">{t("clientes.tabs.participants")}</TabsTrigger>
           <TabsTrigger value="history">{t("clientes.tabs.history")}</TabsTrigger>
         </TabsList>
         <TabsContent value="data">
@@ -469,6 +471,9 @@ export function Cliente360Real({
         </TabsContent>
         <TabsContent value="conversations">
           <ListaConversas conversas={conversas} emails={emails} />
+        </TabsContent>
+        <TabsContent value="participants">
+          <ParticipantesPainel clienteId={cliente.id} />
         </TabsContent>
         <TabsContent value="history">
           <Timeline eventos={eventos} emptyLabel={t("clientes.noHistory")} />

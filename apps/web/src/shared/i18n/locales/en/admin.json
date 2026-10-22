@@ -50,7 +50,8 @@
       "payments": "Payments",
       "meetings": "Meetings",
       "conversations": "Conversations",
-      "history": "History"
+      "history": "History",
+      "participants": "Participants"
     },
     "unlockNextPhase": "Unlock next phase",
     "unlockConfirmTitle": "Confirm phase unlock",
@@ -351,6 +352,20 @@
     "invitedBy": "Invited by {{author}} on {{date}}",
     "revokedBy": "Revoked by {{author}} on {{date}}",
     "noAccess": "No portal access",
-    "roleNotAllowedForProgram": "This role does not exist in this case's program version"
+    "roleNotAllowedForProgram": "This role does not exist in this case's program version",
+    "loading": "Loading participants…",
+    "loadError": "Could not load participants.",
+    "empty": "No participants registered yet.",
+    "inviteTitle": "Invite participant",
+    "displayNameLabel": "Display name",
+    "emailLabel": "Email (optional)",
+    "familiarIdLabel": "Family member ID",
+    "organizacaoIdLabel": "Organization ID",
+    "successInvited": "Participant invited successfully.",
+    "successRevoked": "Access revoked successfully.",
+    "errorForbidden": "No permission for this action.",
+    "errorValidation": "Invalid data for this participant.",
+    "errorConflict": "Conflict: an equivalent record already exists.",
+    "errorGeneric": "Could not complete the action. Try again."
   }
 }
