@@ -18,6 +18,7 @@ import type {
   Cliente360AdminConsulta,
   ClienteRepository,
   DashboardAdminConsulta,
+  ParticipantesConsulta,
   PerfilClienteConsulta,
 } from "@/features/crm/application/ports";
 import type { PropostasConsulta } from "@/features/crm/application/ports";
@@ -25,6 +26,7 @@ import { SupabaseCasoComandos } from "@/features/crm/infrastructure/SupabaseCaso
 import { SupabaseCliente360AdminConsulta } from "@/features/crm/infrastructure/SupabaseCliente360AdminConsulta";
 import { SupabaseClienteRepository } from "@/features/crm/infrastructure/SupabaseClienteRepository";
 import { SupabaseDashboardAdminConsulta } from "@/features/crm/infrastructure/SupabaseDashboardAdminConsulta";
+import { SupabaseParticipantesConsulta } from "@/features/crm/infrastructure/SupabaseParticipantesConsulta";
 import { SupabasePerfilClienteConsulta } from "@/features/crm/infrastructure/SupabasePerfilClienteConsulta";
 import { SupabasePropostasConsulta } from "@/features/crm/infrastructure/SupabasePropostasConsulta";
 import type {
@@ -65,6 +67,7 @@ let operacaoAdminReal: OperacaoAdminConsulta | undefined;
 let cliente360AdminReal: Cliente360AdminConsulta | undefined;
 let perfilClienteReal: PerfilClienteConsulta | undefined;
 let casoComandosReal: CasoComandos | undefined;
+let participantesReal: ParticipantesConsulta | undefined;
 
 export function obterConsultaAgendaReal(): AgendaConsulta {
   if (!agendaReal) agendaReal = new SupabaseAgendaConsulta();
@@ -137,6 +140,14 @@ export function obterConsultaPerfilClienteReal(): PerfilClienteConsulta {
 export function obterCasoComandosReal(): CasoComandos {
   if (!casoComandosReal) casoComandosReal = new SupabaseCasoComandos();
   return casoComandosReal;
+}
+
+/** E03-S07 (T049) — leitura de participantes do caso (`ParticipantesPainel.tsx`), mesmo critério
+ *  de lazy singleton das demais consultas reais acima: sem variante Mock (ler participante
+ *  fictício fora do Postgres não teria RLS nenhuma pra provar). */
+export function obterConsultaParticipantesReal(): ParticipantesConsulta {
+  if (!participantesReal) participantesReal = new SupabaseParticipantesConsulta();
+  return participantesReal;
 }
 
 export async function obterRepositorioClientes(): Promise<ClienteRepository> {

@@ -12,6 +12,8 @@ import { getSupabase } from "@/shared/supabase/client";
 import type { CasoComandos } from "../application/ports";
 import { CasoComandoError } from "../application/ports";
 import type { Contrato, ContratoCondicao, Prioridade } from "../domain/contrato";
+import type { Participante } from "../domain/participante";
+import { type LinhaParticipanteSupabase, paraParticipante } from "./SupabaseParticipantesConsulta";
 
 const CABECALHO_CSRF = { "x-akros-csrf": "1" };
 
@@ -113,5 +115,19 @@ export class SupabaseCasoComandos implements CasoComandos {
   ): Promise<{ id: string; clienteId: string; faseAtualId: string | null }> {
     const data = await invocar("preparar_caso", { ...input });
     return paraPreparoCaso(data as LinhaJornadaSupabase);
+  }
+
+  async convidarParticipante(
+    input: Parameters<CasoComandos["convidarParticipante"]>[0],
+  ): Promise<Participante> {
+    const data = await invocar("convidar_participante", { ...input });
+    return paraParticipante(data as LinhaParticipanteSupabase);
+  }
+
+  async revogarParticipante(
+    input: Parameters<CasoComandos["revogarParticipante"]>[0],
+  ): Promise<Participante> {
+    const data = await invocar("revogar_participante", { ...input });
+    return paraParticipante(data as LinhaParticipanteSupabase);
   }
 }

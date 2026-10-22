@@ -184,4 +184,128 @@ describe("SupabaseCasoComandos", () => {
       });
     });
   });
+
+  describe("convidarParticipante", () => {
+    const input = {
+      clienteId: "11111111-1111-4111-8111-111111111111",
+      papel: "beneficiario" as const,
+      sujeitoTipo: "titular" as const,
+      nomeExibicao: "Ana Beneficiária",
+      email: "ana@example.com",
+      idempotencyKey: "idem-convite-1",
+    };
+
+    it("chama a Edge Function com o header CSRF e todos os campos do input, e traduz a linha devolvida", async () => {
+      invoke.mockResolvedValue({
+        data: {
+          id: "66666666-6666-4666-8666-666666666666",
+          cliente_id: input.clienteId,
+          papel: input.papel,
+          sujeito_tipo: input.sujeitoTipo,
+          familiar_id: null,
+          organizacao_id: null,
+          nome_exibicao: input.nomeExibicao,
+          email: input.email,
+          auth_user_id: null,
+          estado: "ativo",
+          convidado_por: "33333333-3333-4333-8333-333333333333",
+          convidado_em: "2026-10-16T12:00:00.000Z",
+          revogado_por: null,
+          revogado_em: null,
+        },
+        error: null,
+      });
+
+      const participante = await new SupabaseCasoComandos().convidarParticipante(input);
+
+      expect(invoke).toHaveBeenCalledWith("caso-comandos", {
+        headers: { "x-akros-csrf": "1" },
+        body: { acao: "convidar_participante", ...input },
+      });
+      expect(participante).toMatchObject({
+        id: "66666666-6666-4666-8666-666666666666",
+        clienteId: input.clienteId,
+        papel: "beneficiario",
+        sujeitoTipo: "titular",
+        nomeExibicao: input.nomeExibicao,
+        email: input.email,
+        estado: "ativo",
+        convidadoPor: "33333333-3333-4333-8333-333333333333",
+      });
+      expect(participante).not.toHaveProperty("authUserId");
+      expect(participante).not.toHaveProperty("familiarId");
+    });
+
+    it("erro 422 do servidor (papel fora do conjunto do programa) vira CasoComandoError 422", async () => {
+      invoke.mockResolvedValue({
+        data: null,
+        error: Object.assign(new Error("Edge Function returned a non-2xx status code"), {
+          context: respostaDeErro(422, "Dados inválidos para esta operação"),
+        }),
+      });
+
+      await esperarCasoComandoError(
+        new SupabaseCasoComandos().convidarParticipante(input),
+        422,
+        "Dados inválidos para esta operação",
+      );
+    });
+  });
+
+  describe("revogarParticipante", () => {
+    const input = {
+      participanteId: "66666666-6666-4666-8666-666666666666",
+      idempotencyKey: "idem-revoga-1",
+    };
+
+    it("chama a Edge Function com o header CSRF e todos os campos do input, e traduz a linha devolvida", async () => {
+      invoke.mockResolvedValue({
+        data: {
+          id: input.participanteId,
+          cliente_id: "11111111-1111-4111-8111-111111111111",
+          papel: "beneficiario",
+          sujeito_tipo: "titular",
+          familiar_id: null,
+          organizacao_id: null,
+          nome_exibicao: "Ana Beneficiária",
+          email: "ana@example.com",
+          auth_user_id: null,
+          estado: "revogado",
+          convidado_por: "33333333-3333-4333-8333-333333333333",
+          convidado_em: "2026-10-16T12:00:00.000Z",
+          revogado_por: "33333333-3333-4333-8333-333333333333",
+          revogado_em: "2026-10-16T13:00:00.000Z",
+        },
+        error: null,
+      });
+
+      const participante = await new SupabaseCasoComandos().revogarParticipante(input);
+
+      expect(invoke).toHaveBeenCalledWith("caso-comandos", {
+        headers: { "x-akros-csrf": "1" },
+        body: { acao: "revogar_participante", ...input },
+      });
+      expect(participante).toMatchObject({
+        id: input.participanteId,
+        estado: "revogado",
+        revogadoPor: "33333333-3333-4333-8333-333333333333",
+        revogadoEm: "2026-10-16T13:00:00.000Z",
+      });
+    });
+
+    it("erro 403 (não-admin) vira CasoComandoError 403", async () => {
+      invoke.mockResolvedValue({
+        data: null,
+        error: Object.assign(new Error("Edge Function returned a non-2xx status code"), {
+          context: respostaDeErro(403, "Operação não autorizada"),
+        }),
+      });
+
+      await esperarCasoComandoError(
+        new SupabaseCasoComandos().revogarParticipante(input),
+        403,
+        "Operação não autorizada",
+      );
+    });
+  });
 });

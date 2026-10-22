@@ -4,6 +4,7 @@ import type { Documento } from "@/features/documentos/domain/types";
 import type { Jornada } from "@/features/jornada/domain/types";
 import type { Pagamento } from "@/features/pagamentos/domain/types";
 import type { Contrato } from "../domain/contrato";
+import type { PapelParticipante, Participante, SujeitoTipo } from "../domain/participante";
 import type { Cliente, Proposta } from "../domain/types";
 
 export interface ClienteRepository {
@@ -111,4 +112,34 @@ export interface CasoComandos {
     levantamentoEstado?: "incompleto" | "conferido";
     idempotencyKey: string;
   }): Promise<{ id: string; clienteId: string; faseAtualId: string | null }>;
+
+  /** E03-S07 (T049/T046) — convida um participante para o caso (ADR-0018, FR-017/FR-020). O
+   *  Select de `papel` da UI sempre apresenta os 4 papéis fixos do domínio: a validação real de
+   *  "este papel existe na versão do programa do caso" é feita no servidor
+   *  (`crm.convidar_participante`, migration 0024), que responde 422 quando não bate — nunca
+   *  repita essa checagem no cliente contra um catálogo próprio (duas fontes de verdade
+   *  divergem). */
+  convidarParticipante(input: {
+    clienteId: string;
+    papel: PapelParticipante;
+    sujeitoTipo: SujeitoTipo;
+    familiarId?: string;
+    organizacaoId?: string;
+    nomeExibicao: string;
+    email?: string;
+    idempotencyKey: string;
+  }): Promise<Participante>;
+
+  /** FR-020 — revoga só o participante indicado; nunca afeta os demais do mesmo caso (ver
+   *  `crm.revogar_participante`, migration 0024, e `participante.test.ts` pela prova no domínio). */
+  revogarParticipante(input: {
+    participanteId: string;
+    idempotencyKey: string;
+  }): Promise<Participante>;
+}
+
+/** E03-S07 (T049) — leitura dos participantes de um caso para o painel admin
+ * (`ParticipantesPainel.tsx`). RLS decide o recorte (mesmo critério de `DocumentosConsulta`). */
+export interface ParticipantesConsulta {
+  carregar(clienteId: string): Promise<Participante[]>;
 }
