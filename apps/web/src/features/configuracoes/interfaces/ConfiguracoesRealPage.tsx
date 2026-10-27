@@ -1,3 +1,4 @@
+import { useSessaoStore } from "@/features/sessao/application/store";
 import { erroDetalhado } from "@/shared/lib/http/edge-function-error";
 import { navegarPara } from "@/shared/lib/navegacao";
 import { getSupabase } from "@/shared/supabase/client";
@@ -727,9 +728,8 @@ function IntegracaoMicrosoftCard() {
     evento.preventDefault();
     setEnviando(true);
     try {
-      const { data: sessao, error: erroSessao } = await getSupabase().auth.getSession();
-      const token = sessao.session?.access_token;
-      if (erroSessao || !token) throw new Error(t("oneDrive.errorStartFailed"));
+      const token = useSessaoStore.getState().sessao?.accessToken;
+      if (!token) throw new Error(t("oneDrive.errorStartFailed"));
 
       const urlProjeto = import.meta.env.VITE_SUPABASE_URL as string | undefined;
       if (!urlProjeto) throw new Error(t("oneDrive.errorStartFailed"));

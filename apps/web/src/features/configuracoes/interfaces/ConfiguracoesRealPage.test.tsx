@@ -1,3 +1,4 @@
+import { useSessaoStore } from "@/features/sessao/application/store";
 // E13-S13 — formulário de canal e agente: campos por tipo de canal, corpo enviado à Edge Function
 // e nenhuma credencial na tela depois de salvar.
 // @vitest-environment jsdom
@@ -271,9 +272,11 @@ describe("ConfiguracoesRealPage — Conta Microsoft / OneDrive (E03-S07 Fase 5)"
   beforeEach(async () => {
     invoke.mockReset();
     navegarPara.mockReset();
-    getSession.mockResolvedValue({
-      data: { session: { access_token: "token-admin" } },
-      error: null,
+    getSession.mockRejectedValue(new Error("Supabase Auth não mantém a sessão da aplicação"));
+    useSessaoStore.getState().definirSessao({
+      accessToken: "token-admin",
+      expiresAt: 9999999999,
+      usuario: { id: "admin-1", email: "admin@example.test", papel: "admin" },
     });
     // Determinístico independente do idioma detectado no ambiente (navigator/locale da
     // máquina que roda o teste) — o detector de i18next pode resolver "en" fora do pt-BR
@@ -282,6 +285,7 @@ describe("ConfiguracoesRealPage — Conta Microsoft / OneDrive (E03-S07 Fase 5)"
   });
   afterEach(() => {
     cleanup();
+    useSessaoStore.getState().definirSessao(null);
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
