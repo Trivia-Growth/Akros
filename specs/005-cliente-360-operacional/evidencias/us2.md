@@ -47,11 +47,9 @@ migration 0028) e o processa — provado com Postgres real, incluindo o caso de 
 — seja pelo upload completo (`enviarFragmento` retorna `concluido: true` + `itemId`), seja pela
 reconciliação (T070, item determinístico já existe com o tamanho certo). Teste
 "upload completo grava item\_id, estado armazenado e descarta segredo da sessão" prova a
-sequência completa com um fake de `IOGraphMicrosoft`. **Gap**: "aponta para o arquivo na pasta do
-caso" na UI (um link/indicador na tela do documento) depende de `arquivo-baixar` estar
-referenciado pela interface do portal — a função existe e está testada (T073/T074), mas o
-componente de frontend que a invoca é de outra task (fora de T069-T077); aqui só a borda
-HTTP/dado está pronta.
+sequência completa com um fake de `IOGraphMicrosoft`. A interface agora oferece download da
+versão armazenada via `arquivo-baixar`; adapter e tela foram testados com respostas simuladas.
+O fluxo completo com Microsoft real ainda precisa de validação.
 
 ## Cenário 4
 

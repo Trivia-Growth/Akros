@@ -3,6 +3,7 @@ import { CircleAlert, FileText, LockKeyhole, PenLine } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDocumentosClienteReal } from "../application/real-hooks";
+import { useDownloadDocumento } from "../application/useDownloadDocumento";
 import { useEnvioDocumento } from "../application/useEnvioDocumento";
 import type { Documento } from "../domain/types";
 
@@ -62,6 +63,7 @@ function DocumentoCard({
 }) {
   const { t } = useTranslation("portal");
   const envio = useEnvioDocumento(documento.id);
+  const download = useDownloadDocumento();
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [erroLocal, setErroLocal] = useState<string | null>(null);
 
@@ -156,6 +158,11 @@ function DocumentoCard({
             {t(erroLocal ?? envio.erro ?? "upload.invalidFile", { size: "20 MB" })}
           </p>
         )}
+        {download.erro && (
+          <p role="alert" className="text-sm text-red-700">
+            {t("upload.downloadError")}
+          </p>
+        )}
         {envio.estadoRecebimento === "recebido" && (
           <Badge variant="success">{t("upload.uploaded")}</Badge>
         )}
@@ -193,6 +200,16 @@ function DocumentoCard({
                         ? t("upload.storageDone")
                         : t("upload.storageFailed")}
                 </Badge>
+                {versao.estadoArmazenamento === "armazenado" && (
+                  <button
+                    type="button"
+                    className="text-navy underline disabled:opacity-50"
+                    disabled={download.baixando}
+                    onClick={() => void download.baixar(versao.id, versao.nomeOriginal)}
+                  >
+                    {t("upload.download")}
+                  </button>
+                )}
               </li>
             ))}
           </ul>

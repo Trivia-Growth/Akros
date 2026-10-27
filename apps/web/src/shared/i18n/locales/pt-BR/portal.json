@@ -162,6 +162,8 @@
     "notYourRole": "Este documento é dirigido a outro participante do caso",
     "newVersion": "Nova versão enviada",
     "versions": "Versões enviadas",
+    "download": "Baixar arquivo",
+    "downloadError": "Não foi possível baixar o arquivo. Tente novamente.",
     "version": "Versão {{number}}",
     "rejected": "Envio não concluído"
   }

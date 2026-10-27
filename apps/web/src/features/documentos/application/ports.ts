@@ -37,6 +37,10 @@ export interface VersoesConsulta {
   listarPorDocumento(documentoId: string): Promise<VersaoDocumento[]>;
 }
 
+export interface ArquivoDownloadPort {
+  baixar(versaoId: string): Promise<Blob>;
+}
+
 export interface EnvioArquivoPort {
   enviar(input: {
     objetoPermitido: string;

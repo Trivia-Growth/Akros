@@ -34,12 +34,14 @@ import { SupabaseParticipantesConsulta } from "@/features/crm/infrastructure/Sup
 import { SupabasePerfilClienteConsulta } from "@/features/crm/infrastructure/SupabasePerfilClienteConsulta";
 import { SupabasePropostasConsulta } from "@/features/crm/infrastructure/SupabasePropostasConsulta";
 import type {
+  ArquivoDownloadPort,
   DocumentosAdminConsulta,
   DocumentosConsulta,
   EnvioArquivoPort,
   EnvioDocumentoComandos,
   VersoesConsulta,
 } from "@/features/documentos/application/ports";
+import { SupabaseArquivoDownload } from "@/features/documentos/infrastructure/SupabaseArquivoDownload";
 import { SupabaseDocumentosAdminConsulta } from "@/features/documentos/infrastructure/SupabaseDocumentosAdminConsulta";
 import { SupabaseDocumentosConsulta } from "@/features/documentos/infrastructure/SupabaseDocumentosConsulta";
 import { SupabaseEnvioComandos } from "@/features/documentos/infrastructure/SupabaseEnvioComandos";
@@ -72,6 +74,7 @@ let documentosAdminReal: DocumentosAdminConsulta | undefined;
 let envioDocumentoReal: EnvioDocumentoComandos | undefined;
 let versoesDocumentoReal: VersoesConsulta | undefined;
 let envioArquivoReal: EnvioArquivoPort | undefined;
+let arquivoDownloadReal: ArquivoDownloadPort | undefined;
 let pagamentosReal: PagamentosConsulta | undefined;
 let comunicacaoReal: ComunicacaoConsulta | undefined;
 let comunicacaoAdminReal: ComunicacaoAdminConsulta | undefined;
@@ -124,6 +127,11 @@ export function obterComandosEnvioDocumento(): EnvioDocumentoComandos {
 export function obterConsultaVersoesDocumento(): VersoesConsulta {
   if (!versoesDocumentoReal) versoesDocumentoReal = new SupabaseVersoesConsulta();
   return versoesDocumentoReal;
+}
+
+export function obterArquivoDownloadReal(): ArquivoDownloadPort {
+  if (!arquivoDownloadReal) arquivoDownloadReal = new SupabaseArquivoDownload();
+  return arquivoDownloadReal;
 }
 
 export function obterEnvioArquivoReal(): EnvioArquivoPort {

@@ -162,6 +162,8 @@
     "notYourRole": "This document is directed to another participant of the case",
     "newVersion": "New version submitted",
     "versions": "Submitted versions",
+    "download": "Download file",
+    "downloadError": "Could not download the file. Please try again.",
     "version": "Version {{number}}",
     "rejected": "Upload not completed"
   }
