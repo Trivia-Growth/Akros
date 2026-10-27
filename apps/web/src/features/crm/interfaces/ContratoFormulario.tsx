@@ -69,6 +69,7 @@ export function ContratoFormulario({ open, onClose, clienteId, onSalvo }: Contra
   const [programaVersao, setProgramaVersao] = useState("");
   const [prazoDias, setPrazoDias] = useState("");
   const [prioridade, setPrioridade] = useState<"padrao" | "prioritaria">("padrao");
+  const [origem, setOrigem] = useState<"" | "importado" | "nascido_na_plataforma">("");
   const [observacao, setObservacao] = useState("");
   const [condicoes, setCondicoes] = useState<CondicaoFormulario[]>([]);
   const [erro, setErro] = useState<string | null>(null);
@@ -87,6 +88,7 @@ export function ContratoFormulario({ open, onClose, clienteId, onSalvo }: Contra
     setProgramaVersao("");
     setPrazoDias("");
     setPrioridade("padrao");
+    setOrigem("");
     setObservacao("");
     setCondicoes([]);
     setErro(null);
@@ -107,6 +109,7 @@ export function ContratoFormulario({ open, onClose, clienteId, onSalvo }: Contra
     programaId.trim() !== "" &&
     programaVersao.trim() !== "" &&
     prazoValido &&
+    origem !== "" &&
     condicoesPreenchidas &&
     condicoesValidasDominio &&
     !salvando;
@@ -119,7 +122,7 @@ export function ContratoFormulario({ open, onClose, clienteId, onSalvo }: Contra
   }
 
   async function handleSalvar() {
-    if (!podeSalvar) return;
+    if (!podeSalvar || !origem) return;
     setErro(null);
 
     const payloadCondicoes: CondicaoContratoInput[] = condicoes.map((condicao, index) => ({
@@ -154,6 +157,7 @@ export function ContratoFormulario({ open, onClose, clienteId, onSalvo }: Contra
       await prepararCaso({
         clienteId,
         contratoId: contrato.id,
+        origem,
         idempotencyKey: crypto.randomUUID(),
       });
       toast.success(t("case.contractSavedSuccess"));
@@ -194,6 +198,15 @@ export function ContratoFormulario({ open, onClose, clienteId, onSalvo }: Contra
             prazoDias !== "" && !prazoValido ? t("case.contractResponseDeadlineInvalid") : undefined
           }
         />
+        <Select
+          label={t("case.caseOrigin")}
+          value={origem}
+          onChange={(e) => setOrigem(e.target.value as "" | "importado" | "nascido_na_plataforma")}
+        >
+          <option value="">{t("case.caseOriginChoose")}</option>
+          <option value="nascido_na_plataforma">{t("case.caseOriginNew")}</option>
+          <option value="importado">{t("case.caseOriginImported")}</option>
+        </Select>
         <Select
           label={t("case.contractPriority")}
           value={prioridade}

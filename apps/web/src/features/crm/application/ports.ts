@@ -110,6 +110,7 @@ export interface CasoComandos {
     clienteId: string;
     contratoId: string;
     levantamentoEstado?: "incompleto" | "conferido";
+    origem?: "importado" | "nascido_na_plataforma";
     idempotencyKey: string;
   }): Promise<{ id: string; clienteId: string; faseAtualId: string | null }>;
 

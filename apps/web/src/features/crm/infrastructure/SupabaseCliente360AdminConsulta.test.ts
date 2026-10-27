@@ -6,6 +6,30 @@ import {
 } from "./SupabaseCliente360AdminConsulta";
 
 describe("SupabaseCliente360AdminConsulta — UUIDs reais", () => {
+  it("preserva origem e conferência da situação importada", () => {
+    const jornadas = recomporJornadasAdmin({
+      jornadas: [
+        {
+          id: "jornada-a",
+          cliente_id: "cliente-a",
+          fase_atual_id: null,
+          programa_id: null,
+          programa_versao: null,
+          origem_situacao_inicial: "importado",
+          conferido_por: "admin-a",
+          conferido_em: "2026-10-27T12:00:00Z",
+        },
+      ],
+      fases: [],
+      etapas: [],
+    });
+    expect(jornadas[0]).toMatchObject({
+      origemSituacaoInicial: "importado",
+      conferidoPor: "admin-a",
+      conferidoEm: "2026-10-27T12:00:00Z",
+    });
+  });
+
   it("E13-S11 AC-3: preserva UUID remoto sem mapa de fixture", () => {
     expect(
       paraCliente360({

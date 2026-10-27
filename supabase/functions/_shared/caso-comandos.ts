@@ -55,6 +55,7 @@ export const PrepararCasoSchema = z
     clienteId: z.string().uuid(),
     contratoId: z.string().uuid(),
     levantamentoEstado: z.enum(["incompleto", "conferido"]).optional(),
+    origem: z.enum(["importado", "nascido_na_plataforma"]).optional(),
     idempotencyKey: z.string().min(1),
   })
   .strict();
@@ -226,6 +227,7 @@ export interface IOCasoComandos {
     nome:
       | "registrar_contrato"
       | "preparar_caso"
+      | "preparar_caso_com_origem"
       | "convidar_participante"
       | "revogar_participante"
       | "solicitar_documento"
@@ -340,11 +342,12 @@ export function criarManipuladorCasoComandos(io: IOCasoComandos) {
               return data;
             }
             case "preparar_caso": {
-              const { data, error } = await io.rpc("preparar_caso", {
+              const { data, error } = await io.rpc(entrada.origem ? "preparar_caso_com_origem" : "preparar_caso", {
                 p_cliente_id: entrada.clienteId,
                 p_contrato_id: entrada.contratoId,
                 p_levantamento_estado: entrada.levantamentoEstado ?? null,
                 p_autor_id: userId,
+                ...(entrada.origem ? { p_origem: entrada.origem } : {}),
               });
               if (error) throw erroDeNegocio(error);
               return data;

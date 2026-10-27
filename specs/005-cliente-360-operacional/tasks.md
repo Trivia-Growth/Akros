@@ -106,8 +106,8 @@ pendências; caso sem contrato aparece como cadastro incompleto.
 - [x] T039 [US1] Registrar adapter, hooks e telas em `apps/web/src/app/real-repositories.ts` e `apps/web/src/app/di.ts` na mesma entrega
 - [x] T040 [US1] Escrever `apps/web/src/features/crm/interfaces/cliente-360-operacional.smoke.test.tsx` provando selo de cadastro incompleto, pendências separadas por tipo e ausência de nota interna no DTO do portal
 - [x] T041 [US1] Rodar `rtk pnpm run ci:local` e `rtk pnpm run arch:check`; registrar evidência dos cenários 1 a 6 da US1 em `specs/005-cliente-360-operacional/evidencias/us1.md`
-- [ ] T041a [US1] **Gap real encontrado em revisão adversarial, registrado em `evidencias/us1.md` cenário 2**: `crm.preparar_caso` (migration `0022`) grava `origem_situacao_inicial` sempre como `'nascido_na_plataforma'` — não há parâmetro para `'importado'`. Sem isto, US1 cenário 2 ("cliente em andamento... registra situação inicial... origem") não fica provado de ponta a ponta, e **bloqueia considerar a US1 inteira `Converged`** mesmo com T027-T041 aprovados. Adicionar `p_origem text DEFAULT 'nascido_na_plataforma'` à RPC (migration nova, `0024` em diante — `0022` já foi revisada/aprovada, não editar), expor `origem` opcional no Zod de `preparar_caso` (`_shared/caso-comandos.ts`), e um campo simples no `ContratoFormulario`/fluxo de preparo ("Cliente em andamento (histórico importado)" vs. "Caso novo"). Vínculo/preservação de pasta OneDrive fica fora (depende da integração OneDrive, fase 5) — este item é só o parâmetro de origem e seu registro de autor/data, que já existem (`conferido_por`/`conferido_em`)
-- [ ] T041b [US1] Estender `apps/web/src/features/crm/infrastructure/SupabaseCliente360AdminConsulta.test.ts` com testes do novo campo `origemSituacaoInicial` depois que T041a existir (segue o mesmo padrão dos testes de `paraContrato` já adicionados nesta fase — ver commit da revisão adversarial)
+- [x] T041a [US1] Registrar origem da situação inicial com autor e data: migration 0029 adiciona RPC compatível com a legada; interface exige escolha explícita; Deno, Vitest e Postgres verificados.
+- [x] T041b [US1] Testar leitura de origemSituacaoInicial e conferência no adapter de consulta do 360.
 
 ---
 
@@ -171,7 +171,7 @@ arquivo na pasta do caso, sem acesso a arquivo de outro caso.
 - [x] T074 [P] [US2] Escrever `supabase/functions/arquivo-baixar/arquivo-baixar.test.ts`: versão de outro caso 404; versão restrita a outro papel 404; participante revogado 403; resposta sem URL do Graph
 - [x] T075 [US2] Criar `supabase/migrations/0022_E03-S07_cron_transferencia.sql` com o agendamento de `arquivo-processar` (a cada minuto), `arquivos.liberar_leases_expiradas()` e `arquivos.limpar_temporarios_confirmados()`, sem apagar versão `recebida` com transferência pendente
 - [x] T076 [US2] Escrever `supabase/tests/11-cron-transferencia_test.sql` provando que lease expirado volta a `pendente`, que temporário confirmado é limpo e que versão recebida pendente **não** é limpa
-- [x] T077 [US2] Registrar evidência dos 8 cenários da US2 em `specs/005-cliente-360-operacional/evidencias/us2.md`, incluindo a execução real contra a pasta corporativa de teste com arquivos fictícios
+- [ ] T077 [US2] Completar evidência dos 8 cenários da US2, incluindo execução real contra pasta corporativa com arquivos fictícios; execução real ainda não ocorreu.
 
 ---
 
@@ -276,7 +276,7 @@ sem esta fase a feature existe no repositório e **não** existe para o Bruno.
 
 - [ ] T128 Abrir o PR da branch com o ID da story no título, aguardar `gh pr checks` verde no agregador `ci` (cobre `qualidade`, `seguranca` e `db-tests`) sem check obrigatório pulado
 - [ ] T129 Fechar **A-01** no Netlify: `VITE_DEMO_MODE=false`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` configurados e novo build publicado — sem isso o site segue em modo demo e nenhuma tela real aparece
-- [ ] T130 Aplicar as migrations `0017` a `0024` no Supabase de produção, em ordem, conferindo `lint:migrations` e os testes SQL no projeto remoto
+- [ ] T130 Conferir histórico remoto e aplicar migrations pendentes 0017 a 0029 em ordem; validar testes SQL e reversão. Publicar Edge Functions atualizadas antes do frontend que usa a RPC de 0029.
 - [ ] T131 Publicar as seis Edge Functions (`caso-comandos`, `revisao-comandos`, `envio-comandos`, `arquivo-baixar`, `arquivo-processar`, `onedrive-oauth`) e conferir `CORS_ALLOWED_ORIGINS` com o domínio de produção
 - [ ] T132 Criar o bucket `envios` no projeto remoto com os mesmos limites e conferir que `SELECT` anônimo e `INSERT` fora de reserva são negados
 - [ ] T133 Cadastrar no Vault o segredo `processador:arquivos` e o client secret do app Microsoft, e agendar `arquivo-processar` no Supabase Cron

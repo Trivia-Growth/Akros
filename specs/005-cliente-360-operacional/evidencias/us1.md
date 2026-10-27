@@ -20,19 +20,15 @@ exercitada pelo smoke test `cliente-360-operacional.smoke.test.tsx` (T040).
 
 ## Cenário 2
 
+**Atualização de 2026-10-27:** a migration 0029 e o formulário passaram a registrar origem escolhida, autor e data. A chamada anterior segue compatível. `12-origem-caso_test.sql` verifica os dois caminhos em Postgres; testes Deno e Vitest verificam comando, formulário e leitura. O vínculo e a preservação da pasta ainda precisam de validação ponta a ponta com OneDrive real; o cenário continua parcial.
+
 > **Given** um cliente em andamento, **When** a equipe registra situação inicial e vincula sua
 > pasta, **Then** mantém os arquivos existentes e registra autor, data e origem dessa situação
 > inicial.
 
-**Parcialmente verificado — gap conhecido, fora do escopo de T036-041**: `crm.preparar_caso`
-grava `conferido_por`/`conferido_em` (autor e data — provado em T031/T032) e `Jornada` agora
-expõe esses campos ao frontend (`contratoId`, `levantamentoEstado`, `conferidoPor`, `conferidoEm`,
-`origemSituacaoInicial` — mapeados nesta entrega em `SupabaseJornadaConsulta.ts`). Porém a RPC
-hoje grava `origem_situacao_inicial` sempre como `'nascido_na_plataforma'` (migration 0022,
-linha 283) — não há parâmetro ainda para distinguir histórico importado de caso novo, nem UI de
-vínculo/preservação de pasta OneDrive (isso depende da integração OneDrive, fora desta fase). Este
-cenário não está coberto de ponta a ponta; falta uma task futura para o parâmetro de origem e o
-fluxo de importação de histórico.
+**Parcialmente verificado:** a RPC original grava autor e data e permanece compatível. A nova RPC
+`crm.preparar_caso_com_origem` permite distinguir histórico importado de caso novo, com escolha
+explícita no formulário. O vínculo e a preservação de pasta não foram testados com OneDrive real.
 
 ## Cenário 3
 
@@ -102,9 +98,8 @@ checagem quando `!situacao.contrato`, antes de qualquer cálculo de pendência (
 
 ## Gaps conhecidos ao final da fase 3
 
-1. Cenário 2 (situação inicial de cliente em andamento): falta parâmetro de origem na RPC
-   `crm.preparar_caso` para distinguir histórico importado de caso nascido na plataforma, e falta
-   UI de vínculo/preservação de pasta OneDrive (integração OneDrive é de fase futura).
+1. Cenário 2 (situação inicial de cliente em andamento): falta execução real da integração para
+   comprovar vínculo e preservação da pasta do caso no OneDrive.
 2. Cenário 5: participantes e papéis (ADR-0018) não têm formulário nesta entrega — contrato hoje
    só registra programa/condições/prazo/prioridade, sem participante.
 3. Prazo por pendência individual não aparece item a item na fila "O que precisa de atenção" —

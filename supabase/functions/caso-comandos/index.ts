@@ -9,6 +9,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 import { criarManipuladorCasoComandos } from "../_shared/caso-comandos.ts";
+import { executarCasoRpc } from "../_shared/caso-rpc.ts";
 import { criarIOGraphMicrosoftReal } from "../_shared/graph-microsoft.ts";
 import { clienteServico, obterSegredo, salvarSegredo } from "../_shared/integracoes.ts";
 import { criarIOIdempotencia } from "../_shared/io-supabase-caso.ts";
@@ -29,7 +30,7 @@ serve(
     limite: (req) => checarLimite({ req, rota: FN, ...TETOS[FN] }),
     autenticarAdmin: (req) => requireAdmin(req),
     idempotencia: criarIOIdempotencia(),
-    rpc: (nome, params) => clienteServico().rpc(nome, params),
+    rpc: (nome, params) => executarCasoRpc(clienteServico())(nome, params),
     graph: { listarAncestrais: (params) => graphReal.listarAncestrais(params) },
     // T056: lê a integração (drive/pasta raiz públicos), troca o refresh token do Vault por um
     // access token fresco e regrava o Vault se a Microsoft rotacionar o refresh token — nunca um

@@ -159,6 +159,16 @@ const VINCULAR_PASTA = {
   idempotencyKey: "chave-6",
 };
 
+Deno.test("preparo registra origem importada e rejeita origem desconhecida", async () => {
+  const { h, e } = montar();
+  const resposta = await h(req({ ...PREPARAR_CASO, origem: "importado" }));
+  assertEquals(resposta.status, 200);
+  assertEquals(e.chamadas[0].params.p_origem, "importado");
+  const invalida = await h(req({ ...PREPARAR_CASO, origem: "desconhecida", idempotencyKey: "origem-invalida" }));
+  assertEquals(invalida.status, 422);
+  assertEquals(e.rpc, 1);
+});
+
 Deno.test("CSRF ausente é 401, antes de autenticar; RPC nunca chamada", async () => {
   const { h, e } = montar();
   const r = await h(req(REGISTRAR_CONTRATO, {}));

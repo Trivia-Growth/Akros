@@ -35,10 +35,7 @@ serve(
     // `.schema(...)` explícito: as três funções vivem fora do schema `public`
     // (`arquivos.reservar_envio`/`finalizar_envio`, `jornada.enviar_etapa_para_avaliacao`) — sem
     // isso o PostgREST resolveria a chamada contra `public` (primeiro schema de
-    // `[api].schemas` em config.toml) e nunca acharia a função. CONCERN registrado no relatório
-    // desta task: `caso-comandos/index.ts` (T031) chama `clienteServico().rpc(nome, params)` sem
-    // `.schema("crm")" — mesmo risco, não verificável neste sandbox (sem PostgREST real) e fora
-    // do escopo desta task consertar ali.
+    // `[api].schemas` em config.toml) e nunca acharia a função.
     rpc: (nome, params) => {
       const schema = nome === "enviar_etapa_para_avaliacao" ? "jornada" : "arquivos";
       return clienteServico().schema(schema).rpc(nome, params);
