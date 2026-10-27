@@ -123,6 +123,22 @@ export interface CasoComandos {
     idempotencyKey: string;
   }): Promise<void>;
 
+  solicitarDocumento(
+    input: {
+      clienteId: string;
+      faseId: string;
+      requisitoId: string;
+      titulo: string;
+      prazoEm?: string;
+      instrucao?: string;
+      idempotencyKey: string;
+    } & (
+      | { sujeitoTipo: "caso" }
+      | { sujeitoTipo: "participante"; sujeitoParticipanteId: string }
+      | { sujeitoTipo: "familiar"; sujeitoFamiliarId: string }
+    ),
+  ): Promise<void>;
+
   /** E03-S07 (T049/T046) — convida um participante para o caso (ADR-0018, FR-017/FR-020). O
    *  Select de `papel` da UI sempre apresenta os 4 papéis fixos do domínio: a validação real de
    *  "este papel existe na versão do programa do caso" é feita no servidor

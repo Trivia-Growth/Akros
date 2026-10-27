@@ -201,6 +201,23 @@ describe("SupabaseCasoComandos", () => {
     });
   });
 
+  it("solicita documento sem permitir definir restrições pelo navegador", async () => {
+    const input = {
+      clienteId: "11111111-1111-4111-8111-111111111111",
+      faseId: "22222222-2222-4222-8222-222222222222",
+      requisitoId: "passaporte",
+      sujeitoTipo: "caso" as const,
+      titulo: "Passaporte",
+      idempotencyKey: "solicitar-1",
+    };
+    invoke.mockResolvedValue({ data: { id: "documento-1" }, error: null });
+    await new SupabaseCasoComandos().solicitarDocumento(input);
+    expect(invoke).toHaveBeenCalledWith("caso-comandos", {
+      headers: { "x-akros-csrf": "1" },
+      body: { acao: "solicitar_documento", ...input },
+    });
+  });
+
   describe("convidarParticipante", () => {
     const input = {
       clienteId: "11111111-1111-4111-8111-111111111111",

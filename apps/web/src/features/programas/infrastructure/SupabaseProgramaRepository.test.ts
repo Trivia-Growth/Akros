@@ -22,6 +22,14 @@ const linha: LinhaProgramaSupabase = {
 };
 
 describe("SupabaseProgramaRepository — mapeamento", () => {
+  it("preserva requisito desativado ao ler e gravar programa", () => {
+    const programa = paraDominio({
+      ...linha,
+      documentos_exigidos: [{ id: "req", titulo: "Antigo", ativo: false }],
+    });
+    expect(programa.documentosExigidos[0].ativo).toBe(false);
+    expect(paraColunas(programa).documentos_exigidos[0].ativo).toBe(false);
+  });
   it("preserva papéis configurados na leitura e na gravação", () => {
     const papeis = [
       { papel: "aplicante", obrigatorio: true },

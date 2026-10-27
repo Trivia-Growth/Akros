@@ -41,6 +41,7 @@ import type { Cliente } from "../domain/types";
 import { ContratoFormulario } from "./ContratoFormulario";
 import { ParticipantesPainel } from "./ParticipantesPainel";
 import { PastaCasoPainel } from "./PastaCasoPainel";
+import { SolicitarDocumentoPainel } from "./SolicitarDocumentoPainel";
 
 const SAUDE_VARIANT = { em_dia: "success", atencao: "warning", atrasado: "danger" } as const;
 const DOCUMENTO_VARIANT = {
@@ -463,6 +464,14 @@ export function Cliente360Real({
           </Card>
         </TabsContent>
         <TabsContent value="documents">
+          {jornada && (
+            <SolicitarDocumentoPainel
+              clienteId={cliente.id}
+              jornada={jornada}
+              familiares={cliente.perfilImigratorio?.familiares ?? []}
+              onSalvo={() => void refetch()}
+            />
+          )}
           <ListaDocumentos documentos={documentos} />
         </TabsContent>
         <TabsContent value="payments">

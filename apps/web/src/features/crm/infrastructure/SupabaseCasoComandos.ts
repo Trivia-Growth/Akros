@@ -103,6 +103,12 @@ async function invocar(acao: string, corpo: Record<string, unknown>): Promise<un
 }
 
 export class SupabaseCasoComandos implements CasoComandos {
+  async solicitarDocumento(
+    input: Parameters<CasoComandos["solicitarDocumento"]>[0],
+  ): Promise<void> {
+    await invocar("solicitar_documento", { ...input });
+  }
+
   async vincularPasta(input: Parameters<CasoComandos["vincularPasta"]>[0]): Promise<void> {
     await invocar("vincular_pasta", { ...input });
   }

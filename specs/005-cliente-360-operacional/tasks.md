@@ -276,7 +276,7 @@ sem esta fase a feature existe no repositório e **não** existe para o Bruno.
 
 - [ ] T128 Abrir o PR da branch com o ID da story no título, aguardar `gh pr checks` verde no agregador `ci` (cobre `qualidade`, `seguranca` e `db-tests`) sem check obrigatório pulado
 - [ ] T129 Fechar **A-01** no Netlify: `VITE_DEMO_MODE=false`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` configurados e novo build publicado — sem isso o site segue em modo demo e nenhuma tela real aparece
-- [ ] T130 Conferir histórico remoto e aplicar migrations pendentes 0017 a 0036 em ordem; validar testes SQL e reversão. Publicar Edge Functions atualizadas antes do frontend que usa a RPC de 0029.
+- [ ] T130 Conferir histórico remoto e aplicar migrations pendentes 0017 a 0037 em ordem; validar testes SQL e reversão. Publicar Edge Functions atualizadas antes do frontend que usa a RPC de 0029.
 - [ ] T131 Publicar as seis Edge Functions (`caso-comandos`, `revisao-comandos`, `envio-comandos`, `arquivo-baixar`, `arquivo-processar`, `onedrive-oauth`) e conferir `CORS_ALLOWED_ORIGINS` com o domínio de produção
 - [ ] T132 Criar o bucket `envios` no projeto remoto com os mesmos limites e conferir que `SELECT` anônimo e `INSERT` fora de reserva são negados
 - [ ] T133 Cadastrar no Vault o segredo `processador:arquivos` e o client secret do app Microsoft, e agendar `arquivo-processar` no Supabase Cron

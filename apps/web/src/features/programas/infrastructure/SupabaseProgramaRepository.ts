@@ -151,6 +151,7 @@ function paraRequisito(
     titulo,
     objetivo: texto(valor.objetivo, titulo),
     obrigatorio: valor.obrigatorio === true,
+    ...(valor.ativo === false ? { ativo: false } : {}),
     emitidoPor,
     ...(listaDeTextos(valor.aceitaSubstituto)
       ? { aceitaSubstituto: listaDeTextos(valor.aceitaSubstituto) }

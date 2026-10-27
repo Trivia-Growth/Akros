@@ -14,6 +14,8 @@ Migration 0035 revalida participação, papel e fase na autorização de objeto 
 testar revogação durante retomada TUS contra Storage real.
 Migration 0036 impede limpeza direta por SQL: o processador recupera leases expiradas e remove
 temporários confirmados pela API do Storage. Testes simulam a API; falta execução hospedada.
+O 360 permite solicitar documentos do catálogo para caso, participante ou familiar; migration
+0037 valida requisito ativo e fase no servidor. Os dados do catálogo real precisam ser conferidos.
 
 **Fecha a Fase 5 (US2) — tasks T069-T077, Frente C (transferência ao OneDrive, ADR-0019).**
 Para cada cenário de aceite de `spec.md` (User Story 2), uma frase de como foi verificado nesta
