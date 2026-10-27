@@ -24,6 +24,7 @@ import type {
   DashboardAdminConsulta,
   ParticipantesConsulta,
   PerfilClienteConsulta,
+  VinculoPastaConsulta,
 } from "@/features/crm/application/ports";
 import type { PropostasConsulta } from "@/features/crm/application/ports";
 import { SupabaseCasoComandos } from "@/features/crm/infrastructure/SupabaseCasoComandos";
@@ -33,6 +34,7 @@ import { SupabaseDashboardAdminConsulta } from "@/features/crm/infrastructure/Su
 import { SupabaseParticipantesConsulta } from "@/features/crm/infrastructure/SupabaseParticipantesConsulta";
 import { SupabasePerfilClienteConsulta } from "@/features/crm/infrastructure/SupabasePerfilClienteConsulta";
 import { SupabasePropostasConsulta } from "@/features/crm/infrastructure/SupabasePropostasConsulta";
+import { SupabaseVinculoPastaConsulta } from "@/features/crm/infrastructure/SupabaseVinculoPastaConsulta";
 import type {
   ArquivoDownloadPort,
   DocumentosAdminConsulta,
@@ -85,6 +87,12 @@ let cliente360AdminReal: Cliente360AdminConsulta | undefined;
 let perfilClienteReal: PerfilClienteConsulta | undefined;
 let casoComandosReal: CasoComandos | undefined;
 let participantesReal: ParticipantesConsulta | undefined;
+let vinculoPastaReal: VinculoPastaConsulta | undefined;
+
+export function obterVinculoPastaReal(): VinculoPastaConsulta {
+  if (!vinculoPastaReal) vinculoPastaReal = new SupabaseVinculoPastaConsulta();
+  return vinculoPastaReal;
+}
 
 export function obterConsultaAgendaReal(): AgendaConsulta {
   if (!agendaReal) agendaReal = new SupabaseAgendaConsulta();

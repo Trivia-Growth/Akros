@@ -40,6 +40,7 @@ import { type SituacaoCaso, calcularProximaAcao } from "../domain/caso";
 import type { Cliente } from "../domain/types";
 import { ContratoFormulario } from "./ContratoFormulario";
 import { ParticipantesPainel } from "./ParticipantesPainel";
+import { PastaCasoPainel } from "./PastaCasoPainel";
 
 const SAUDE_VARIANT = { em_dia: "success", atencao: "warning", atrasado: "danger" } as const;
 const DOCUMENTO_VARIANT = {
@@ -432,6 +433,7 @@ export function Cliente360Real({
         clienteId={cliente.id}
         onSalvo={() => void refetch()}
       />
+      {jornada && <PastaCasoPainel clienteId={cliente.id} jornadaId={jornada.id} />}
       <Tabs defaultValue="data">
         <TabsList className="flex max-w-full overflow-x-auto whitespace-nowrap">
           <TabsTrigger value="data">{t("clientes.tabs.data")}</TabsTrigger>

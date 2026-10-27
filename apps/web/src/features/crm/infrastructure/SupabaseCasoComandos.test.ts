@@ -185,6 +185,22 @@ describe("SupabaseCasoComandos", () => {
     });
   });
 
+  it("vincula a pasta pelo comando autenticado do caso", async () => {
+    const input = {
+      clienteId: "11111111-1111-4111-8111-111111111111",
+      jornadaId: "22222222-2222-4222-8222-222222222222",
+      integracaoId: "33333333-3333-4333-8333-333333333333",
+      folderItemId: "pasta-1",
+      idempotencyKey: "vinculo-1",
+    };
+    invoke.mockResolvedValue({ data: { id: "vinculo-1" }, error: null });
+    await new SupabaseCasoComandos().vincularPasta(input);
+    expect(invoke).toHaveBeenCalledWith("caso-comandos", {
+      headers: { "x-akros-csrf": "1" },
+      body: { acao: "vincular_pasta", ...input },
+    });
+  });
+
   describe("convidarParticipante", () => {
     const input = {
       clienteId: "11111111-1111-4111-8111-111111111111",

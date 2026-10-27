@@ -380,12 +380,15 @@ export function criarIOGraphMicrosoftReal(opts: {
     async listarAncestrais({ accessToken, driveId, itemId }) {
       const ancestrais: string[] = [];
       let itemAtualId: string | null = itemId;
+      const visitados = new Set<string>();
       // Sobe parentReference.id até não achar mais pai (chegou na raiz do drive) — o próprio
       // itemId inicial nunca entra na lista (lista só ANCESTRAIS, não o item); quem decide se a
       // cadeia alcança a pasta autorizada é a lógica pura de `vincular_pasta`, não esta porta.
       for (;;) {
+        if (visitados.has(itemAtualId)) throw new Error("ciclo de ancestralidade no Graph");
+        visitados.add(itemAtualId);
         const resposta = await fetch(
-          `${GRAPH_BASE_OAUTH}/drives/${driveId}/items/${itemAtualId}?$select=parentReference`,
+          `${GRAPH_BASE_OAUTH}/drives/${encodeURIComponent(driveId)}/items/${encodeURIComponent(itemAtualId)}?$select=parentReference,folder`,
           { headers: { Authorization: `Bearer ${accessToken}` } },
         );
         if (resposta.status === 404) {
@@ -394,7 +397,10 @@ export function criarIOGraphMicrosoftReal(opts: {
         if (!resposta.ok) {
           throw new Error(`consulta de ancestralidade falhou: ${resposta.status}`);
         }
-        const dados = (await resposta.json()) as { parentReference?: { id?: string } };
+        const dados = (await resposta.json()) as { parentReference?: { id?: string }; folder?: object | null };
+        if (itemAtualId === itemId && (!dados.folder || typeof dados.folder !== "object")) {
+          throw new Error("item do Graph não é pasta");
+        }
         const paiId = dados.parentReference?.id ?? null;
         if (!paiId) break;
         ancestrais.push(paiId);

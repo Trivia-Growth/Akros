@@ -114,6 +114,15 @@ export interface CasoComandos {
     idempotencyKey: string;
   }): Promise<{ id: string; clienteId: string; faseAtualId: string | null }>;
 
+  vincularPasta(input: {
+    clienteId: string;
+    jornadaId: string;
+    integracaoId: string;
+    folderItemId: string;
+    caminhoExibicao?: string;
+    idempotencyKey: string;
+  }): Promise<void>;
+
   /** E03-S07 (T049/T046) — convida um participante para o caso (ADR-0018, FR-017/FR-020). O
    *  Select de `papel` da UI sempre apresenta os 4 papéis fixos do domínio: a validação real de
    *  "este papel existe na versão do programa do caso" é feita no servidor
@@ -137,6 +146,13 @@ export interface CasoComandos {
     participanteId: string;
     idempotencyKey: string;
   }): Promise<Participante>;
+}
+
+export interface VinculoPastaConsulta {
+  carregar(
+    clienteId: string,
+    jornadaId: string,
+  ): Promise<{ folderItemId: string; estado: string } | null>;
 }
 
 /** E03-S07 (T049) — leitura dos participantes de um caso para o painel admin

@@ -1,5 +1,9 @@
 # Evidências — User Story 2 (Participante acessa a jornada e envia documento)
 
+**Atualização 2026-10-27:** o 360 inclui painel para vincular uma pasta por ID. O Graph recusa
+item que não é pasta, e a migration 0030 impede associar jornada de outro cliente. Testes com
+respostas simuladas e Postgres verificam os caminhos; falta validação com o tenant corporativo.
+
 **Fecha a Fase 5 (US2) — tasks T069-T077, Frente C (transferência ao OneDrive, ADR-0019).**
 Para cada cenário de aceite de `spec.md` (User Story 2), uma frase de como foi verificado nesta
 entrega. Mesmo padrão de `evidencias/us1.md`/`us6.md`: não repete prova que já existe (T054-T068,
