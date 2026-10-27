@@ -22,6 +22,26 @@ const linha: LinhaProgramaSupabase = {
 };
 
 describe("SupabaseProgramaRepository — mapeamento", () => {
+  it("preserva papéis configurados na leitura e na gravação", () => {
+    const papeis = [
+      { papel: "aplicante", obrigatorio: true },
+      { papel: "familiar_apoio", obrigatorio: false },
+    ];
+    const programa = paraDominio({ ...linha, papeis });
+    expect(programa.papeis).toEqual(papeis);
+    expect(paraColunas(programa).papeis).toEqual(papeis);
+  });
+
+  it("recusa papel inválido em requisito restrito para não apagar sua proteção", () => {
+    expect(() =>
+      paraDominio({
+        ...linha,
+        documentos_exigidos: [
+          { id: "restrito", titulo: "Documento", restrito: true, papelDirigido: "desconhecido" },
+        ],
+      }),
+    ).toThrow();
+  });
   it("E13-S11 AC-1: converte JSONB snake_case para domínio", () => {
     const programa = paraDominio(linha);
     expect(programa).toMatchObject({
@@ -43,6 +63,7 @@ describe("SupabaseProgramaRepository — mapeamento", () => {
       ativo: true,
       fases_template: linha.fases_template,
       documentos_exigidos: [],
+      papeis: [],
     });
   });
 
@@ -84,20 +105,20 @@ describe("SupabaseProgramaRepository — mapeamento", () => {
     expect(programa.documentosExigidos[1]).not.toHaveProperty("restrito");
   });
 
-  it("E03-S07 (US6)/ADR-0018: papelDirigido com valor fora do enum é descartado (dado externo não confiável)", () => {
-    const programa = paraDominio({
-      ...linha,
-      documentos_exigidos: [
-        {
-          id: "req-invalido",
-          titulo: "Documento qualquer",
-          obrigatorio: true,
-          papelDirigido: "papel-que-nao-existe",
-        },
-      ],
-    });
-
-    expect(programa.documentosExigidos[0]).not.toHaveProperty("papelDirigido");
+  it("E03-S07 (US6)/ADR-0018: papelDirigido fora do enum é recusado sem abrir acesso", () => {
+    expect(() =>
+      paraDominio({
+        ...linha,
+        documentos_exigidos: [
+          {
+            id: "req-invalido",
+            titulo: "Documento qualquer",
+            obrigatorio: true,
+            papelDirigido: "papel-que-nao-existe",
+          },
+        ],
+      }),
+    ).toThrow("papel inválido");
   });
 
   it("E03-S07 (US6)/ADR-0018: paraColunas persiste o requisito restrito inteiro como JSONB", () => {

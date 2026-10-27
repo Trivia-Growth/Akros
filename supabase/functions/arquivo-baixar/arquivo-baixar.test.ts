@@ -116,6 +116,14 @@ Deno.test("participante sem restrição alguma → 200, documento livre", async 
   assertEquals(resposta.status, 200);
 });
 
+Deno.test("requisito restrito sem papel válido não permite download", async () => {
+  const handler = montarHandler(
+    montarIO({ documento: { faseId: null, restritoAoPapel: true, papelDirigido: null } }),
+    montarGraph(),
+  );
+  assertEquals((await handler(req())).status, 404);
+});
+
 Deno.test("fase não liberada → 404", async () => {
   const handler = montarHandler(
     montarIO({ documento: { faseId: "fase-1", restritoAoPapel: false, papelDirigido: null }, faseLiberada: false }),

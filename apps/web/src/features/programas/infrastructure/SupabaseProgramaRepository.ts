@@ -5,6 +5,7 @@ import type {
   EmissorDocumento,
   EtapaTemplate,
   FaseTemplate,
+  PapelDoPrograma,
   PapelPrograma,
   Programa,
   RequisitoDocumento,
@@ -24,6 +25,7 @@ export interface LinhaProgramaSupabase {
   ativo: boolean;
   fases_template: unknown;
   documentos_exigidos: unknown;
+  papeis?: unknown;
 }
 
 const RESPONSAVEIS: ResponsavelEtapa[] = ["cliente", "akros", "terceiro", "uscis"];
@@ -135,6 +137,12 @@ function paraRequisito(
   const papelDirigido = PAPEIS_PROGRAMA.includes(valor.papelDirigido as PapelPrograma)
     ? (valor.papelDirigido as PapelPrograma)
     : undefined;
+  if (
+    (valor.papelDirigido != null && !papelDirigido) ||
+    (valor.restrito === true && !papelDirigido)
+  ) {
+    throw new Error("Requisito com papel inválido.");
+  }
 
   return {
     id: texto(valor.id, `${programaId}-documento-${indice + 1}`),
@@ -162,6 +170,18 @@ export function paraDominio(linha: LinhaProgramaSupabase): Programa {
   const fasesTemplate = linha.fases_template.map((fase, indice) =>
     paraFase(fase, linha.id, indice),
   );
+  const papeisBrutos = linha.papeis ?? [];
+  if (!Array.isArray(papeisBrutos)) throw new Error("Programa remoto tem papéis inválidos.");
+  const papeis: PapelDoPrograma[] = papeisBrutos.map((item) => {
+    if (
+      !ehObjeto(item) ||
+      !PAPEIS_PROGRAMA.includes(item.papel as PapelPrograma) ||
+      typeof item.obrigatorio !== "boolean"
+    ) {
+      throw new Error("Programa remoto tem papel inválido.");
+    }
+    return { papel: item.papel as PapelPrograma, obrigatorio: item.obrigatorio };
+  });
   return {
     id: linha.id,
     codigo: linha.codigo,
@@ -174,12 +194,7 @@ export function paraDominio(linha: LinhaProgramaSupabase): Programa {
     documentosExigidos: linha.documentos_exigidos.map((requisito, indice) =>
       paraRequisito(requisito, linha.id, fasesTemplate[0]?.id, indice),
     ),
-    // E03-S07 (US6)/ADR-0018: `programas.programas` ainda não tem coluna `papeis` no banco
-    // (fica para a task de infra desta fase); até lá, todo programa lido do Supabase chega
-    // sem papel declarado. Não é mock — é lacuna real de dado, sinalizada aqui em vez de
-    // silenciosa (CLAUDE.md § Divergência da spec).
-    // SPEC_DEVIATION (ADR-0018): coluna `papeis` pendente de migration própria desta fase.
-    papeis: [],
+    papeis,
   };
 }
 
@@ -193,6 +208,7 @@ export function paraColunas(programa: Programa) {
     ativo: programa.ativo,
     fases_template: programa.fasesTemplate,
     documentos_exigidos: programa.documentosExigidos,
+    papeis: programa.papeis,
   };
 }
 

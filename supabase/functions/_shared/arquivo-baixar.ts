@@ -6,7 +6,7 @@
 // exigido é o `papel_dirigido` do documento dono da versão, ou qualquer participante se
 // `restrito_ao_papel = false`. MESMO predicado da policy `participante_ve_versao_do_caso_no_seu_
 // papel` (migration 0020) — não reimplementado diferente da SQL:
-//   d.restrito_ao_papel = false OR d.papel_dirigido IS NULL OR crm.tenho_papel(d.cliente_id, d.papel_dirigido)
+//   d.restrito_ao_papel = false OR (d.papel_dirigido IS NOT NULL AND crm.tenho_papel(...))
 // Erros (design-tecnico.md §2, regras transversais): 401 sessão; **404** para versão de outro
 // caso E para versão restrita a outro papel (403 confirmaria existência); 403 só para
 // participante com registro REVOGADO nesse caso (ele sabe que foi revogado — não é informação
@@ -87,7 +87,8 @@ async function autorizarDownload(
     throw revogado ? forbidden("Participação revogada") : new HttpError(404, NAO_ENCONTRADO);
   }
 
-  if (documento.restritoAoPapel && documento.papelDirigido) {
+  if (documento.restritoAoPapel) {
+    if (!documento.papelDirigido) throw new HttpError(404, NAO_ENCONTRADO);
     const temPapel = participacoes.some((p) => p.papel === documento.papelDirigido);
     // Participa do caso (ramo acima garantiu isso) mas sem o papel exigido: 404, nunca 403 —
     // "403 confirmaria existência" do requisito restrito (design-tecnico.md §2). `exigirPapel`
@@ -199,4 +200,3 @@ export function criarManipuladorArquivoBaixar(deps: DepsHandlerArquivoBaixar) {
     }
   };
 }
-

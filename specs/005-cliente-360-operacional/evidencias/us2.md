@@ -6,6 +6,8 @@ respostas simuladas e Postgres verificam os caminhos; falta validação com o te
 As migrations 0031 e 0032 tratam envio de requisito comum, acesso a requisito restrito e
 autorização na finalização, inclusive após revogação; essas verificações também precisam ser
 exercitadas na stack real durante o teste ponta a ponta.
+Migration 0033 e `arquivo-baixar` negam leitura e download de requisito restrito sem papel válido;
+a equipe mantém acesso para corrigir o cadastro.
 
 **Fecha a Fase 5 (US2) — tasks T069-T077, Frente C (transferência ao OneDrive, ADR-0019).**
 Para cada cenário de aceite de `spec.md` (User Story 2), uma frase de como foi verificado nesta
