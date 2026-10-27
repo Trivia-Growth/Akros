@@ -12,6 +12,7 @@ import { clienteServico, obterSegredo, salvarSegredo } from "./integracoes.ts";
 import { LEASE_TRABALHO_MINUTOS } from "./limites.ts";
 import type { IOArquivoProcessar, ResultadoContexto, TrabalhoLease } from "./arquivo-processar.ts";
 import { MOTIVO_PASTA_AUSENTE, MOTIVO_RECONECTAR } from "./arquivo-processar.ts";
+import { executarManutencaoArquivos } from "./manutencao-arquivos.ts";
 import type { SegredoMicrosoftGraph } from "./graph-microsoft.ts";
 
 let cliente: SupabaseClient | null = null;
@@ -19,10 +20,38 @@ let cliente: SupabaseClient | null = null;
 // mesmo critério de `io-supabase.ts`/`io-supabase-caso.ts`.
 const sb = () => (cliente ??= clienteServico());
 
-export function criarIOArquivoProcessar(): IOArquivoProcessar {
+export function criarIOArquivoProcessar(clienteOverride?: SupabaseClient): IOArquivoProcessar {
+  const api = () => clienteOverride ?? sb();
   return {
     async adquirirTrabalho(leaseDono) {
-      const { data, error } = await sb().schema("arquivos").rpc("adquirir_trabalho_pendente", {
+      await executarManutencaoArquivos({
+        async liberarLeases() {
+          const { error } = await api().schema("arquivos").rpc("liberar_leases_expiradas");
+          if (error) throw new Error("falha ao recuperar leases expiradas");
+        },
+        async listarConfirmados() {
+          const { data, error } = await api().schema("arquivos").from("versoes")
+            .select("id,objeto_temporario")
+            .eq("estado_armazenamento", "armazenado")
+            .not("item_id", "is", null)
+            .not("objeto_temporario", "is", null)
+            .limit(10);
+          if (error) throw new Error("falha ao consultar temporários confirmados");
+          return (data ?? []).map((linha) => ({ id: linha.id as string, caminho: linha.objeto_temporario as string }));
+        },
+        async removerObjeto(caminho) {
+          const { error } = await api().storage.from("envios").remove([caminho]);
+          if (error) throw new Error("falha ao remover temporário pelo Storage");
+        },
+        async marcarLimpo(id, caminho) {
+          const { error } = await api().schema("arquivos").from("versoes")
+            .update({ objeto_temporario: null })
+            .eq("id", id).eq("objeto_temporario", caminho)
+            .eq("estado_armazenamento", "armazenado").not("item_id", "is", null);
+          if (error) throw new Error("falha ao registrar limpeza");
+        },
+      });
+      const { data, error } = await api().schema("arquivos").rpc("adquirir_trabalho_pendente", {
         p_lease_dono: leaseDono,
         p_lease_minutos: LEASE_TRABALHO_MINUTOS,
       });
@@ -37,7 +66,7 @@ export function criarIOArquivoProcessar(): IOArquivoProcessar {
     },
 
     async carregarContexto(trabalho: TrabalhoLease): Promise<ResultadoContexto> {
-      const { data: versao, error: erroVersao } = await sb()
+      const { data: versao, error: erroVersao } = await api()
         .schema("arquivos")
         .from("versoes")
         .select("id,cliente_id,documento_id,pagamento_id,tamanho_bytes,objeto_temporario")
@@ -54,7 +83,7 @@ export function criarIOArquivoProcessar(): IOArquivoProcessar {
       if (!versao) throw new Error("versão referenciada pelo trabalho não existe");
       if (!versao.objeto_temporario) throw new Error("versão sem objeto temporário no bucket");
 
-      const { data: vinculo, error: erroVinculo } = await sb()
+      const { data: vinculo, error: erroVinculo } = await api()
         .schema("arquivos")
         .from("vinculos_pasta")
         .select("integracao_id,drive_id,folder_item_id,estado")
@@ -66,7 +95,7 @@ export function criarIOArquivoProcessar(): IOArquivoProcessar {
       if (erroVinculo) throw new Error("falha ao carregar vínculo de pasta do caso");
       if (!vinculo) return { ok: false, motivo: MOTIVO_PASTA_AUSENTE };
 
-      const { data: integracao, error: erroIntegracao } = await sb()
+      const { data: integracao, error: erroIntegracao } = await api()
         .schema("arquivos")
         .from("integracoes_microsoft")
         .select("id,pasta_raiz_item_id,estado")
@@ -95,11 +124,11 @@ export function criarIOArquivoProcessar(): IOArquivoProcessar {
     },
 
     async obterSegredoVault(escopo) {
-      return obterSegredo<SegredoMicrosoftGraph>(sb(), escopo);
+      return obterSegredo<SegredoMicrosoftGraph>(api(), escopo);
     },
 
     async salvarSegredoVault(escopo, valor) {
-      await salvarSegredo(sb(), escopo, valor);
+      await salvarSegredo(api(), escopo, valor);
     },
 
     async descartarSegredoSessao(versaoId) {
@@ -111,20 +140,20 @@ export function criarIOArquivoProcessar(): IOArquivoProcessar {
       // de sessão expira sozinha no Graph depois de alguns dias de qualquer forma). Nunca lança:
       // uma falha aqui não pode desfazer o sucesso já gravado em `marcarConcluido`.
       try {
-        await salvarSegredo(sb(), `upload-sessao:${versaoId}`, { uploadUrl: "" });
+        await salvarSegredo(api(), `upload-sessao:${versaoId}`, { uploadUrl: "" });
       } catch {
         // melhor esforço — já logado por `salvarSegredo`/RPC subjacente se necessário.
       }
     },
 
     async baixarObjetoTemporario(caminho) {
-      const { data, error } = await sb().storage.from("envios").download(caminho);
+      const { data, error } = await api().storage.from("envios").download(caminho);
       if (error || !data) throw new Error("falha ao baixar objeto temporário do bucket envios");
       return new Uint8Array(await data.arrayBuffer());
     },
 
     async atualizarProgresso(trabalhoId, bytesEnviados, sessaoReferencia) {
-      const { error } = await sb()
+      const { error } = await api()
         .schema("arquivos")
         .from("trabalhos_transferencia")
         .update({
@@ -137,14 +166,14 @@ export function criarIOArquivoProcessar(): IOArquivoProcessar {
     },
 
     async marcarConcluido({ trabalhoId, versaoId, itemId, driveId }) {
-      const { error: erroVersao } = await sb()
+      const { error: erroVersao } = await api()
         .schema("arquivos")
         .from("versoes")
         .update({ item_id: itemId, drive_id: driveId, estado_armazenamento: "armazenado" })
         .eq("id", versaoId);
       if (erroVersao) throw new Error("falha ao marcar versão como armazenada");
 
-      const { error: erroTrabalho } = await sb()
+      const { error: erroTrabalho } = await api()
         .schema("arquivos")
         .from("trabalhos_transferencia")
         .update({
@@ -160,7 +189,7 @@ export function criarIOArquivoProcessar(): IOArquivoProcessar {
     },
 
     async marcarFalhaTransitoria({ trabalhoId, tentativas, proximaTentativaEm }) {
-      const { error } = await sb()
+      const { error } = await api()
         .schema("arquivos")
         .from("trabalhos_transferencia")
         .update({
@@ -176,7 +205,7 @@ export function criarIOArquivoProcessar(): IOArquivoProcessar {
     },
 
     async marcarBloqueado({ trabalhoId, motivo }) {
-      const { error } = await sb()
+      const { error } = await api()
         .schema("arquivos")
         .from("trabalhos_transferencia")
         .update({

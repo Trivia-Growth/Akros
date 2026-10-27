@@ -1,8 +1,7 @@
 -- Manutenção da fila de transferência ao OneDrive (E03-S07, Fase 5/US2, migration 0028, T076).
--- Roda no job `db-tests`. Prova as duas funções auxiliares chamando-as DIRETAMENTE via SQL --
+-- Roda no job `db-tests`. Verifica lease e bloqueio da limpeza SQL direta --
 -- `pg_cron` não roda neste ambiente (ver SPEC_DEVIATION no topo de 0028), então não há tick real
--- para esperar; o que importa é o COMPORTAMENTO das funções que o cron chamaria, não o
--- agendamento em si.
+-- para esperar. A limpeza real pela API do Storage é testada no processador com serviços simulados.
 
 \set ON_ERROR_STOP on
 
@@ -129,26 +128,28 @@ BEGIN
     'trabalho com lease ainda válida NÃO deveria voltar a pendente';
 END $$;
 
--- ── Cenário 2: temporário de versão 'armazenada' (item_id confirmado) é limpo ──────────────────
+-- ── Cenário 2: limpeza SQL direta é bloqueada para não deixar objeto órfão ────────────────────
 DO $$
 DECLARE
-  v_qtd integer;
   v_objeto_depois text;
   v_existe_no_bucket boolean;
 BEGIN
-  SELECT arquivos.limpar_temporarios_confirmados() INTO v_qtd;
-  ASSERT v_qtd >= 1, 'limpar_temporarios_confirmados deveria limpar ao menos 1 versão armazenada';
+  BEGIN
+    PERFORM arquivos.limpar_temporarios_confirmados();
+    RAISE EXCEPTION 'limpeza SQL direta não deveria ser permitida';
+  EXCEPTION WHEN feature_not_supported THEN NULL;
+  END;
 
   SELECT objeto_temporario INTO v_objeto_depois FROM arquivos.versoes
     WHERE id = 'b0000000-0000-0000-0000-000000000007';
-  ASSERT v_objeto_depois IS NULL,
-    'objeto_temporario da versão armazenada deveria ser limpo (NULL) após limpar_temporarios_confirmados()';
+  ASSERT v_objeto_depois IS NOT NULL,
+    'referência deve permanecer até a remoção pela API do Storage';
 
   SELECT EXISTS (
     SELECT 1 FROM storage.objects WHERE bucket_id = 'envios' AND name = 'b0000000-0000-0000-0000-000000000001/v7.pdf'
   ) INTO v_existe_no_bucket;
-  ASSERT NOT v_existe_no_bucket,
-    'objeto físico da versão armazenada deveria ter sido removido de storage.objects';
+  ASSERT v_existe_no_bucket,
+    'metadados do objeto não podem ser removidos diretamente por SQL';
 END $$;
 
 -- ── Cenário 3: versão 'recebida' com trabalho 'pendente' NÃO é limpa pela mesma função ─────────
@@ -169,12 +170,10 @@ BEGIN
     'objeto físico de versão recebida/pendente deveria continuar em storage.objects';
 END $$;
 
--- Rodar de novo (idempotência): nenhuma das duas funções deveria quebrar ou limpar algo além do
--- que já é elegível.
+-- Rodar liberação de lease de novo não deve alterar trabalho ainda válido.
 DO $$
 BEGIN
   PERFORM arquivos.liberar_leases_expiradas();
-  PERFORM arquivos.limpar_temporarios_confirmados();
 END $$;
 
 DO $$ BEGIN RAISE NOTICE 'Cron de transferência (lease/limpeza, 0028): todas as asserções passaram'; END $$;

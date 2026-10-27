@@ -12,6 +12,8 @@ Migration 0034 valida se o familiar de uma nova solicitação ou participação 
 dados já existentes precisam de auditoria no ambiente de destino.
 Migration 0035 revalida participação, papel e fase na autorização de objeto reservado; falta
 testar revogação durante retomada TUS contra Storage real.
+Migration 0036 impede limpeza direta por SQL: o processador recupera leases expiradas e remove
+temporários confirmados pela API do Storage. Testes simulam a API; falta execução hospedada.
 
 **Fecha a Fase 5 (US2) — tasks T069-T077, Frente C (transferência ao OneDrive, ADR-0019).**
 Para cada cenário de aceite de `spec.md` (User Story 2), uma frase de como foi verificado nesta
@@ -154,10 +156,10 @@ de `pg_cron`, que não roda neste ambiente — SPEC_DEVIATION documentada no top
 - lease expirada (`estado = 'em_execucao'`, `lease_ate` no passado) volta a `pendente`, com
   `lease_ate`/`lease_dono` nulos, depois de `arquivos.liberar_leases_expiradas()`; lease AINDA
   válida não é tocada (controle negativo).
-- temporário de versão `armazenada` (`item_id` confirmado) é removido de `storage.objects` e
-  `objeto_temporario` vira `NULL`, por `arquivos.limpar_temporarios_confirmados()`.
-- versão `recebida` com trabalho `pendente` **não** é limpa pela mesma função (garantia central do
-  ADR-0019 preservada) — controle positivo no mesmo arquivo de teste.
+- a limpeza direta em `storage.objects` agora é recusada e mantém a referência; remover metadados
+  via SQL não apaga o arquivo físico. O processador usa a API de Storage e só depois limpa a
+  referência; os testes Deno verificam essa sequência com respostas simuladas.
+- versão `recebida` com trabalho `pendente` continua preservada no teste SQL.
 
 **Lease concorrente (T072, concorrência genuína, não simulada)**: duas sessões `psql` REAIS
 disputando o MESMO trabalho `pendente`, via uma função temporária que espelha
