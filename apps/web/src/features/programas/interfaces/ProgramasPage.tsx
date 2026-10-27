@@ -22,6 +22,7 @@ import type {
   EmissorDocumento,
   EtapaTemplate,
   FaseTemplate,
+  PapelPrograma,
   Programa,
   RequisitoDocumento,
   ResponsavelEtapa,
@@ -33,6 +34,12 @@ const EMISSORES: EmissorDocumento[] = [
   "empregador",
   "instituicao",
   "terceiro_certificado",
+];
+const PAPEIS_EDITAVEIS: Array<{ papel: PapelPrograma; nome: string }> = [
+  { papel: "aplicante", nome: "Aplicante" },
+  { papel: "beneficiario", nome: "Beneficiário" },
+  { papel: "organizacao_aplicante", nome: "Organização aplicante" },
+  { papel: "familiar_apoio", nome: "Familiar de apoio" },
 ];
 
 export function ProgramasPage() {
@@ -467,8 +474,13 @@ function ProgramaEditor({
       await onSalvar(limpo);
       toast.success("Jornada atualizada. Novos casos usarão esta configuração.");
       onClose();
-    } catch {
-      toast.error("Não foi possível salvar a configuração.");
+    } catch (causa) {
+      const codigo = (causa as { code?: unknown } | null)?.code;
+      toast.error(
+        codigo === "55000"
+          ? "Esta versão já está em uso. Duplique o programa para alterar as regras."
+          : "Não foi possível salvar a configuração.",
+      );
     }
   }
 
@@ -507,6 +519,41 @@ function ProgramaEditor({
           />
           Disponibilizar este programa para novos contratos
         </label>
+
+        <fieldset className="mt-5 rounded-lg border border-border p-4">
+          <legend className="px-1 text-sm font-semibold text-navy">Papéis do programa</legend>
+          <p className="mb-3 text-sm text-ink-soft">
+            Defina quem pode participar dos casos deste programa.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {PAPEIS_EDITAVEIS.map(({ papel, nome }) => {
+              const item = draft.papeis.find((atual) => atual.papel === papel);
+              return (
+                <Select
+                  key={papel}
+                  label={nome}
+                  value={!item ? "ausente" : item.obrigatorio ? "obrigatorio" : "opcional"}
+                  onChange={(event) => {
+                    const escolha = event.target.value;
+                    setDraft((atual) => ({
+                      ...atual,
+                      papeis: [
+                        ...atual.papeis.filter((p) => p.papel !== papel),
+                        ...(escolha === "ausente"
+                          ? []
+                          : [{ papel, obrigatorio: escolha === "obrigatorio" }]),
+                      ],
+                    }));
+                  }}
+                >
+                  <option value="ausente">Não participa</option>
+                  <option value="opcional">Opcional</option>
+                  <option value="obrigatorio">Obrigatório</option>
+                </Select>
+              );
+            })}
+          </div>
+        </fieldset>
 
         <div className="mt-6 flex flex-col gap-4">
           {draft.fasesTemplate.map((fase, faseIndex) => (
