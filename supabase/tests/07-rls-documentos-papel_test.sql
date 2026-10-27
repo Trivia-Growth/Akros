@@ -21,6 +21,9 @@ INSERT INTO crm.clientes (id, nome, email, telefone, tipo_visto, case_manager)
 VALUES ('a7111111-1111-1111-1111-111111111111', 'Cliente Teste Papel', 'papel@example.com',
         '11900000003', 'eb2-niw', 'Natalia');
 
+UPDATE crm.clientes SET perfil_imigratorio = '{"familiares":[{"id":"fam-revogavel"}]}'::jsonb
+WHERE id = 'a7111111-1111-1111-1111-111111111111';
+
 -- P1: aplicante, ativo durante todo o teste (cenarios 1-3).
 -- P2: familiar_apoio, ativo no cenario 5 até ser revogado no meio do proprio cenario.
 INSERT INTO crm.participantes (id, cliente_id, papel, sujeito_tipo, familiar_id, auth_user_id, nome_exibicao, email)

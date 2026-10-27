@@ -15,6 +15,9 @@ VALUES
   ('a1111111-1111-1111-1111-111111111111', 'Cliente Caso A', 'casoa@example.com', '11900000001', 'eb2-niw', 'Natalia'),
   ('b2222222-2222-2222-2222-222222222222', 'Cliente Caso B', 'casob@example.com', '11900000002', 'eb2-niw', 'Natalia');
 
+UPDATE crm.clientes SET perfil_imigratorio = '{"familiares":[{"id":"fam-a2"}]}'::jsonb WHERE id = 'a1111111-1111-1111-1111-111111111111';
+UPDATE crm.clientes SET perfil_imigratorio = '{"familiares":[{"id":"fam-b2"}]}'::jsonb WHERE id = 'b2222222-2222-2222-2222-222222222222';
+
 INSERT INTO crm.organizacoes (id, nome)
 VALUES ('c3333333-3333-3333-3333-333333333333', 'Organizacao Teste');
 

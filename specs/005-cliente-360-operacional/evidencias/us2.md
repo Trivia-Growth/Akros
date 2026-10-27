@@ -8,6 +8,10 @@ autorização na finalização, inclusive após revogação; essas verificaçõe
 exercitadas na stack real durante o teste ponta a ponta.
 Migration 0033 e `arquivo-baixar` negam leitura e download de requisito restrito sem papel válido;
 a equipe mantém acesso para corrigir o cadastro.
+Migration 0034 valida se o familiar de uma nova solicitação ou participação pertence ao caso;
+dados já existentes precisam de auditoria no ambiente de destino.
+Migration 0035 revalida participação, papel e fase na autorização de objeto reservado; falta
+testar revogação durante retomada TUS contra Storage real.
 
 **Fecha a Fase 5 (US2) — tasks T069-T077, Frente C (transferência ao OneDrive, ADR-0019).**
 Para cada cenário de aceite de `spec.md` (User Story 2), uma frase de como foi verificado nesta

@@ -140,15 +140,26 @@ ROLLBACK;
 --      policy de INSERT, mas a mesma sessao, no mesmo participante, le zero linhas de volta: a
 --      ausencia de policy de SELECT nega mesmo a propria linha recem-inserida. ROLLBACK ao
 --      final para nao deixar o objeto persistido para os testes seguintes (09) ───────────────
+INSERT INTO arquivos.versoes (id, cliente_id, documento_id, numero_versao, nome_original, mime,
+  tamanho_bytes, estado_recebimento, enviado_por)
+VALUES ('80000000-0000-0000-0000-000000000012', '80000000-0000-0000-0000-000000000001',
+  '80000000-0000-0000-0000-000000000010', 2, 'novo.pdf', 'application/pdf', 123456,
+  'reservada', '80000000-0000-0000-0000-00000000000e');
+INSERT INTO arquivos.reservas_envio (versao_id, objeto_permitido, tamanho_declarado, mime_declarado,
+  idempotency_key, expira_em, criada_por)
+VALUES ('80000000-0000-0000-0000-000000000012',
+  '80000000-0000-0000-0000-000000000001/80000000-0000-0000-0000-000000000012.pdf', 123456,
+  'application/pdf', 'idem-80000000-0012', now() + interval '24 hours',
+  '80000000-0000-0000-0000-00000000000e');
 BEGIN;
   SET LOCAL ROLE authenticated;
   SET LOCAL request.jwt.claims = '{"sub":"80000000-0000-0000-0000-00000000000e","app_metadata":{"role":"cliente"}}';
   DO $$
   BEGIN
     INSERT INTO storage.objects (bucket_id, name)
-      VALUES ('envios', '80000000-0000-0000-0000-000000000001/80000000-0000-0000-0000-000000000011.pdf');
+      VALUES ('envios', '80000000-0000-0000-0000-000000000001/80000000-0000-0000-0000-000000000012.pdf');
     ASSERT (SELECT count(*) FROM storage.objects
-            WHERE name = '80000000-0000-0000-0000-000000000001/80000000-0000-0000-0000-000000000011.pdf') = 0,
+            WHERE name = '80000000-0000-0000-0000-000000000001/80000000-0000-0000-0000-000000000012.pdf') = 0,
       'participante NAO deveria conseguir ler (SELECT) o objeto que ele mesmo acabou de enviar ao bucket envios';
   END $$;
 ROLLBACK;
