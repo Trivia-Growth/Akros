@@ -31,8 +31,9 @@ export function criarIOArquivoProcessar(clienteOverride?: SupabaseClient): IOArq
         },
         async listarConfirmados() {
           const { data, error } = await api().schema("arquivos").from("versoes")
-            .select("id,objeto_temporario")
+            .select("id,objeto_temporario,trabalhos_transferencia!inner(estado)")
             .eq("estado_armazenamento", "armazenado")
+            .eq("trabalhos_transferencia.estado", "concluido")
             .not("item_id", "is", null)
             .not("objeto_temporario", "is", null)
             .limit(10);

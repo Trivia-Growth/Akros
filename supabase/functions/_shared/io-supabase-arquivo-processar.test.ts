@@ -22,6 +22,7 @@ Deno.test("processador recupera leases e remove temporário confirmado pela API 
   assertEquals(chamadas.map((c) => c.metodo), ["POST", "GET", "DELETE", "PATCH", "POST"]);
   assertStringIncludes(chamadas[0].url, "liberar_leases_expiradas");
   assertStringIncludes(decodeURIComponent(chamadas[1].url), "estado_armazenamento=eq.armazenado");
+  assertStringIncludes(decodeURIComponent(chamadas[1].url), "trabalhos_transferencia.estado=eq.concluido");
   assertStringIncludes(decodeURIComponent(chamadas[1].url), "item_id=not.is.null");
   assertStringIncludes(chamadas[2].url, "/storage/v1/object/envios");
   assertStringIncludes(chamadas[2].corpo, "cliente/arquivo.pdf");
