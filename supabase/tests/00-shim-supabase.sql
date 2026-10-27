@@ -44,8 +44,10 @@ CREATE OR REPLACE FUNCTION auth.role() RETURNS text
 
 CREATE TABLE IF NOT EXISTS auth.users (
   id    uuid PRIMARY KEY,
-  email text
+  email text,
+  raw_app_meta_data jsonb DEFAULT '{}'::jsonb
 );
+ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS raw_app_meta_data jsonb DEFAULT '{}'::jsonb;
 
 DO $$
 BEGIN

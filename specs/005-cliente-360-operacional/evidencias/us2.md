@@ -3,6 +3,9 @@
 **Atualização 2026-10-27:** o 360 inclui painel para vincular uma pasta por ID. O Graph recusa
 item que não é pasta, e a migration 0030 impede associar jornada de outro cliente. Testes com
 respostas simuladas e Postgres verificam os caminhos; falta validação com o tenant corporativo.
+As migrations 0031 e 0032 tratam envio de requisito comum, acesso a requisito restrito e
+autorização na finalização, inclusive após revogação; essas verificações também precisam ser
+exercitadas na stack real durante o teste ponta a ponta.
 
 **Fecha a Fase 5 (US2) — tasks T069-T077, Frente C (transferência ao OneDrive, ADR-0019).**
 Para cada cenário de aceite de `spec.md` (User Story 2), uma frase de como foi verificado nesta

@@ -8,7 +8,7 @@
 -- funcoes rejeitaria toda chamada com 42501 mesmo com `SET LOCAL ROLE service_role` aplicado.
 --
 -- Tres invariantes exigidas pelo brief desta task, contra Postgres real:
---   1) arquivos.reservar_envio recusa participante sem papel_dirigido nem envio_conjunto (403).
+--   1) arquivos.reservar_envio recusa participante de outro papel para requisito restrito (404).
 --   2) arquivos.finalizar_envio com revisaoEsperada divergente nao grava e devolve erro (409).
 --   3) Duas chamadas de arquivos.finalizar_envio para a mesma versao nao duplicam
 --      arquivos.trabalhos_transferencia (COUNT(*) = 1) -- a dedup de idempotencyKey em si e
@@ -53,7 +53,7 @@ VALUES (
 );
 
 -- ── 1. reservar_envio recusa o participante 'aplicante' (papel nao casa, sem envio_conjunto) --
---      403 (insufficient_privilege, ERRCODE 42501) -- e aceita o 'beneficiario' correto ────────
+--      404 (P0002, não revela existência) -- e aceita o 'beneficiario' correto ────────
 BEGIN;
   SET LOCAL ROLE service_role;
   SET LOCAL request.jwt.claims = '{"role":"service_role"}';
@@ -65,8 +65,8 @@ BEGIN;
         'application/pdf', false, '90000000-0000-0000-0000-00000000000a'
       );
       RAISE EXCEPTION 'nao deveria ter permitido o participante aplicante reservar envio para documento dirigido ao beneficiario';
-    EXCEPTION WHEN insufficient_privilege THEN
-      NULL; -- esperado: papel sem autoridade (ERRCODE 42501 -> 403 na Edge Function)
+    EXCEPTION WHEN no_data_found THEN
+      NULL; -- requisito restrito não pode revelar existência (P0002 -> 404)
     END;
   END $$;
 ROLLBACK;

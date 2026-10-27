@@ -130,7 +130,7 @@ export interface IOEnvioComandos {
    *  para `finalizar_envio` achar o caminho do objeto no bucket antes de verificá-lo. */
   obterReserva(versaoId: string): Promise<ReservaEnvioInfo | null>;
   rpc(
-    nome: "reservar_envio" | "finalizar_envio" | "enviar_etapa_para_avaliacao",
+    nome: "reservar_envio" | "autorizar_finalizacao" | "finalizar_envio" | "enviar_etapa_para_avaliacao",
     params: Record<string, unknown>,
   ): Promise<RespostaRpc<unknown>>;
 }
@@ -232,6 +232,13 @@ export function criarManipuladorEnvioComandos(io: IOEnvioComandos) {
           break;
         }
         case "finalizar_envio": {
+          // Também valida antes do cache de idempotência e da leitura privilegiada do Storage:
+          // usuário revogado ou de outro caso não pode recuperar resultado nem sondar arquivo.
+          const { error: erroAutorizacao } = await io.rpc("autorizar_finalizacao", {
+            p_versao_id: entrada.versaoId,
+            p_autor_id: userId,
+          });
+          if (erroAutorizacao) throw erroDeNegocio(erroAutorizacao);
           resultado = await comIdempotencia(
             io.idempotencia,
             "finalizar_envio",

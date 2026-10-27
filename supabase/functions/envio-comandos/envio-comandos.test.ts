@@ -32,6 +32,7 @@ function montar(
     admin?: boolean;
     limite?: boolean;
     rpcErro?: { code?: string; message: string } | null;
+    autorizacaoErro?: { code?: string; message: string } | null;
     rpcResultado?: unknown;
     reserva?: ReservaEnvioInfo | null;
     objeto?: ObjetoEnvio | null;
@@ -69,6 +70,9 @@ function montar(
       );
     },
     rpc: (nome, params): Promise<RespostaRpc<unknown>> => {
+      if (String(nome) === "autorizar_finalizacao") {
+        return Promise.resolve({ data: null, error: a.autorizacaoErro ?? null });
+      }
       e.rpc++;
       e.chamadas.push({ nome, params });
       if (a.rpcErro) return Promise.resolve({ data: null, error: a.rpcErro });
@@ -115,6 +119,23 @@ const ENVIAR_ETAPA = {
   etapaId: "44444444-4444-4444-8444-444444444444",
   revisaoEsperada: 1,
 };
+
+Deno.test("finalização recusada antes da leitura do arquivo quando a reserva não pertence ao usuário", async () => {
+  const { h, e } = montar({ autorizacaoErro: { code: "P0002", message: "não encontrado" } });
+  const r = await h(req(FINALIZAR_ENVIO));
+  assertEquals(r.status, 404);
+  assertEquals(e.obterObjetoChamadas, 0);
+  assertEquals(e.gravacoes, 0);
+});
+
+Deno.test("repetição idempotente volta a verificar acesso antes de retornar resultado", async () => {
+  const opts: { autorizacaoErro: { code: string; message: string } | null } = { autorizacaoErro: null };
+  const { h, e } = montar(opts);
+  assertEquals((await h(req(FINALIZAR_ENVIO))).status, 200);
+  opts.autorizacaoErro = { code: "P0002", message: "acesso revogado" };
+  assertEquals((await h(req(FINALIZAR_ENVIO))).status, 404);
+  assertEquals(e.obterObjetoChamadas, 1);
+});
 
 // ── CSRF / auth / schema básicos ─────────────────────────────────────────────────────────────
 

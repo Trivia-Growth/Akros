@@ -36,9 +36,9 @@ serve(
     // (`arquivos.reservar_envio`/`finalizar_envio`, `jornada.enviar_etapa_para_avaliacao`) — sem
     // isso o PostgREST resolveria a chamada contra `public` (primeiro schema de
     // `[api].schemas` em config.toml) e nunca acharia a função.
-    rpc: (nome, params) => {
+    rpc: async (nome, params) => {
       const schema = nome === "enviar_etapa_para_avaliacao" ? "jornada" : "arquivos";
-      return clienteServico().schema(schema).rpc(nome, params);
+      return await clienteServico().schema(schema).rpc(nome, params);
     },
   }),
 );
