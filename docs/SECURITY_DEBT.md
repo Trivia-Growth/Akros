@@ -133,6 +133,29 @@ caminho normal não tem como pular silenciosamente.
 **Fecha em:** ambiente de teste separado do de produção — aí o e2e pode voltar para a CI sem os
 dois problemas que o tiraram dela.
 
+### E13-S15 — canal Evolution (aceito, monitorar)
+
+- **Mensagem de teste é um vetor de spam do próprio admin.** `enviar_teste` manda um texto fixo a
+  qualquer número informado, limitado só pelo teto da função (600/h). Admin é confiável e a ação é
+  auditada por log de função; se o número virar problema, criar teto próprio por canal.
+- **Admin pode registrar uma versão como "provada" sem rodar o smoke.** A evidência é texto livre.
+  Aceito: o admin é dono da instalação; a matriz tem auditoria (`audit.registrar_mudanca`).
+- **Chave global do servidor Evolution é usada em runtime** (instância e envio). Vazamento exige trocar
+  a chave no servidor e na tela. Reavaliar token por instância após o smoke no servidor do Akros.
+- **Envio ainda síncrono dentro do webhook** (perde a resposta se a Evolution falhar): fecha na E13-S16.
+- **Áudio do cliente sai do Akros para um provedor de transcrição (Groq ou OpenRouter).** Voz, nome e
+  endereço falados vão ao terceiro a cada transcrição; a retenção do lado dele não é controlada nem
+  declarada nas páginas consultadas, e o `provider.zdr` do OpenRouter só existe no corpo JSON (o Akros
+  envia multipart). Mitigação: nasce desligada, aceite explícito por provedor, contrato de dados
+  conferido pelo escritório antes de ligar (ADR-0022). Fecha com: enviar JSON com `zdr` se exigido.
+- **Transcrição é síncrona no webhook** (até 20 s a mais) e pode ser feita duas vezes se a Evolution
+  reentregar antes do recibo (gasto duplicado, mensagem não). Teto de 120/h limita o dano. Fecha na
+  E13-S16 (fila).
+- **Whisper pode alucinar em áudio com ruído/silêncio.** Aviso "pode conter erros" na tela e áudio
+  original à mão; áudio vazio cai no encaminhamento. Sem filtro de confiança.
+- **Anexos de cliente (documentos de imigração) ficam no bucket privado sem varredura de malware.**
+  Só admin abre, por link de 60 s, e a lista de tipos exclui HTML/executável. Varredura = story futura.
+
 ## Referências
 - `seguranca/baseline-minimo.md`, `seguranca/os-grade.md` — checklists que geraram estas entradas.
 - `docs/epics/ROADMAP.md` — perguntas abertas de produto (nº 6, 8) espelhadas aqui do ângulo de

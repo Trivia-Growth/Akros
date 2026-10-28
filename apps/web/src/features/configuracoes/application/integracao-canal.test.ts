@@ -12,30 +12,6 @@ import {
 const ID = "11111111-1111-4111-8111-111111111111";
 
 describe("integracao-canal — corpo enviado a integracoes-ia-salvar", () => {
-  it("Evolution: união por provedor, sem campos de Meta, chave só se digitada", () => {
-    const corpo = corpoDeSalvar(
-      {
-        ...CANAL_INICIAL,
-        identificador: " 5511999999999 ",
-        baseUrl: "https://evo.exemplo.com",
-        instancia: "akros",
-        chaveEvolution: "  ",
-        phoneNumberId: "999",
-      },
-      AGENTE_INICIAL,
-    );
-    expect(corpo.canal).toEqual({
-      provedor: "evolution",
-      nomeExibicao: "WhatsApp Akros",
-      identificador: "5511999999999",
-      ativa: true,
-      baseUrl: "https://evo.exemplo.com",
-      instancia: "akros",
-    });
-    expect(corpo.canal).not.toHaveProperty("apiKey");
-    expect(corpo.canal).not.toHaveProperty("phoneNumberId");
-  });
-
   it("WhatsApp oficial: ids e os três segredos quando digitados", () => {
     const corpo = corpoDeSalvar(
       {
@@ -47,7 +23,6 @@ describe("integracao-canal — corpo enviado a integracoes-ia-salvar", () => {
         accessToken: "EAAB-token",
         appSecret: "app-secret",
         verifyToken: "token-verificacao",
-        baseUrl: "https://nao-deve-ir.com",
       },
       AGENTE_INICIAL,
     );
@@ -96,7 +71,7 @@ describe("integracao-canal — corpo enviado a integracoes-ia-salvar", () => {
 
   it("incluirCanal=false salva só o agente (Playground antes de conectar um número)", () => {
     const corpo = corpoDeSalvar(
-      { ...CANAL_INICIAL, baseUrl: "https://nao-deve-ir.com", chaveEvolution: "segredo" },
+      { ...CANAL_INICIAL, accessToken: "segredo" },
       { ...AGENTE_INICIAL, chaveOpenRouter: "sk-or-1" },
       false,
     );
@@ -108,13 +83,12 @@ describe("integracao-canal — corpo enviado a integracoes-ia-salvar", () => {
   it("limparSegredos zera as credenciais digitadas, preserva o token de verificação (aperto de mão da Meta) e o resto", () => {
     const limpo = limparSegredos({
       ...CANAL_INICIAL,
-      chaveEvolution: "a",
       accessToken: "b",
       appSecret: "c",
       verifyToken: "d",
       nomeConta: "Conta",
     });
-    expect([limpo.chaveEvolution, limpo.accessToken, limpo.appSecret]).toEqual(["", "", ""]);
+    expect([limpo.accessToken, limpo.appSecret]).toEqual(["", ""]);
     expect(limpo.verifyToken).toBe("d");
     expect(limpo.nomeConta).toBe("Conta");
   });
@@ -128,9 +102,6 @@ describe("integracao-canal — endereço do webhook e token de verificação", (
     expect(urlWebhookConta("https://p.supabase.co", "instagram", ID)).toContain(
       "meta-instagram-webhook",
     );
-    expect(urlWebhookConta("https://p.supabase.co", "evolution", ID)).toContain(
-      "evolution-webhook",
-    );
   });
 
   it("sem URL do projeto ou sem conta não inventa endereço", () => {
@@ -140,7 +111,6 @@ describe("integracao-canal — endereço do webhook e token de verificação", (
 
   it("os nomes das functions batem com os do servidor", () => {
     expect(FUNCAO_WEBHOOK).toEqual({
-      evolution: "evolution-webhook",
       whatsapp_oficial: "meta-whatsapp-webhook",
       instagram: "meta-instagram-webhook",
     });

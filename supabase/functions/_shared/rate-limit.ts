@@ -134,6 +134,14 @@ export const TETOS = {
   "lead-capturar": { teto: 5, janelaSegundos: 3600 },
   // Painel administrativo: poucas gravações, mas sempre fail-closed pois troca chaves e webhook.
   "integracoes-ia-salvar": { teto: 10, janelaSegundos: 3600 },
+  // Canal Evolution (E13-S15): configuração é rara, mas a tela consulta o estado a cada poucos
+  // segundos enquanto o QR está aberto — teto por hora folgado para isso, ainda fail-closed (a
+  // função troca chaves e instala webhook).
+  "canal-evolution": { teto: 600, janelaSegundos: 3600 },
+  // Transcrição de áudio (E13-S15, ADR-0022): cada chamada custa no provedor, e o webhook chega de um
+  // IP só — o teto é, na prática, o limite de gasto por hora. Estourar não perde a mensagem (ela
+  // vira anexo + encaminhamento). Fail-closed: sem limitador, não se gasta.
+  "transcricao-audio": { teto: 120, janelaSegundos: 3600 },
   // Evolution pode concentrar tráfego em um IP; teto protege Vault/LLM sem bloquear uso normal.
   "evolution-webhook": { teto: 120, janelaSegundos: 60 },
   // Playground do admin: cada teste gasta crédito de LLM, então o teto é por hora, fail-closed.

@@ -60,6 +60,21 @@ export function precisaDeHumano(texto: string): boolean {
   return PEDE_HUMANO.test(normalizado);
 }
 
+/** Janela em que o mesmo encaminhamento não é repetido (cliente que manda 10 fotos recebe UM aviso). */
+export const JANELA_REENCAMINHAMENTO_MS = 10 * 60_000;
+
+/** O último texto do agente nesta conversa é este mesmo encaminhamento, enviado há pouco? */
+export function encaminhadoRecentemente(historico: unknown, texto: string, agora = Date.now()): boolean {
+  if (!Array.isArray(historico)) return false;
+  for (let i = historico.length - 1; i >= 0; i--) {
+    const m = historico[i] as { autor?: unknown; texto?: unknown; enviadoEm?: unknown } | null;
+    if (m?.autor !== "agente_ia") continue;
+    const quando = typeof m.enviadoEm === "string" ? Date.parse(m.enviadoEm) : Number.NaN;
+    return m.texto === texto && Number.isFinite(quando) && agora - quando < JANELA_REENCAMINHAMENTO_MS;
+  }
+  return false;
+}
+
 export type Decisao =
   | { tipo: "handoff"; texto: string }
   | { tipo: "sem_chave" }
@@ -100,10 +115,12 @@ export async function processarEntrada(
   entrada: EntradaCanal,
   opcoes: OpcoesPipeline,
 ): Promise<ResultadoPipeline> {
-  const cliente = await deps.vincularCliente(entrada.contatoExterno);
+  // Sem telefone comprovado não se tenta vincular a cliente: a conversa fica só com a equipe.
+  const naoIdentificada = entrada.identificacao === "nao_identificada";
+  const cliente = naoIdentificada ? null : await deps.vincularCliente(entrada.contatoExterno);
   const recibo = await deps.registrar({
     clienteId: cliente?.id ?? null,
-    clienteNome: cliente?.nome ?? entrada.nome ?? "Contato",
+    clienteNome: cliente?.nome ?? entrada.nome ?? (naoIdentificada ? "Contato não identificado" : "Contato"),
     entrada,
   });
   if (!recibo.processar || !recibo.conversaId) return "duplicada";
@@ -115,7 +132,8 @@ export async function processarEntrada(
   ) => deps.concluir({ conversaId, origemId: entrada.origemId, status, ...extra });
 
   try {
-    if (!opcoes.contaAtiva) {
+    // Contato não identificado: mensagem guardada para a equipe; ninguém responde por palpite.
+    if (naoIdentificada || !opcoes.contaAtiva) {
       await fechar("ignorado");
       return "ignorado";
     }
@@ -123,6 +141,18 @@ export async function processarEntrada(
     if (!agente) {
       await fechar("ignorado");
       return "ignorado";
+    }
+
+    // Anexo, figurinha ou tipo não suportado: o agente não interpreta, só encaminha à equipe.
+    if (entrada.encaminhar) {
+      const texto = agente.mensagem_handoff.slice(0, opcoes.limiteSaida);
+      if (encaminhadoRecentemente(await deps.historico(conversaId), texto)) {
+        await fechar("handoff"); // já avisado há pouco: registra, não repete a mensagem
+        return "handoff";
+      }
+      await deps.enviar(texto);
+      await fechar("handoff", { textoSaida: texto });
+      return "handoff";
     }
 
     const decisao = await decidirResposta(

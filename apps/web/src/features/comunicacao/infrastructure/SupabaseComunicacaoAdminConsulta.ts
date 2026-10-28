@@ -1,6 +1,7 @@
 import { getSupabase } from "@/shared/supabase/client";
 import type { ComunicacaoAdminConsulta, ResumoAgenteIA } from "../application/ports";
 import type {
+  AnexoMensagem,
   CanalComunicacao,
   Conversa,
   EmailMensagem,
@@ -18,6 +19,7 @@ interface LinhaConversa {
   mensagens: unknown;
   atendido_por_ia: boolean;
   custo_ia: number | string | null;
+  identificacao?: string | null;
 }
 
 interface LinhaEmail {
@@ -79,9 +81,13 @@ function paraMensagens(valor: unknown): Mensagem[] {
         texto: mensagem.texto,
         enviadoEm: mensagem.enviadoEm,
         lida: mensagem.lida,
-        ...(mensagem.tipo === "imagem" || mensagem.tipo === "audio" || mensagem.tipo === "arquivo"
+        ...(mensagem.tipo === "imagem" ||
+        mensagem.tipo === "audio" ||
+        mensagem.tipo === "arquivo" ||
+        mensagem.tipo === "video"
           ? { tipo: mensagem.tipo }
           : {}),
+        ...paraAnexo(mensagem.anexo),
         ...(typeof mensagem.midiaNome === "string" ? { midiaNome: mensagem.midiaNome } : {}),
         ...(typeof mensagem.duracaoSegundos === "number"
           ? { duracaoSegundos: mensagem.duracaoSegundos }
@@ -90,6 +96,39 @@ function paraMensagens(valor: unknown): Mensagem[] {
       },
     ];
   });
+}
+
+function paraAnexo(valor: unknown): { anexo?: AnexoMensagem } {
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) return {};
+  const a = valor as Record<string, unknown>;
+  if (typeof a.mime !== "string" || typeof a.baixado !== "boolean") return {};
+  const motivo =
+    a.motivo === "tamanho" || a.motivo === "tipo" || a.motivo === "download" ? a.motivo : undefined;
+  return {
+    anexo: {
+      mime: a.mime,
+      baixado: a.baixado,
+      tamanhoBytes: typeof a.tamanhoBytes === "number" ? a.tamanhoBytes : null,
+      // O caminho só vale se o arquivo foi guardado; nunca de um anexo "não baixado".
+      ...(a.baixado && typeof a.caminho === "string" ? { caminho: a.caminho } : {}),
+      ...(motivo ? { motivo } : {}),
+      ...paraTranscricao(a.transcricao),
+    },
+  };
+}
+
+function paraTranscricao(valor: unknown): {
+  transcricao?: NonNullable<AnexoMensagem["transcricao"]>;
+} {
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) return {};
+  const t = valor as Record<string, unknown>;
+  if (t.estado !== "concluida" && t.estado !== "falhou") return {};
+  return {
+    transcricao: {
+      estado: t.estado,
+      ...(t.estado === "falhou" && typeof t.motivo === "string" ? { motivo: t.motivo } : {}),
+    },
+  };
 }
 
 function paraEmails(valor: unknown): EmailMensagem[] {
@@ -129,6 +168,7 @@ export function paraConversa(linha: LinhaConversa): Conversa {
     canal: linha.canal,
     mensagens: paraMensagens(linha.mensagens),
     atendidoPorIA: linha.atendido_por_ia,
+    identificacao: linha.identificacao === "nao_identificada" ? "nao_identificada" : "identificada",
     ...(linha.custo_ia === null ? {} : { custoIA: Number(linha.custo_ia) }),
   };
 }
@@ -146,6 +186,15 @@ export function paraEmail(linha: LinhaEmail): EmailThread {
 
 /** Visão administrativa, toda definida por RLS; UI real não atualiza nenhuma dessas tabelas. */
 export class SupabaseComunicacaoAdminConsulta implements ComunicacaoAdminConsulta {
+  /** Link temporário (60 s) do anexo no bucket privado; só admin consegue (policy do bucket). */
+  async urlDoAnexo(caminho: string): Promise<string> {
+    const { data, error } = await getSupabase()
+      .storage.from("comunicacao-anexos")
+      .createSignedUrl(caminho, 60);
+    if (error || !data?.signedUrl) throw new Error("Não foi possível abrir o anexo.");
+    return data.signedUrl;
+  }
+
   async carregarAdmin() {
     const [conversas, emails, eventos, agentes, fontes] = await Promise.all([
       getSupabase()

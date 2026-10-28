@@ -1,12 +1,24 @@
 // _shared/segredos.ts — formas dos segredos no Vault e helpers puros (sem dependência externa, para
 // que o pipeline e os testes não puxem o SDK do Supabase).
 
+/**
+ * Segredo da conta Evolution: só o capability token do webhook. A chave global do servidor mora em
+ * `evolution-servidor:<id>` (E13-S15, ADR-0021) e a instância é acessada com ela.
+ */
 export interface SegredoEvolution {
-  apiKey: string;
   webhookToken: string;
 }
 
+export interface SegredoServidorEvolution {
+  apiKey: string;
+}
+
 export interface SegredoOpenRouter {
+  apiKey: string;
+}
+
+/** Chave do provedor de transcrição de áudio (E13-S15, ADR-0022): uma por instalação. */
+export interface SegredoTranscricao {
   apiKey: string;
 }
 
@@ -24,6 +36,10 @@ export function escopoEvolution(contaId: string): string {
   return `evolution:${contaId}`;
 }
 
+export function escopoServidorEvolution(servidorId: string): string {
+  return `evolution-servidor:${servidorId}`;
+}
+
 export function escopoMetaWhatsApp(contaId: string): string {
   return `meta-whatsapp:${contaId}`;
 }
@@ -34,6 +50,10 @@ export function escopoMetaInstagram(contaId: string): string {
 
 export function escopoOpenRouter(agenteId: string): string {
   return `openrouter:${agenteId}`;
+}
+
+export function escopoTranscricao(configId: string): string {
+  return `transcricao:${configId}`;
 }
 
 export function tokenAleatorio(): string {

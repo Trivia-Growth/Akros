@@ -1,24 +1,19 @@
-// integracoes-ia-salvar — E13-S12/E13-S13. Único caminho de escrita de chaves pelo painel admin.
-// Configura UMA conta de canal (Evolution, WhatsApp oficial ou Instagram) e o agente que a atende.
+// integracoes-ia-salvar — E13-S12/E13-S13. Caminho de escrita de chaves do painel admin para o agente
+// e para as contas da Meta (WhatsApp oficial e Instagram). A Evolution saiu daqui na E13-S15: servidor,
+// instância, webhook (com releitura), QR e estado vivem em `canal-evolution`.
 // Nenhuma chave volta na resposta: só identificadores, estado e o endereço do webhook (público).
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { HttpError, badRequest, requireAdmin } from "../_shared/auth.ts";
-import { registrarWebhookEvolution } from "../_shared/canais/evolution.ts";
-import { ErroProvedor } from "../_shared/canais/tipos.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { requireCsrfHeader } from "../_shared/csrf.ts";
 import {
   clienteServico,
-  escopoEvolution,
   escopoMetaInstagram,
   escopoMetaWhatsApp,
   escopoOpenRouter,
   obterSegredo,
   salvarSegredo,
-  tokenAleatorio,
-  urlSemBarraFinal,
-  type SegredoEvolution,
   type SegredoMeta,
   type SegredoOpenRouter,
 } from "../_shared/integracoes.ts";
@@ -145,17 +140,10 @@ serve(async (req) => {
 });
 
 function escopoDaConta(provedor: Canal["provedor"], contaId: string): string {
-  return provedor === "evolution"
-    ? escopoEvolution(contaId)
-    : provedor === "whatsapp_oficial"
-    ? escopoMetaWhatsApp(contaId)
-    : escopoMetaInstagram(contaId);
+  return provedor === "whatsapp_oficial" ? escopoMetaWhatsApp(contaId) : escopoMetaInstagram(contaId);
 }
 
 function metadadosPublicos(canal: Canal): Record<string, string> {
-  if (canal.provedor === "evolution") {
-    return { baseUrl: urlSemBarraFinal(canal.baseUrl), instancia: canal.instancia };
-  }
   if (canal.provedor === "whatsapp_oficial") {
     return { phoneNumberId: canal.phoneNumberId, wabaId: canal.wabaId };
   }
@@ -168,13 +156,6 @@ async function montarSegredo(
   canal: Canal,
   escopo: string,
 ): Promise<{ valor: Record<string, string> }> {
-  if (canal.provedor === "evolution") {
-    const anterior = await obterSegredo<SegredoEvolution>(supabase, escopo);
-    const apiKey = canal.apiKey ?? anterior?.apiKey;
-    if (!apiKey) throw badRequest("Informe a chave da Evolution nesta primeira configuração");
-    // O token do webhook nasce uma vez e é reaproveitado: trocá-lo desligaria a Evolution já registrada.
-    return { valor: { apiKey, webhookToken: anterior?.webhookToken ?? tokenAleatorio() } };
-  }
   const anterior = await obterSegredo<SegredoMeta>(supabase, escopo);
   const accessToken = canal.accessToken ?? anterior?.accessToken;
   const appSecret = canal.appSecret ?? anterior?.appSecret;
@@ -185,7 +166,7 @@ async function montarSegredo(
   return { valor: { accessToken, appSecret, verifyToken } };
 }
 
-/** Passos 1 a 3: valida a conta, grava segredos e conta (INATIVA) e registra o webhook da Evolution. */
+/** Passos 1 a 3: valida a conta e grava segredos e conta (INATIVA). */
 async function prepararCanal(
   supabase: ReturnType<typeof clienteServico>,
   canal: Canal,
@@ -230,26 +211,6 @@ async function prepararCanal(
 
   await salvarSegredo(supabase, escopo, segredoNovo.valor);
 
-  // 3) Passo externo (só Evolution): a Meta o administrador registra no painel dela, com a URL e o
-  //    token de verificação. Falha aqui deixa a conta inativa e devolve o motivo ao admin.
-  if (canal.provedor === "evolution") {
-    try {
-      await registrarWebhookEvolution(fetch, {
-        baseUrl: canal.baseUrl,
-        apiKey: (segredoNovo.valor as unknown as SegredoEvolution).apiKey,
-        instancia: canal.instancia,
-        urlWebhook: webhookUrl,
-        token: (segredoNovo.valor as unknown as SegredoEvolution).webhookToken,
-      });
-    } catch (erro) {
-      const status = erro instanceof ErroProvedor ? erro.status : 0;
-      throw new HttpError(
-        502,
-        status === 401 || status === 403
-          ? "A Evolution recusou a chave. Confira a API key e a instância."
-          : "Não foi possível registrar o webhook na Evolution. Confira a URL, a instância e se ela está online.",
-      );
-    }
-  }
+  // 3) Meta: o administrador registra a URL e o token de verificação no painel dela.
   return { contaId, webhookUrl };
 }

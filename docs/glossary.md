@@ -208,6 +208,41 @@ Espelho, no pré-venda, do gate de liberação de fase (E03-S03).
 **Base de reativação:** visão sobre leads com estágio terminal, segmentável por objeção e momento
 de vida, para oferta futura.
 
+
+## Canais de atendimento (WhatsApp via Evolution — E13-S15)
+
+**Servidor Evolution:** o servidor da Evolution API do Akros (um por instalação). O produto guarda o
+endereço, a versão detectada e o estado de compatibilidade; a chave de administração fica no Vault.
+
+**Matriz de compatibilidade:** lista, por versão do servidor, as capacidades **provadas** no smoke de
+contrato. Versão fora da matriz não aceita instâncias. É dado editável pelo admin, com evidência.
+
+**Instância:** a conexão de um número no servidor Evolution; o nome é derivado do canal
+(`akros-<id>`), nunca digitado.
+
+**Estado de conexão (do canal):** `sem instância` → `configuração incompleta` → `aguardando
+pareamento` → `conectado e verificado` → `desconectado` (ou `erro`). "Conectado e verificado" exige
+que o número pareado seja o número cadastrado do canal.
+
+**Contato não identificado:** conversa de um remetente cujo telefone o WhatsApp não revelou (endereço
+interno `@lid` sem número comprovado). Fica só com a equipe, sem vínculo com cliente e sem resposta
+do agente.
+
+**Anexo (de conversa):** arquivo recebido por canal (imagem, documento, áudio, vídeo), guardado em
+armazenamento privado e aberto pela equipe por link temporário. "Anexo não baixado" = a mensagem existe,
+o arquivo não foi guardado (tamanho, tipo ou falha), com o motivo.
+
+**Encaminhamento (do agente):** mensagem fixa do agente avisando que a equipe humana vai responder;
+usada para pedidos jurídicos/financeiros e para anexos. Não se repete em 10 minutos na mesma conversa.
+
+**Transcrição de áudio:** texto gerado a partir de um áudio recebido por canal, por um provedor externo
+(Groq ou OpenRouter). Nasce **desligada**; ligar exige o aceite de que o áudio sai do Akros e a
+verificação de chave e modelo. O texto aparece na conversa como "transcrição automática — pode conter
+erros"; se falhar, o áudio fica guardado e o cliente recebe o encaminhamento (ADR-0022).
+
+**Smoke de contrato:** execução manual de `scripts/evolution-contract-smoke.ts` contra o servidor real:
+cria uma instância efêmera, prova as capacidades e a apaga. Sua evidência registra a versão na matriz.
+
 ---
 
 ## Como manter este doc atualizado

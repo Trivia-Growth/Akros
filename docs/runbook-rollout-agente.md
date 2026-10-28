@@ -36,10 +36,25 @@ ela é imutável**: qualquer ajuste vira `0017`.
 6. Conferir que o Data API **não** enxerga o cofre: com a chave `anon`,
    `GET /rest/v1/referencias_cofre` com `Accept-Profile: configuracoes` → 401/403.
 
+## 1b. Migration `0039` (E13-S15)
+
+Servidor e matriz Evolution, estado do canal, conversa "contato não identificado", bucket privado
+`comunicacao-anexos` e escopo `evolution-servidor` no Vault. Ensaiar antes (`BEGIN; …; ROLLBACK;`),
+conferir `select count(*) from storage.buckets where id = 'comunicacao-anexos'` e que `anon` não lê
+`configuracoes.evolution_servidor`. Reverso no cabeçalho; só antes de haver conversa real.
+
+## 1c. Migration `0040` (E13-S15, transcrição de áudio)
+
+Tabela `configuracoes.transcricao_audio` (uma linha, nasce vazia = transcrição desligada) e escopo
+`transcricao` no Vault. **A regex de escopo do Vault é recriada**: depois de aplicar, conferir que
+os escopos antigos continuam aceitos (`evolution:`, `openrouter:`, `microsoft-graph:`,
+`upload-sessao:`; o teste SQL `22-transcricao-audio_test.sql` faz isso). Ensaiar antes
+(`BEGIN; …; ROLLBACK;`). Reverso no cabeçalho; só reverter com a transcrição desligada.
+
 ## 2. Edge Functions
 
 ```bash
-for f in evolution-webhook integracoes-ia-salvar meta-whatsapp-webhook meta-instagram-webhook; do
+for f in evolution-webhook canal-evolution integracoes-ia-salvar meta-whatsapp-webhook meta-instagram-webhook; do
   supabase functions deploy "$f" --project-ref mhxopadkizktsenohnbm --no-verify-jwt
 done
 ```
@@ -72,8 +87,29 @@ Conferir `GET /functions/v1/<f>` de cada uma: 405 (webhooks e salvar) em vez de 
 
 Admin → Configurações → "Configurar canal e agente". As chaves são digitadas só aqui.
 
-**Evolution** — URL HTTPS, nome da instância, API key. O webhook é registrado sozinho. O número
-precisa estar pareado (QR) no painel da própria Evolution.
+**Evolution (E13-S15, ADR-0021)** — fluxo próprio em Configurações → "Canal WhatsApp · Evolution"; a
+instância é criada e pareada **pelo Akros**, sem painel da Evolution:
+
+1. **Servidor:** URL HTTPS pública + chave de administração do servidor. Versão fora da matriz fica
+   "incompatível": rode o smoke (`quickstart` da spec 006) e use **Registrar versão provada**.
+2. **Número:** "Adicionar número" (nome + número com DDI/DDD).
+3. **Criar instância e instalar webhook:** o Akros só avança depois de **reler** o webhook na Evolution.
+4. **Aceite do risco de banimento → QR Code →** escanear com o número do canal. Número diferente do
+   cadastrado não conecta.
+5. **Mensagem de teste** (para um número seu, diferente do canal) → **Ativar canal** → vincular o
+   agente. O agente continua nascendo desligado.
+
+**Transcrição de áudio (E13-S15, ADR-0022)** — Configurações → "Transcrição de áudio". Nasce
+**desligada** e **não** muda nada até ser ligada. Antes de ligar, o escritório confere o contrato de
+dados do provedor (o áudio do cliente sai do Akros). Passos: provedor (Groq recomendado) + modelo +
+idioma + chave + aceite → **Testar chave e modelo** (nenhum áudio enviado) → **Ligar**. O teste não
+prova a transcrição: **envie um áudio de voz do WhatsApp** de um número cadastrado e confira o texto
+em Comunicação (`quickstart` passo 3b). Teto de 120 transcrições/hora. Para voltar atrás: **Desligar**
+(áudio volta a ser guardado + encaminhamento).
+
+Se a conexão travar: **reinicie o servidor Evolution** (sair da sessão e escanear de novo pode parar o
+recebimento em versões afetadas; a tela não oferece isso). Trocar o **endereço** do servidor reinicia
+todos os canais; trocar só a chave, não.
 
 **WhatsApp oficial** — no painel do app na Meta: *Phone number ID*, *WhatsApp Business Account ID*,
 token permanente de usuário do sistema e *App Secret*; invente (ou gere) o token de verificação.
