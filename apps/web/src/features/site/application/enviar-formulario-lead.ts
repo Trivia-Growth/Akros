@@ -26,5 +26,5 @@ export async function enviarFormularioLead(input: LeadFormValues): Promise<Lead>
     mensagem: input.mensagem,
     origem: "Formulário homepage",
   };
-  return container.capturaLeads.criar(novoLead);
+  return container.leads.criar(novoLead);
 }

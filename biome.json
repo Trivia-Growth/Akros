@@ -16,8 +16,8 @@
       ".triviaiox-core/**",
       ".codex/**",
       ".claude/**",
-      ".specify/**",
       "graphify-out/**",
+      "specs/_debt-baseline.json",
       "**/.impeccable/hook.cache.json",
       "**/.impeccable/config.local.json"
     ]
@@ -27,8 +27,7 @@
     "enabled": true,
     "rules": {
       "recommended": true,
-      "suspicious": { "noExplicitAny": "error" },
-      "correctness": { "useHookAtTopLevel": "error" }
+      "suspicious": { "noExplicitAny": "error" }
     }
   },
   "formatter": {

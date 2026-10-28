@@ -3,7 +3,7 @@ import { AdminLayout } from "@/shared/layout/AdminLayout";
 import { PortalLayout } from "@/shared/layout/PortalLayout";
 import { PublicLayout } from "@/shared/layout/PublicLayout";
 import { isDemoMode } from "@/shared/lib/env";
-import { Navigate, createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 import { admin, portal, rota, site } from "./rota";
 
 /**
@@ -108,85 +108,55 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: rota(portal, () =>
-          isDemoMode
-            ? import("@/features/jornada/interfaces/DashboardPage").then((m) => ({
-                default: m.DashboardPage,
-              }))
-            : import("@/features/jornada/interfaces/DashboardRealPage").then((m) => ({
-                default: m.DashboardRealPage,
-              })),
+          import("@/features/jornada/interfaces/DashboardPage").then((m) => ({
+            default: m.DashboardPage,
+          })),
         ),
       },
       {
         path: "jornada",
         element: rota(portal, () =>
-          isDemoMode
-            ? import("@/features/jornada/interfaces/JornadaPage").then((m) => ({
-                default: m.JornadaPage,
-              }))
-            : import("@/features/jornada/interfaces/JornadaRealPage").then((m) => ({
-                default: m.JornadaRealPage,
-              })),
+          import("@/features/jornada/interfaces/JornadaPage").then((m) => ({
+            default: m.JornadaPage,
+          })),
         ),
       },
       {
         path: "documentos",
         element: rota(portal, () =>
-          isDemoMode
-            ? import("@/features/documentos/interfaces/DocumentosPage").then((m) => ({
-                default: m.DocumentosPage,
-              }))
-            : import("@/features/documentos/interfaces/DocumentosRealPage").then((m) => ({
-                default: m.DocumentosRealPage,
-              })),
+          import("@/features/documentos/interfaces/DocumentosPage").then((m) => ({
+            default: m.DocumentosPage,
+          })),
         ),
       },
       {
         path: "pagamentos",
         element: rota(portal, () =>
-          isDemoMode
-            ? import("@/features/pagamentos/interfaces/PagamentosPage").then((m) => ({
-                default: m.PagamentosPage,
-              }))
-            : import("@/features/pagamentos/interfaces/PagamentosRealPage").then((m) => ({
-                default: m.PagamentosRealPage,
-              })),
+          import("@/features/pagamentos/interfaces/PagamentosPage").then((m) => ({
+            default: m.PagamentosPage,
+          })),
         ),
       },
       {
         path: "mensagens",
         element: rota(portal, () =>
-          isDemoMode
-            ? import("@/features/comunicacao/interfaces/MensagensPage").then((m) => ({
-                default: m.MensagensPage,
-              }))
-            : import("@/features/comunicacao/interfaces/MensagensRealPage").then((m) => ({
-                default: m.MensagensRealPage,
-              })),
+          import("@/features/comunicacao/interfaces/MensagensPage").then((m) => ({
+            default: m.MensagensPage,
+          })),
         ),
       },
       {
         path: "agenda",
         element: rota(portal, () =>
-          isDemoMode
-            ? import("@/features/agenda/interfaces/AgendaPage").then((m) => ({
-                default: m.AgendaPage,
-              }))
-            : import("@/features/agenda/interfaces/AgendaRealPage").then((m) => ({
-                default: m.AgendaRealPage,
-              })),
+          import("@/features/agenda/interfaces/AgendaPage").then((m) => ({
+            default: m.AgendaPage,
+          })),
         ),
       },
       {
         path: "perfil",
         element: rota(portal, () =>
-          isDemoMode
-            ? import("@/features/crm/interfaces/PerfilPage").then((m) => ({
-                default: m.PerfilPage,
-              }))
-            : import("@/features/crm/interfaces/PerfilRealPage").then((m) => ({
-                default: m.PerfilRealPage,
-              })),
+          import("@/features/crm/interfaces/PerfilPage").then((m) => ({ default: m.PerfilPage })),
         ),
       },
     ],
@@ -198,97 +168,63 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: rota(admin, () =>
-          isDemoMode
-            ? import("@/features/crm/interfaces/AdminDashboardPage").then((m) => ({
-                default: m.AdminDashboardPage,
-              }))
-            : import("@/features/crm/interfaces/AdminDashboardRealPage").then((m) => ({
-                default: m.AdminDashboardRealPage,
-              })),
+          import("@/features/crm/interfaces/AdminDashboardPage").then((m) => ({
+            default: m.AdminDashboardPage,
+          })),
         ),
       },
       {
         path: "leads",
-        // E13-S11 Task 5 (AC-4): kanban ainda é mock — fora do demo a rota não existe e
-        // redireciona, para nunca carregar `useMockDb` numa sessão real.
-        element: isDemoMode ? (
-          rota(admin, () =>
-            import("@/features/crm/interfaces/KanbanPage").then((m) => ({ default: m.KanbanPage })),
-          )
-        ) : (
-          <Navigate to="/admin" replace />
+        element: rota(admin, () =>
+          import("@/features/crm/interfaces/KanbanPage").then((m) => ({ default: m.KanbanPage })),
         ),
       },
       {
         path: "aprovacoes",
-        element: isDemoMode ? (
-          rota(admin, () =>
-            import("@/features/crm/interfaces/AprovacoesPage").then((m) => ({
-              default: m.AprovacoesPage,
-            })),
-          )
-        ) : (
-          <Navigate to="/admin" replace />
+        element: rota(admin, () =>
+          import("@/features/crm/interfaces/AprovacoesPage").then((m) => ({
+            default: m.AprovacoesPage,
+          })),
         ),
       },
       {
         path: "clientes",
         element: rota(admin, () =>
-          isDemoMode
-            ? import("@/features/crm/interfaces/Clientes360Page").then((m) => ({
-                default: m.Clientes360Page,
-              }))
-            : import("@/features/crm/interfaces/Clientes360RealPage").then((m) => ({
-                default: m.Clientes360RealPage,
-              })),
+          import("@/features/crm/interfaces/Clientes360Page").then((m) => ({
+            default: m.Clientes360Page,
+          })),
         ),
       },
       {
         path: "documentos",
         element: rota(admin, () =>
-          isDemoMode
-            ? import("@/features/documentos/interfaces/FilaRevisaoPage").then((m) => ({
-                default: m.FilaRevisaoPage,
-              }))
-            : import("@/features/documentos/interfaces/FilaRevisaoRealPage").then((m) => ({
-                default: m.FilaRevisaoRealPage,
-              })),
+          import("@/features/documentos/interfaces/FilaRevisaoPage").then((m) => ({
+            default: m.FilaRevisaoPage,
+          })),
         ),
       },
       {
         path: "propostas",
         element: rota(admin, () =>
-          isDemoMode
-            ? import("@/features/crm/interfaces/PropostasPage").then((m) => ({
-                default: m.PropostasPage,
-              }))
-            : import("@/features/crm/interfaces/PropostasRealPage").then((m) => ({
-                default: m.PropostasRealPage,
-              })),
+          import("@/features/crm/interfaces/PropostasPage").then((m) => ({
+            default: m.PropostasPage,
+          })),
         ),
       },
       {
         path: "propostas/:id",
         element: rota(admin, () =>
-          isDemoMode
-            ? import("@/features/crm/interfaces/PropostaDocumentoPage").then((m) => ({
-                default: m.PropostaDocumentoPage,
-              }))
-            : import("@/features/crm/interfaces/PropostaDocumentoRealPage").then((m) => ({
-                default: m.PropostaDocumentoRealPage,
-              })),
+          import("@/features/crm/interfaces/PropostaDocumentoPage").then((m) => ({
+            default: m.PropostaDocumentoPage,
+          })),
         ),
       },
       {
         path: "pagamentos",
-        element: isDemoMode ? (
-          rota(admin, () =>
-            import("@/features/pagamentos/interfaces/ConciliacaoPage").then((m) => ({
-              default: m.ConciliacaoPage,
-            })),
-          )
-        ) : (
-          <Navigate to="/admin" replace />
+        element: rota(admin, () =>
+          import("@/features/pagamentos/interfaces/ConciliacaoPage").then((m) => ({
+            default: m.ConciliacaoPage,
+          })),
         ),
       },
       {
@@ -302,61 +238,41 @@ export const router = createBrowserRouter([
       {
         path: "operacao",
         element: rota(admin, () =>
-          isDemoMode
-            ? import("@/features/jornada/interfaces/OperacaoPage").then((m) => ({
-                default: m.OperacaoPage,
-              }))
-            : import("@/features/jornada/interfaces/OperacaoRealPage").then((m) => ({
-                default: m.OperacaoRealPage,
-              })),
+          import("@/features/jornada/interfaces/OperacaoPage").then((m) => ({
+            default: m.OperacaoPage,
+          })),
         ),
       },
       {
         path: "reativacao",
-        element: isDemoMode ? (
-          rota(admin, () =>
-            import("@/features/crm/interfaces/ReativacaoPage").then((m) => ({
-              default: m.ReativacaoPage,
-            })),
-          )
-        ) : (
-          <Navigate to="/admin" replace />
+        element: rota(admin, () =>
+          import("@/features/crm/interfaces/ReativacaoPage").then((m) => ({
+            default: m.ReativacaoPage,
+          })),
         ),
       },
       {
         path: "comunicacao",
         element: rota(admin, () =>
-          isDemoMode
-            ? import("@/features/comunicacao/interfaces/ComunicacaoPage").then((m) => ({
-                default: m.ComunicacaoPage,
-              }))
-            : import("@/features/comunicacao/interfaces/ComunicacaoRealPage").then((m) => ({
-                default: m.ComunicacaoRealPage,
-              })),
+          import("@/features/comunicacao/interfaces/ComunicacaoPage").then((m) => ({
+            default: m.ComunicacaoPage,
+          })),
         ),
       },
       {
         path: "agenda",
         element: rota(admin, () =>
-          isDemoMode
-            ? import("@/features/agenda/interfaces/AdminAgendaPage").then((m) => ({
-                default: m.AdminAgendaPage,
-              }))
-            : import("@/features/agenda/interfaces/AdminAgendaRealPage").then((m) => ({
-                default: m.AdminAgendaRealPage,
-              })),
+          import("@/features/agenda/interfaces/AdminAgendaPage").then((m) => ({
+            default: m.AdminAgendaPage,
+          })),
         ),
       },
       {
         path: "configuracoes",
         element: rota(admin, () =>
-          isDemoMode
-            ? import("@/features/configuracoes/interfaces/ConfiguracoesPage").then((m) => ({
-                default: m.ConfiguracoesPage,
-              }))
-            : import("@/features/configuracoes/interfaces/ConfiguracoesRealPage").then((m) => ({
-                default: m.ConfiguracoesRealPage,
-              })),
+          import("@/features/configuracoes/interfaces/ConfiguracoesPage").then((m) => ({
+            default: m.ConfiguracoesPage,
+          })),
         ),
       },
     ],

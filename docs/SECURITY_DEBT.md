@@ -15,27 +15,34 @@ por tempo indeterminado, monitorar.
 
 ## P0 — bloqueia produção
 
-Nenhum P0 aberto. Os dois últimos fecharam em 2026-09-05 com E13-S11 (Task 5) e foram movidos
-para o histórico abaixo.
+### Frontend ainda não fala com o schema real (RLS só provado no banco)
+`crm`/`jornada`/`documentos`/`pagamentos`/`agenda`/`programas`/`comunicacao` têm RLS real,
+provado via PostgREST (E13-S01..S05) — mas a UI ainda lê 100% de `useMockDb` (E12-S01). O
+isolamento por `cliente_id` só existe no banco; a aplicação em si não o exercita ainda.
+**Fecha em:** E13-S08 (trocar `MockClienteRepository`/demais por adapter Supabase).
 
-### Fechados em 2026-09-05 — E13-S11 (Task 5, corte demo)
+### Store global única carrega dado de todas as personas na memória do browser
+Mesmo autenticado como um cliente só (E12-S02), `useMockDb` mantém as 5 personas mockadas
+inteiras na memória do JS da aba — um `console.log(useMockDb.getState())` no DevTools expõe tudo.
+**Aceitável hoje** porque o dado é 100% fictício (sem PII real). **Bloqueia** subir qualquer dado
+real de cliente antes de existir filtragem de estado no frontend equivalente à RLS do banco.
+**Fecha em:** E13-S08, junto da troca de adapter.
 
-**1. Frontend ainda não fala com o schema real (RLS só provado no banco).**
-Medido em 2026-08-31: 8 telas liam `useMockDb` mesmo com `clientes` migrado (E13-S08) — dashboard
-mostrava personas fictícias enquanto `/admin/clientes` mostrava os reais. **Fechamento:** as ondas
-de E13-S11 migraram Programas, Configurações, Agenda, transcrições, Jornada, Documentos,
-Pagamentos, Mensagens, Propostas, Comunicação, Dashboards, Perfil, Operação, Cliente 360 e Fila de
-revisão para adapters reais com RLS por `auth.uid()`; as 4 rotas que restavam em mock
-(`/admin/leads`, `/admin/aprovacoes`, `/admin/pagamentos`, `/admin/reativacao`) foram **ocultadas
-fora do modo demo** (redirect ao dashboard, itens fora do menu) — decisão consciente de 05/09.
-Migrá-las exige mutações que seguem sem RPC/Edge Function de transição/auditoria e vira story
-própria.
+### Sem CSP e sem HSTS em produção
+`netlify.toml` tem `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` e `Permissions-Policy` —
+não tem `Content-Security-Policy` nem `Strict-Transport-Security`. Isso importa mais aqui do que
+no caso genérico: o **ADR-0008 aceita explicitamente** que "XSS com a página aberta continua
+podendo agir em nome do usuário" e nomeia **CSP estrita** como a mitigação. A mitigação nomeada
+não existe. Mitigação parcial hoje: zero ocorrências de `dangerouslySetInnerHTML` (verificado
+30/08/2026) e TTL curto do access token.
+**Fecha em:** E16-S01 AC-2 — sobe primeiro como `Content-Security-Policy-Report-Only`.
 
-**2. Store global única carrega dado de todas as personas na memória do browser.**
-`useMockDb` mantinha as 5 personas inteiras na memória da aba, expostas num `console.log` do
-DevTools. **Fechamento:** fora do demo nenhuma rota carrega mais a store (as 4 restantes foram
-ocultadas acima) e o e2e serial prova que a sessão real não baixa `mocks/store`. Filtragem nunca
-seria solução — quando o filtro roda, o dado já está na memória; a saída foi não carregar.
+### Edge Functions sem rate limiting
+`grep -rn "rate\|limit" supabase/functions/` não devolve nada. `sessao-login` aceita tentativa
+ilimitada de senha: força bruta e enumeração de usuário sem custo. `seguranca/os-grade.md` pede
+rate limit `fail-closed` em função pública e a `Definition-of-Done.md` §4 lista como obrigatório.
+Superfície reduzida hoje (2 usuários seed), o que diminui o alcance, não o risco.
+**Fecha em:** story própria de segurança, antes de qualquer usuário além dos seed.
 
 ## P1 — corrigir antes de dado real de cliente
 
@@ -44,11 +51,11 @@ Titular/banco/conta são **fictícios de propósito** (E10-S01, ROADMAP pergunta
 Substituir pelos dados reais da Akros é decisão consciente, não técnica — feita quando a Akros
 aprovar uso fora de demo.
 
-### Eventos/threads de lead ainda não apontam para `crm.leads`
+### `crm.leads` não existe — eventos/threads de lead ficam sem dono
 `comunicacao.eventos.cliente_id` e `email_threads.cliente_id` são nullable pra cobrir o caso de
 lead ainda não convertido (E13-S05/design.md). Hoje isso só significa "invisível pra qualquer
-cliente" (correto). E13-S09 aplicou tabela, RLS admin-only, captura pública e conversão atômica no
-projeto real em 2026-09-04. A ligação das threads/eventos entra nas ondas de E13-S11.
+cliente" (correto). Quando `crm.leads` existir, decidir se leads precisam de RLS própria (hoje
+não logam, só staff acessa via admin).
 
 ### Retenção de dado de lead perdido (LGPD)
 ROADMAP pergunta aberta nº 6: base legal e prazo de guarda pra lead descartado/inativo (E11-S02/
@@ -69,17 +76,14 @@ determinístico e local; nada sai da máquina.
 **Fecha em:** decisão registrada sobre provedor, retenção e opt-out de treino, antes do primeiro
 adapter real. Trilha `ia/` cumprida (`@prompt-engineer` + `@security`).
 
-### Credenciais de integração externa ainda sem cofre — FECHADO (padrão Vault, E13-S12)
+### Credenciais de integração externa ainda sem cofre
 Google Calendar, Microsoft Graph, Calendly, Meta Graph, OpenRouter, Whisper e Fireflies aparecem
 como formulário de credencial em `/admin/configuracoes`. Todas mockadas — nenhum token real é
 aceito ou persistido. Quando qualquer uma virar real, cai a exigência de
 `seguranca/os-grade.md` §Credenciais externas: `refresh_token` em Supabase Vault, `access_token`
 cifrado, nada exposto na UI. O **ADR-0007** já registrou essa preocupação ao aprovar a tool de
 agenda do agente.
-**Fechado em:** E13-S12 entregou o padrão em 2026-09-05/08 (ADR-0012): chaves Evolution/OpenRouter
-vão ao Supabase Vault via RPC service-role, capability token autentica webhook por header, nada
-volta ao browser. Quando Google/Meta/Calendly/Whisper/Fireflies virarem reais, seguem o mesmo
-padrão — o roteiro está em `specs/E13-S12-integracao-evolution-openrouter/`.
+**Fecha em:** E14 (cofre de credenciais).
 
 ## P2 — aceito, monitorar
 
@@ -119,19 +123,14 @@ nasce sem `skip` e instala o binário, o que fecha o furo **na CI**; local conti
 design (não travar quem não tem a ferramenta).
 **Fecha em:** já fechado do lado da CI quando o pipeline estiver ativo com o check obrigatório.
 
-### Matriz de autorização (e2e) é gate local, não é enforçada no servidor
-Decisão de 2026-08-31: o e2e roda **sempre** no `pre-push` (`lefthook.yml`, sem `skip`) e **nunca**
-na CI. O motivo é custo e perímetro — na CI ele levaria minutos em todo push e faria cada PR
-abrir sessão no Supabase de produção, além de exigir a senha dos usuários seed nos secrets do
-repositório.
-
-O risco que sobra: o gate depende da máquina de quem empurra. Quem tiver o hook desinstalado, ou
-usar `--no-verify`, manda regressão de autorização para a `main` sem barreira. A branch protection
-não tem como cobrir isso.
-**Mitigação:** o `pre-push` falha alto se faltar credencial ou browser (sem `skip`), então o
-caminho normal não tem como pular silenciosamente.
-**Fecha em:** ambiente de teste separado do de produção — aí o e2e pode voltar para a CI sem os
-dois problemas que o tiraram dela.
+### Matriz de autorização (e2e) não roda na CI
+O job `e2e` de `.github/workflows/ci.yml` está desligado (`vars.E2E_HABILITADO`). Ele autentica de
+verdade contra o projeto Supabase de produção — não há mock de rede —, então ligar exige colocar a
+senha dos usuários seed nos secrets do repositório e aceitar login em produção a cada PR. Hoje a
+matriz só roda na máquina de quem lembra (`pnpm --filter @akros/web test:e2e`), o que a torna
+best-effort: uma regressão de autorização passa no merge.
+**Fecha em:** decisão sobre usuários de teste em ambiente separado do real (relacionado a SD-09),
+e então `E2E_HABILITADO=true` com o check obrigatório na branch protection.
 
 ## Referências
 - `seguranca/baseline-minimo.md`, `seguranca/os-grade.md` — checklists que geraram estas entradas.

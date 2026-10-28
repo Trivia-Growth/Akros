@@ -1,19 +1,10 @@
 import type { CanalEvento, EventoComunicacao } from "@/features/comunicacao/domain/types";
 import { Badge } from "@/shared/ui";
-import {
-  AlertTriangle,
-  Calendar,
-  Instagram,
-  Mail,
-  MessageCircle,
-  MonitorCog,
-  Send,
-} from "lucide-react";
+import { AlertTriangle, Calendar, Mail, MessageCircle, MonitorCog, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const CANAL_ICON: Record<CanalEvento, typeof Mail> = {
   whatsapp: MessageCircle,
-  instagram: Instagram,
   email: Mail,
   chat_portal: Send,
   reuniao: Calendar,

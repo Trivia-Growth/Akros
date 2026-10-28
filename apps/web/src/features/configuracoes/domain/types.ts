@@ -105,43 +105,4 @@ export interface ContaCanalConectada {
   identificador: string;
   ativa: boolean;
   conectadoEm: string;
-  /** Metadados operacionais, sem API key nem token do webhook. */
-  evolution?: { baseUrl: string; instancia: string; credenciaisConfiguradas: boolean };
-  /** WhatsApp oficial e Instagram (Meta): só ids públicos, nunca token nem App Secret. */
-  meta?: {
-    phoneNumberId?: string;
-    wabaId?: string;
-    igAccountId?: string;
-    credenciaisConfiguradas: boolean;
-  };
-}
-
-/** Configuração de atendimento exibível ao admin. Chave OpenRouter fica somente no Vault. */
-export interface AgenteIAIntegracao {
-  id: string;
-  nome: string;
-  funcao: string;
-  alma: string;
-  saudacao: string;
-  mensagemHandoff: string;
-  modelo: string;
-  ativo: boolean;
-}
-
-/** E03-S07 Fase 5 (T058, ADR-0019). Espelha `arquivos.integracoes_microsoft.estado` (migration
- *  0020) — conexão única, admin-only, com a conta Microsoft corporativa. */
-export type EstadoIntegracaoOneDrive = "conectada" | "expirada" | "revogada";
-
-/** Conexão corporativa com o OneDrive (ADR-0019) — cartão "Conta Microsoft / OneDrive" em
- *  `ConfiguracoesRealPage.tsx`. Nunca carrega token/refresh token: o schema `arquivos` já
- *  restringe a leitura dessas colunas de segredo a lugar nenhum (o Vault, não a tabela) —
- *  aqui só o que já é metadado público na linha. `pastaRaizId` é o id opaco do item no Graph
- *  (`pasta_raiz_item_id`), não um caminho legível — a tabela não tem uma coluna de exibição para
- *  a pasta raiz (só `arquivos.vinculos_pasta.caminho_exibicao`, que é por CASO, não por conexão). */
-export interface IntegracaoOneDrive {
-  id: string;
-  contaEmail: string;
-  pastaRaizId: string;
-  estado: EstadoIntegracaoOneDrive;
-  conectadoEm: string;
 }

@@ -10,7 +10,7 @@ enabled = true
 port = 54321
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` and `graphql_public` schemas are included by default.
-schemas = ["public", "graphql_public", "crm", "jornada", "documentos", "pagamentos", "agenda", "programas", "comunicacao", "audit", "lgpd", "seguranca", "configuracoes", "comandos", "arquivos"]
+schemas = ["public", "graphql_public", "crm", "jornada", "documentos", "pagamentos", "agenda", "programas", "comunicacao", "audit", "lgpd"]
 # Extra schemas to add to the search_path of every request.
 extra_search_path = ["public", "extensions"]
 # The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
@@ -406,16 +406,6 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 # ADR-0008 (sessão) — três funções sem JWT de entrada (não existe token antes do login; o
 # refresh/logout leem o próprio cookie/token da requisição, não um Bearer do gateway).
-[functions.lead-capturar]
-# Anônima por natureza: quem envia o formulário de /contatos é visitante, não usuário. A escrita
-# acontece com service_role dentro da function, nunca com o token de quem chama.
-verify_jwt = false
-
-[functions.telemetria-erro]
-# Anônima de propósito: erro de cliente acontece também com o usuário deslogado, no site
-# institucional. Exigir JWT perderia exatamente os crashes mais visíveis para quem não é cliente.
-verify_jwt = false
-
 [functions.sessao-login]
 enabled = true
 verify_jwt = false
@@ -425,66 +415,6 @@ enabled = true
 verify_jwt = false
 
 [functions.sessao-logout]
-enabled = true
-verify_jwt = false
-
-# Admin é validado dentro da função (Auth + role + CSRF); gateway aberto permite OPTIONS/CORS.
-[functions.integracoes-ia-salvar]
-enabled = true
-verify_jwt = false
-
-# Evolution não envia JWT Supabase. O capability token por conta vai no header x-akros-webhook.
-[functions.evolution-webhook]
-enabled = true
-verify_jwt = false
-
-# Playground do agente: admin é validado dentro da função (Auth + role + CSRF); o gateway fica
-# aberto para o navegador conseguir o preflight CORS.
-[functions.agente-playground]
-enabled = true
-verify_jwt = false
-
-# A Meta não envia JWT Supabase. GET de verificação por hub.verify_token e POST por assinatura HMAC
-# (X-Hub-Signature-256), ambos validados dentro da função, por conta (?conta=<uuid>).
-[functions.meta-whatsapp-webhook]
-enabled = true
-verify_jwt = false
-
-[functions.meta-instagram-webhook]
-enabled = true
-verify_jwt = false
-
-# caso-comandos (E03-S07): admin é validado dentro da função (Auth + role, via requireAdmin);
-# gateway aberto para o navegador conseguir o preflight CORS, mesmo critério de
-# integracoes-ia-salvar/agente-playground.
-[functions.caso-comandos]
-enabled = true
-verify_jwt = false
-
-# onedrive-oauth (E03-S07, ADR-0019): admin é validado dentro da função (requireAdmin). `GET
-# /callback` é redirecionamento do consentimento da Microsoft, não pode carregar Bearer do
-# Supabase — por isso o gateway fica aberto, mesmo critério de caso-comandos.
-[functions.onedrive-oauth]
-enabled = true
-verify_jwt = false
-
-# envio-comandos (E03-S07, ADR-0019): participante ou admin, validado dentro da função
-# (requireAuth + exigirPapel) — não é admin-only como caso-comandos, então não pode reusar
-# requireAdmin, mas o critério de gateway aberto é o mesmo (preflight CORS do navegador).
-[functions.envio-comandos]
-enabled = true
-verify_jwt = false
-
-# arquivo-baixar (E03-S07, ADR-0019): participante ou admin, validado dentro da função
-# (requireAuth + exigirPapel), mesmo critério de envio-comandos.
-[functions.arquivo-baixar]
-enabled = true
-verify_jwt = false
-
-# arquivo-processar (E03-S07, ADR-0019): função interna, nunca chamada por sessão de usuário —
-# só Cron com segredo (requireServiceRole), mesmo critério das integrações Auvo
-# (ver _shared/auth.ts, requireServiceRole).
-[functions.arquivo-processar]
 enabled = true
 verify_jwt = false
 

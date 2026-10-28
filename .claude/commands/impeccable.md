@@ -52,4 +52,4 @@ Abre:
 
 ---
 
-**Obrigatório:** toda feature com UI passa por impeccable antes do `/speckit-converge`.
+**Obrigatório:** toda feature com UI passa por impeccable antes de `/validar`.

@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Bash(node scripts/audit-esteira.mjs)",
+      "Bash(node scripts/eval-spec-fidelity.mjs)",
       "Bash(pnpm test)",
       "Bash(pnpm run test*)",
       "Bash(pnpm run lint)",
@@ -18,14 +20,20 @@
       "Bash(git stash*)",
       "Bash(find . *)",
       "Bash(ls *)",
-      "Bash(cat *)",
-      "Bash(pnpm run arch:check)",
-      "Bash(pnpm run lint:migrations)",
-      "Bash(pnpm run check:edge-functions)"
+      "Bash(cat *)"
     ]
   },
   "hooks": {
     "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/check-story.mjs"
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [

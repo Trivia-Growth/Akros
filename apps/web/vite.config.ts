@@ -9,14 +9,6 @@ export default defineConfig({
   test: {
     exclude: [...configDefaults.exclude, "e2e/**"],
     setupFiles: ["./src/shared/lib/test-setup.ts"],
-    // E03-S07 (T063): `tus-js-client` só declara o campo legado `browser` (sem `exports`) —
-    // Vite, ao empacotar para o navegador, resolve esse campo e usa a variante browser (que lê
-    // `File`/`Blob`); o runner do Vitest (via vite-node) resolve dependências externas pelo
-    // algoritmo padrão do Node (`main`/`module`), que ignora `browser` e cai na variante node
-    // (que só aceita `Buffer`/`Readable`) — achado empírico em `envio-tus.test.ts` ("source
-    // object may only be an instance of Buffer or Readable in this environment"). Este alias
-    // só vale para o Vitest; o build real do navegador nunca passa por aqui.
-    alias: { "tus-js-client": "tus-js-client/lib.esm/browser/index.js" },
     // Cobertura como DIAGNÓSTICO, não como meta de porcentagem: o limiar que vale é por camada
     // (`domain/` e `application/` são puros e não têm desculpa), não um número global que se
     // satisfaz testando o que é fácil. Rode com `pnpm --filter @akros/web exec vitest run --coverage`.
@@ -53,18 +45,6 @@ export default defineConfig({
     // Espelha o rewrite de proxy do Netlify (ADR-0008) em dev: o browser só fala com
     // localhost:5173, então o cookie de sessão nasce first-party nos dois ambientes.
     proxy: {
-      "/api/leads": {
-        target: "https://mhxopadkizktsenohnbm.supabase.co/functions/v1/lead-capturar",
-        changeOrigin: true,
-        secure: true,
-        rewrite: () => "",
-      },
-      "/api/telemetria/erro": {
-        target: "https://mhxopadkizktsenohnbm.supabase.co/functions/v1/telemetria-erro",
-        changeOrigin: true,
-        secure: true,
-        rewrite: () => "",
-      },
       "/api/sessao": {
         target: "https://mhxopadkizktsenohnbm.supabase.co/functions/v1",
         changeOrigin: true,

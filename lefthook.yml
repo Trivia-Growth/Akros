@@ -1,17 +1,14 @@
-# Lefthook — orquestrador dos gates locais (ADR-0016).
+# Lefthook — orquestrador único dos gates de qualidade (substitui husky + lint-staged + ci-local.mjs).
+# Um só arquivo define o que roda no commit, na mensagem e no push. Paralelo por padrão (rápido).
+# Instala com `lefthook install` (roda no `pnpm install` via script prepare).
 #
-# Filosofia: o ciclo local precisa ser rápido o bastante para ninguém querer pular. Por isso o
-# pre-push roda só o que pega regressão de código em segundos (Biome, typecheck, vitest); a bateria
-# de segurança e de arquitetura roda na CI, onde cancela run antigo e não custa tempo de quem está
-# desenvolvendo. `pnpm run ci:local` = `lefthook run pre-push`: hook e comando manual são a MESMA
-# definição.
-#
-# Fora daqui de propósito:
-#   • e2e (Playwright, autentica no Supabase real) → `pnpm e2e`, sob demanda; obrigatório antes de
-#     mexer em auth, RLS ou sessão.
-#   • arch:check, lint:migrations, check:edge-functions, db-tests → CI (jobs `qualidade`,
-#     `seguranca` e `db-tests`).
+# Filosofia (ver PADRAO-DE-QUALIDADE.md):
+#   • pre-commit  = LEVE, só arquivos staged — não trava o ritmo do commit.
+#   • pre-push    = ESPELHO FIEL DA CI — a mesma bateria do pipeline, antes de o código sair.
+#     `pnpm run ci:local` = `lefthook run pre-push`: hook e comando manual são a MESMA definição.
+#   • CI real ainda é a prova final (job db-tests com Docker é pulado local) → /validar checa `gh pr checks`.
 
+# ─────────────────────────────────────────────────────────────────────────────
 pre-commit:
   parallel: true
   commands:
@@ -20,18 +17,38 @@ pre-commit:
       run: pnpm exec biome check --write --no-errors-on-unmatched {staged_files}
       stage_fixed: true # re-staga o que o Biome corrigiu automaticamente
 
+# ─────────────────────────────────────────────────────────────────────────────
 commit-msg:
   commands:
     commitlint:
-      run: pnpm exec commitlint --edit {1} # Conventional Commits, com ID da story no escopo
+      run: pnpm exec commitlint --edit {1} # Conventional Commits obrigatório
 
+# ─────────────────────────────────────────────────────────────────────────────
+# pre-push = espelho da CI. Paralelo: você vê TODOS os vermelhos de uma vez, não um a um.
+# db-tests (pgTAP via Docker) NÃO entra aqui — exige Docker local; roda no CI (job db-tests).
 pre-push:
   parallel: true
   commands:
+    remind-impeccable:
+      run: node scripts/remind-impeccable.mjs
+    esteira:
+      run: pnpm run audit:esteira
+    fidelidade:
+      run: pnpm run eval:spec
+    mermaid:
+      run: node scripts/validate-mermaid.mjs
+    migrations:
+      run: pnpm run lint:migrations # RLS-GRANT (custom) + Squawk se instalado
+    edge-functions:
+      run: pnpm run check:edge-functions # função órfã / functions.invoke sem função declarada (E00-S11)
     lint:
       run: pnpm exec biome check .
     typecheck:
       run: pnpm run typecheck
+    arquitetura:
+      run: pnpm run arch:check
+    build:
+      run: pnpm run build
     testes:
       run: pnpm test
     # Secret scanning é best-effort local (o gate bloqueante é o da CI); só roda se instalado:
