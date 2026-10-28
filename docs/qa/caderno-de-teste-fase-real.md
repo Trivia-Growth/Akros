@@ -6,6 +6,9 @@ alwaysApply: false
 
 # Caderno de teste — fase real (avaliação de 2026-10-01)
 
+> Registro histórico de 2026-10-01. Os achados descrevem o ambiente daquela data;
+> precisam de nova verificação antes de orientar decisões sobre o ambiente atual.
+
 Este documento tem duas partes: o que a avaliação encontrou (seções 1 a 3) e o caderno para repetir
 e estender os testes (seção 4). Cada caso tem ID, passo, resultado esperado e o resultado observado
 na avaliação.

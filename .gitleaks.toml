@@ -3,6 +3,15 @@ title = "gitleaks config — Sinérgica SO"
 [extend]
 useDefault = true
 
+[[rules]]
+id = "generic-api-key"
+
+  [[rules.allowlists]]
+  description = "Identificador de idempotência fictício no teste de contrato; presente no histórico."
+  condition = "AND"
+  paths = ['''^apps/web/src/features/crm/infrastructure/SupabaseCasoComandos\.test\.ts$''']
+  regexes = ['''^idem-contrato-1$''']
+
 [allowlist]
 description = "Vendored e lockfiles gerados. deno.lock contém hashes SHA-256 de módulos remotos que podem coincidir com generic-api-key; não contém credenciais."
 paths = [
