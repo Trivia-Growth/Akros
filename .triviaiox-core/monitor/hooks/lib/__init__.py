@@ -1,1 +1,0 @@
-# TRIVIAIOX Monitor Hooks Library
