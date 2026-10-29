@@ -24,6 +24,7 @@ import { requireCsrfHeader } from "./csrf.ts";
 import { comIdempotencia, type IOIdempotencia } from "./idempotencia.ts";
 import { MIME_ACEITO, TAMANHO_MAXIMO_BYTES } from "./limites.ts";
 import { assinaturaPdfValida, type IOStorageEnvios } from "./io-storage-envios.ts";
+import { lerTextoComLimite } from "./corpo.ts";
 
 const FN = "envio-comandos";
 // Payload é só texto/número/UUID (sem upload — o binário vai direto ao bucket via TUS, nunca
@@ -194,8 +195,8 @@ export function criarManipuladorEnvioComandos(io: IOEnvioComandos) {
       // Nunca confia em identidade/papel vindo do body — sempre resolvido pela sessão.
       const { userId, admin } = await io.autenticar(req);
 
-      const bruto = await req.text();
-      if (new TextEncoder().encode(bruto).byteLength > MAX_BYTES) {
+      const bruto = await lerTextoComLimite(req, MAX_BYTES);
+      if (bruto === null) {
         throw new HttpError(413, "Dados excedem limite");
       }
 

@@ -32,6 +32,11 @@ export interface DepsAgente {
   /** Agente ATIVO que atende esta conta, ou `null`. */
   agenteDaConta(): Promise<RegraAgente | null>;
   chaveOpenRouter(agenteId: string): Promise<string | null>;
+  /**
+   * Consome UMA resposta de IA da cota deste contato (AV-05). `false` = cota esgotada ou limitador
+   * indisponível: o pipeline não chama o modelo e só encaminha à equipe.
+   */
+  cotaContato(contatoExterno: string): Promise<boolean>;
   historico(conversaId: string): Promise<unknown>;
   gerarResposta(
     regra: RegraAgente,
@@ -143,8 +148,7 @@ export async function processarEntrada(
       return "ignorado";
     }
 
-    // Anexo, figurinha ou tipo não suportado: o agente não interpreta, só encaminha à equipe.
-    if (entrada.encaminhar) {
+    const encaminhar = async (): Promise<ResultadoPipeline> => {
       const texto = agente.mensagem_handoff.slice(0, opcoes.limiteSaida);
       if (encaminhadoRecentemente(await deps.historico(conversaId), texto)) {
         await fechar("handoff"); // já avisado há pouco: registra, não repete a mensagem
@@ -153,6 +157,18 @@ export async function processarEntrada(
       await deps.enviar(texto);
       await fechar("handoff", { textoSaida: texto });
       return "handoff";
+    };
+
+    // Anexo, figurinha ou tipo não suportado: o agente não interpreta, só encaminha à equipe.
+    if (entrada.encaminhar) return await encaminhar();
+
+    // AV-05: cada resposta de IA custa no provedor. A cota é por CONTATO, antes da chamada paga:
+    // um remetente que fala demais não esgota a conta nem o balde dos demais. Pedido que já vai
+    // para a equipe (`precisaDeHumano`) não chama o modelo e, por isso, não consome cota.
+    if (!precisaDeHumano(entrada.texto) && !(await deps.cotaContato(entrada.contatoExterno))) {
+      // Sem telefone no log: o excesso fica observável, o contato não.
+      deps.log({ nivel: "warn", msg: "cota de IA do contato esgotada" });
+      return await encaminhar();
     }
 
     const decisao = await decidirResposta(

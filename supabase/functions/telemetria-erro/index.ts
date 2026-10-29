@@ -8,6 +8,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { lerTextoComLimite } from "../_shared/corpo.ts";
 import { TETOS, checarLimite, resposta429 } from "../_shared/rate-limit.ts";
 
 const FN = "telemetria-erro";
@@ -46,8 +47,8 @@ serve(async (req) => {
   if (!limite.permitido) return resposta429(limite.reiniciaEm, cors);
 
   try {
-    const bruto = await req.text();
-    if (bruto.length > MAX_BYTES) return new Response(null, { status: 413, headers: cors });
+    const bruto = await lerTextoComLimite(req, MAX_BYTES);
+    if (bruto === null) return new Response(null, { status: 413, headers: cors });
 
     const evento = InputSchema.parse(JSON.parse(bruto));
 

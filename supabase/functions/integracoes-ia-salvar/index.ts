@@ -19,6 +19,7 @@ import {
 } from "../_shared/integracoes.ts";
 import { EntradaSchema, urlWebhook, type Canal } from "../_shared/integracoes-schema.ts";
 import { TETOS, checarLimite, resposta429 } from "../_shared/rate-limit.ts";
+import { lerTextoComLimite } from "../_shared/corpo.ts";
 
 const FN = "integracoes-ia-salvar";
 const MAX_BYTES = 24 * 1024;
@@ -40,8 +41,8 @@ serve(async (req) => {
   try {
     requireCsrfHeader(req);
     const { userId } = await requireAdmin(req);
-    const bruto = await req.text();
-    if (new TextEncoder().encode(bruto).byteLength > MAX_BYTES) throw new HttpError(413, "Dados excedem limite");
+    const bruto = await lerTextoComLimite(req, MAX_BYTES);
+    if (bruto === null) throw new HttpError(413, "Dados excedem limite");
     const { canal, agente } = EntradaSchema.parse(JSON.parse(bruto));
     const supabase = clienteServico();
     const urlProjeto = Deno.env.get("SUPABASE_URL");

@@ -10,7 +10,13 @@ alwaysApply: false
 
 - **Evolution confiável (E13-S15): implementada e verificada localmente em 2026-10-27/28**, branch
   `feat/E13-S15-evolution-confiavel` (worktree `.claude/worktrees/E13-S15-evolution-confiavel`),
-  **não commitada nem enviada** (push/PR é do @devops). Espelha o que funciona no TriviAtende
+  **commitada localmente (`4fcc33c`), não enviada** (push/PR é do @devops). Revisão adversarial do
+  projeto inteiro em 2026-10-28: **FAIL** por achados antigos de RLS do cliente, rate limit e custo de
+  IA, nenhum no código novo — ver `specs/006-evolution-confiavel/evidencias/revisao-adversarial-projeto.md`
+  (AV-01..AV-09). **Correções feitas em 2026-10-29** (migration `0041`, rate limit, cota de IA por
+  contato, corpo em stream, gate, guarda de build), cada uma com teste visto vermelho antes; **ainda
+  não commitadas** neste ponto, sem deploy, sem re-verificação independente. AV-04 só fecha depois de
+  um pedido de teste com `X-Forwarded-For` forjado na plataforma (runbook §2, `SECURITY_DEBT.md` P1). Espelha o que funciona no TriviAtende
   (`origin/main` `2a6d0ab7`): servidor com versão **provada** (matriz editável), instância + webhook
   **relido**, QR com aceite de risco, "conectado" só com o número cadastrado, mensagem de teste que
   prova o envio antes de ativar, `@lid` sem telefone e anexos **guardados** (nada descartado em
@@ -23,8 +29,8 @@ alwaysApply: false
   `specs/006-evolution-confiavel/`, ADR-0021/0022, migrations `0039`/`0040`, função `canal-evolution`.
   Corrigido de passagem: a `0039` recriava a regex do Vault **sem** os escopos do OneDrive
   (`microsoft-graph`, `upload-sessao`); agora os mantém e o teste SQL 22 trava a regressão. Verificado:
-  Deno 334 (funções), SQL 22 testes em Postgres 17 limpo (40 migrations), vitest 351, typecheck, Biome,
-  `arch:check`, build, Squawk, `check:edge-functions`, gates 26.
+  Deno 361 (funções), SQL 23 testes em Postgres 17 limpo (41 migrations), vitest 359, typecheck, Biome,
+  `arch:check`, build, Squawk, `check:edge-functions`, gates 29 (números após as correções AV-01..AV-09).
   **Falta (exige servidor e provedor reais):** rodar `scripts/evolution-contract-smoke.ts` no servidor
   Evolution do Akros, registrar a versão, homologar com número de teste (`quickstart.md` passos 3 e 3b,
   incluindo **áudio real de WhatsApp** — Opus em Ogg — e o tempo ponta a ponta) e só então ligar o

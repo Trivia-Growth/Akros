@@ -32,6 +32,7 @@ import {
 } from "./canais/evolution-estado.ts";
 import { type ResultadoUrl, urlBaseNormalizada } from "./canais/evolution-url.ts";
 import { escopoEvolution, type SegredoEvolution, type SegredoServidorEvolution } from "./segredos.ts";
+import { lerTextoComLimite } from "./corpo.ts";
 
 const MAX_BYTES = 16 * 1024;
 const VALIDADE_QR_MS = 60_000;
@@ -505,8 +506,8 @@ export function criarManipuladorCanalEvolution(d: DepsCanalEvolution) {
     try {
       d.exigirCsrf(req);
       const { userId } = await d.autenticarAdmin(req);
-      const bruto = await req.text();
-      if (new TextEncoder().encode(bruto).byteLength > MAX_BYTES) throw new HttpError(413, "Dados excedem o limite");
+      const bruto = await lerTextoComLimite(req, MAX_BYTES);
+      if (bruto === null) throw new HttpError(413, "Dados excedem o limite");
       const entrada = EntradaSchema.parse(JSON.parse(bruto));
       acao = entrada.acao;
       // deno-lint-ignore no-explicit-any

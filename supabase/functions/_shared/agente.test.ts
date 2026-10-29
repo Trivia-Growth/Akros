@@ -17,11 +17,12 @@ interface Chamadas {
   concluidos: Array<{ status: string; textoSaida?: string; custo?: number | null }>;
   ia: number;
   registros: number;
+  cotas: string[];
   logs: Array<Record<string, unknown>>;
 }
 
 function montar(over: Partial<DepsAgente> = {}): { deps: DepsAgente; c: Chamadas } {
-  const c: Chamadas = { enviados: [], concluidos: [], ia: 0, registros: 0, logs: [] };
+  const c: Chamadas = { enviados: [], concluidos: [], ia: 0, registros: 0, cotas: [], logs: [] };
   const deps: DepsAgente = {
     vincularCliente: () => Promise.resolve({ id: "cli-1", nome: "Maria Cliente" }),
     registrar: () => {
@@ -34,6 +35,10 @@ function montar(over: Partial<DepsAgente> = {}): { deps: DepsAgente; c: Chamadas
     },
     agenteDaConta: () => Promise.resolve(REGRA),
     chaveOpenRouter: () => Promise.resolve("sk-or"),
+    cotaContato: (contato) => {
+      c.cotas.push(contato);
+      return Promise.resolve(true);
+    },
     historico: () => Promise.resolve([]),
     gerarResposta: () => {
       c.ia++;
@@ -190,4 +195,57 @@ Deno.test("decidirResposta: sem chave não chama a IA; com chave devolve texto t
   const d = await decidirResposta({ chaveOpenRouter: () => Promise.resolve("k"), gerarResposta: gerar }, REGRA, "oi", [], 900);
   assertEquals(d.tipo === "resposta" && d.texto.length, 900);
   assertEquals(d.tipo === "resposta" && d.custo, 0.5);
+});
+
+// ── AV-05: cota de IA por contato ────────────────────────────────────────────────────────────
+// Sem teto por contato, um remetente que fala demais gasta a conta do OpenRouter até o teto global
+// do webhook (e ainda consome o balde dos demais). Cota esgotada = sem chamada paga, só o
+// encaminhamento à equipe (que não se repete).
+
+Deno.test("AV-05: cota do contato esgotada — NÃO chama a IA e encaminha à equipe", async () => {
+  const { deps, c } = montar({ cotaContato: () => Promise.resolve(false) });
+  assertEquals(await processarEntrada(deps, ENTRADA, OPCOES), "handoff");
+  assertEquals(c.ia, 0, "a chamada paga ao modelo não pode acontecer sem cota");
+  assertEquals(c.enviados, ["Vou encaminhar para a equipe."]);
+  assertEquals(c.concluidos, [{ status: "handoff", textoSaida: "Vou encaminhar para a equipe.", custo: undefined }]);
+  assert(c.logs.some((l) => l.msg === "cota de IA do contato esgotada"), "o excesso precisa ficar observável");
+  assert(!JSON.stringify(c.logs).includes(ENTRADA.contatoExterno), "o log não carrega o telefone");
+});
+
+Deno.test("AV-05: 200 mensagens de um contato — só as da cota chegam ao modelo", async () => {
+  let restante = 30;
+  const { deps, c } = montar({
+    cotaContato: () => Promise.resolve(restante-- > 0),
+    historico: () => Promise.resolve([{ papel: "agente", texto: "Vou encaminhar para a equipe.", em: new Date().toISOString() }]),
+  });
+  for (let i = 0; i < 200; i++) {
+    await processarEntrada(deps, { ...ENTRADA, origemId: `m${i}`, texto: `pergunta ${i}` }, OPCOES);
+  }
+  assertEquals(c.ia, 30, "um contato não gasta mais do que a própria cota");
+});
+
+Deno.test("AV-05: a cota é do CONTATO — consome pelo telefone da entrada", async () => {
+  const { deps, c } = montar();
+  await processarEntrada(deps, ENTRADA, OPCOES);
+  assertEquals(c.cotas, [ENTRADA.contatoExterno]);
+});
+
+Deno.test("AV-05: pedido de humano e anexo não consomem cota (não chamam o modelo)", async () => {
+  const humano = montar();
+  await processarEntrada(humano.deps, { ...ENTRADA, texto: "quero falar com um advogado" }, OPCOES);
+  assertEquals(humano.c.cotas, []);
+
+  const anexo = montar();
+  await processarEntrada(anexo.deps, { ...ENTRADA, texto: "", encaminhar: true }, OPCOES);
+  assertEquals(anexo.c.cotas, []);
+});
+
+Deno.test("AV-05: contato não identificado ou conta inativa não consome cota", async () => {
+  const semId = montar();
+  await processarEntrada(semId.deps, { ...ENTRADA, identificacao: "nao_identificada" }, OPCOES);
+  assertEquals(semId.c.cotas, []);
+
+  const inativa = montar();
+  await processarEntrada(inativa.deps, ENTRADA, { ...OPCOES, contaAtiva: false });
+  assertEquals(inativa.c.cotas, []);
 });

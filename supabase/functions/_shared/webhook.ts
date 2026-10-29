@@ -4,6 +4,7 @@
 import type { DepsAgente } from "./agente.ts";
 import type { Buscador, Provedor } from "./canais/tipos.ts";
 import type { ProvedorTranscricao } from "./canais/transcricao.ts";
+import { lerCorpoComLimite } from "./corpo.ts";
 
 export interface ContaCanal {
   id: string;
@@ -74,12 +75,9 @@ export function resposta429(reiniciaEm: Date | null): Response {
   });
 }
 
-/** Lê o corpo respeitando o limite de bytes ANTES de materializar tudo; `null` se passar. */
-export async function lerCorpoLimitado(req: Request): Promise<Uint8Array | null> {
-  const declarado = req.headers.get("content-length");
-  if (declarado !== null && (!/^\d+$/.test(declarado) || Number(declarado) > LIMITE_CORPO)) return null;
-  const bytes = new Uint8Array(await req.arrayBuffer());
-  return bytes.byteLength <= LIMITE_CORPO ? bytes : null;
+/** Lê o corpo respeitando o limite de bytes em stream (vale também sem `content-length`, AV-07). */
+export function lerCorpoLimitado(req: Request): Promise<Uint8Array | null> {
+  return lerCorpoComLimite(req, LIMITE_CORPO);
 }
 
 export function objetoOuVazio(valor: unknown): Record<string, unknown> {

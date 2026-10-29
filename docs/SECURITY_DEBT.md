@@ -81,6 +81,19 @@ vão ao Supabase Vault via RPC service-role, capability token autentica webhook 
 volta ao browser. Quando Google/Meta/Calendly/Whisper/Fireflies virarem reais, seguem o mesmo
 padrão — o roteiro está em `specs/E13-S12-integracao-evolution-openrouter/`.
 
+### Origem do rate limit depende de configuração confirmada na plataforma (AV-04, revisão adversarial 2026-10-28)
+`_shared/rate-limit.ts` deixou de usar o **primeiro** elemento de `x-forwarded-for` (forjável pelo
+cliente: a discussão pública do Supabase mostra `spoofado,<IP real>`) e passou a usar o **N-ésimo a
+partir da direita** (`RATE_LIMIT_PROXIES_CONFIAVEIS`, padrão 1) ou um cabeçalho que a plataforma
+sobrescreve (`RATE_LIMIT_IP_HEADER`, ex.: `cf-connecting-ip`). **Não sei** quantos proxies ficam na
+frente da função em produção nem se o rewrite do Netlify (`/api/sessao/*`, `/api/leads`) repassa o IP
+real: com o padrão 1 e um proxy extra, todos os pedidos pelo Netlify podem cair no mesmo balde (login:
+10 por 15 min para o sistema inteiro) — incômodo e visível, em vez do limite decorativo de antes.
+**Antes de publicar as funções:** (1) mandar um pedido de teste por cada caminho (direto ao Supabase e
+pelo Netlify) com `X-Forwarded-For` forjado e conferir, em `seguranca.rate_limit`, que o balde NÃO muda
+com o valor forjado; (2) ajustar `RATE_LIMIT_PROXIES_CONFIAVEIS`/`RATE_LIMIT_IP_HEADER` nos secrets das
+Edge Functions até as origens reais se distinguirem. Dono: @devops (precisa de acesso ao ambiente).
+
 ## P2 — aceito, monitorar
 
 ### Credenciais coladas em texto puro no histórico desta sessão de chat
@@ -155,6 +168,23 @@ dois problemas que o tiraram dela.
   original à mão; áudio vazio cai no encaminhamento. Sem filtro de confiança.
 - **Anexos de cliente (documentos de imigração) ficam no bucket privado sem varredura de malware.**
   Só admin abre, por link de 60 s, e a lista de tipos exclui HTML/executável. Varredura = story futura.
+
+- **Cota de IA por contato é um número inicial (AV-05).** `TETOS["agente-ia-contato"]` = 30 respostas por
+  hora por (conta, telefone); esgotar vira encaminhamento à equipe, sem perder a mensagem. Ajustar com o
+  log `cota de IA do contato esgotada`. Contato com muitas contas/telefones diferentes ainda soma gasto
+  (teto global do webhook continua valendo).
+- **DNS rebinding na URL do servidor Evolution (AV-09).** `validarUrl` resolve e confere o destino a cada
+  chamada, mas o `fetch` do Deno resolve de novo e o IP não é fixado: um DNS controlado pelo atacante
+  poderia devolver IP público na conferência e interno no `fetch`. A URL só é configurada pelo admin
+  (já autenticado, CSRF e teto), então o risco é baixo. Fecha com: fixar o IP resolvido na conexão
+  (cliente HTTP com `resolve`/lookup próprio) ou rede de saída restrita.
+- **Pagamentos visíveis a qualquer participante ativo do caso (pergunta ao dono do produto).**
+  `participante_ve_pagamentos_do_caso` e o download de versão ligada a pagamento valem também para
+  `familiar_apoio`. Pode ser decisão da spec 005; a spec não diz. Se não for, restringir por papel.
+- **Modo demo continua aberto por padrão (AV-08).** `isDemoMode` vale `VITE_DEMO_MODE !== "false"` por
+  decisão registrada (AJUSTES A-01, protótipo mockado). O build agora FALHA se `VITE_SUPABASE_URL` existir
+  com o demo ainda ligado (`apps/web/vite.guardas.ts`), então o esquecimento deixou de publicar
+  `/admin` e `/portal` sem guarda. Fecha de vez com A-01 (modo real no Netlify).
 
 ## Referências
 - `seguranca/baseline-minimo.md`, `seguranca/os-grade.md` — checklists que geraram estas entradas.

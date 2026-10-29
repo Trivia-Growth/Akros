@@ -9,6 +9,7 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getSupabaseServiceKey } from "../_shared/auth.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { lerTextoComLimite } from "../_shared/corpo.ts";
 import { checarLimite, resposta429, TETOS } from "../_shared/rate-limit.ts";
 
 const FN = "lead-capturar";
@@ -45,10 +46,9 @@ serve(async (req) => {
   const reqId = crypto.randomUUID().slice(0, 8);
 
   try {
-    const bruto = await req.text();
-    if (new TextEncoder().encode(bruto).byteLength > MAX_BYTES) {
-      return new Response(null, { status: 413, headers: cors });
-    }
+    // AV-07: o teto vale em stream — sem `content-length` (chunked) o corpo não é lido inteiro.
+    const bruto = await lerTextoComLimite(req, MAX_BYTES);
+    if (bruto === null) return new Response(null, { status: 413, headers: cors });
     const entrada = InputSchema.parse(JSON.parse(bruto));
 
     const supabase = createClient(

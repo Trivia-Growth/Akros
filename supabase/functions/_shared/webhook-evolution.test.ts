@@ -107,6 +107,7 @@ function montar(a: Opcoes = {}): { io: IOEvolution; e: Espiao } {
     },
     limiteTranscricao: () => Promise.resolve({ permitido: a.limiteTranscricao ?? true, reiniciaEm: null }),
     criarDeps: ({ enviar }): DepsAgente => ({
+      cotaContato: () => Promise.resolve(true),
       vincularCliente: (contato) => {
         e.vinculos.push(contato);
         return Promise.resolve(a.cliente ?? null);

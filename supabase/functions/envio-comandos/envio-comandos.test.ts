@@ -331,3 +331,14 @@ Deno.test("enviar_etapa_para_avaliacao: etapa fora de 'pendente' (RPC 55000) é 
   const r = await h(req(ENVIAR_ETAPA));
   assertEquals(r.status, 409);
 });
+
+// AV-06: a presença de `checarLimite` no arquivo não prova que o handler a consulta. Este teste prova.
+Deno.test("AV-06: limite de uso é 429 com Retry-After, antes de autenticar (RPC nunca chamada)", async () => {
+  const { h, e } = montar({ limite: false });
+  const r = await h(req(RESERVAR_ENVIO));
+  assertEquals(r.status, 429);
+  assertEquals(typeof r.headers.get("retry-after"), "string");
+  assertEquals(e.rpc, 0);
+  assertEquals(e.obterReservaChamadas, 0);
+  assertEquals(e.gravacoes, 0);
+});

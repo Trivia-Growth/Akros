@@ -52,3 +52,16 @@
 - [ ] T026 **Não feito aqui (exige provedor e servidor reais):** áudio real de WhatsApp (Opus em Ogg) transcrito pelo provedor escolhido e medição do tempo ponta a ponta — `quickstart.md` passo 3b
 
 - [ ] T019 **Não feito aqui (exige servidor real):** smoke contra o servidor Evolution do Akros e homologação com número de teste — checklist em `quickstart.md`
+
+## Fase 9 — Correções da revisão adversarial do projeto (AV-01..AV-09)
+
+Relatório: `evidencias/revisao-adversarial-projeto.md`. Cada item nasceu de teste vermelho.
+
+- [x] T027 Migration `0041_E13-S15_cliente_sem_escrita_operacional.sql` + teste SQL `23-cliente-sem-escrita-operacional_test.sql`: cliente sem UPDATE em `crm.clientes` e `agenda.reunioes`; `GRANT INSERT` por coluna em `lgpd.*`; admin intacto (AV-01..AV-03)
+- [x] T028 `rate-limit.ts`: origem pelo N-ésimo `x-forwarded-for` da direita ou cabeçalho da plataforma, `checarLimitePorIdentidade`, funções puras testadas sem permissão de ambiente (`rate-limit.test.ts`) (AV-04)
+- [x] T029 `agente.ts`/`io-supabase.ts`: `cotaContato` antes da chamada paga, `TETOS["agente-ia-contato"]`, esgotou ⇒ encaminhamento sem repetir, log sem telefone (`agente.test.ts`) (AV-05)
+- [x] T030 `check-edge-functions.mjs`: exige a CHAMADA de `checarLimite(` e teste de 429 por handler compartilhado + 3 testes de gate; testes de 429 de `envio-comandos`, `arquivo-baixar`, `arquivo-processar` (AV-06)
+- [x] T031 `_shared/corpo.ts`: corpo lido em stream com corte no teto; aplicado a webhooks, `lead-capturar`, `telemetria-erro`, `sessao-login` e handlers autenticados (`corpo.test.ts`) (AV-07)
+- [x] T032 `apps/web/vite.guardas.ts` + plugin de build: `vite build` falha com `VITE_SUPABASE_URL` e demo ligado (AV-08); AV-09 e as ressalvas em `docs/SECURITY_DEBT.md`
+- [ ] T033 **Não feito aqui:** deploy da `0041` e das funções; pedido de teste com `X-Forwarded-For` forjado e ajuste de `RATE_LIMIT_PROXIES_CONFIAVEIS`/`RATE_LIMIT_IP_HEADER` (AV-04); re-verificação independente (`/revisao-adversarial`)
+

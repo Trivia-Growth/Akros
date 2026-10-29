@@ -51,16 +51,36 @@ os escopos antigos continuam aceitos (`evolution:`, `openrouter:`, `microsoft-gr
 `upload-sessao:`; o teste SQL `22-transcricao-audio_test.sql` faz isso). Ensaiar antes
 (`BEGIN; …; ROLLBACK;`). Reverso no cabeçalho; só reverter com a transcrição desligada.
 
+## 1d. Migration `0041` (E13-S15, correções da revisão adversarial AV-01..AV-03)
+
+Tira do cliente a escrita que ele não deve ter: remove as policies de UPDATE do cliente em
+`crm.clientes` e `agenda.reunioes` e troca o `INSERT` em `lgpd.solicitacoes`/`lgpd.consentimentos` por
+`GRANT` por coluna. Ensaiar antes (`BEGIN; …; ROLLBACK;`) e rodar o teste SQL
+`supabase/tests/23-cliente-sem-escrita-operacional_test.sql` contra o banco real em transação.
+Depois de aplicar: com sessão de **cliente**, `PATCH` em `crm.clientes` do próprio id responde sem
+alterar nada; com sessão de **admin**, o painel de clientes e a agenda continuam editando. Reverso no
+cabeçalho. O portal não escreve nessas tabelas, então não há tela a conferir além de abrir o portal.
+
 ## 2. Edge Functions
 
+As correções da revisão adversarial mexem em `_shared/` (rate limit, leitura de corpo, pipeline do
+agente), que entra no pacote de **todas** as funções. Faça o deploy de todas:
+
 ```bash
-for f in evolution-webhook canal-evolution integracoes-ia-salvar meta-whatsapp-webhook meta-instagram-webhook; do
+for f in $(ls supabase/functions | grep -v '^_'); do
   supabase functions deploy "$f" --project-ref mhxopadkizktsenohnbm --no-verify-jwt
 done
 ```
 
 Conferir `GET /functions/v1/<f>` de cada uma: 405 (webhooks e salvar) em vez de 404.
-`sessao-*`, `lead-capturar` e `telemetria-erro` não mudaram.
+
+**Origem do rate limit (AV-04) — conferir ANTES de confiar nos tetos.** O limite deixou de usar o 1º
+elemento de `x-forwarded-for` (forjável). Faça um pedido de teste por caminho (direto em
+`/functions/v1/sessao-login` e pelo Netlify em `/api/sessao/login`), cada um com `X-Forwarded-For`
+forjado diferente, e confira em `seguranca.rate_limit` que o balde **não** muda com o valor forjado e
+que os dois caminhos não caem todos num balde só. Se caírem, ajuste os secrets das funções:
+`RATE_LIMIT_PROXIES_CONFIAVEIS` (quantos proxies anexam o IP; padrão 1) ou `RATE_LIMIT_IP_HEADER`
+(cabeçalho que a plataforma sobrescreve, p.ex. `cf-connecting-ip`). Detalhe em `docs/SECURITY_DEBT.md`.
 
 ## 3. CORS e variáveis
 

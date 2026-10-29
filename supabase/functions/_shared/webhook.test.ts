@@ -54,6 +54,7 @@ function montarIO(a: {
     criarDeps: ({ enviar }): DepsAgente => {
       e.depsCriadas++;
       return {
+        cotaContato: () => Promise.resolve(true),
         vincularCliente: () => Promise.resolve(null),
         registrar: ({ entrada }) => {
           if (a.registrarFalha) return Promise.reject(new Error("banco"));

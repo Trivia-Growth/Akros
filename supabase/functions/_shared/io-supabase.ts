@@ -14,11 +14,14 @@ import {
   type SegredoTranscricao,
 } from "./integracoes.ts";
 import { gerarRespostaOpenRouter, type RegraAgente } from "./openrouter.ts";
+import { TETOS, checarLimitePorIdentidade } from "./rate-limit.ts";
 import type { ProvedorTranscricao } from "./canais/transcricao.ts";
 import type { ContaCanal, IOEvolution, IOWebhook } from "./webhook.ts";
 
-// O teto de uso NÃO é montado aqui: cada `index.ts` chama `checarLimite` com o seu próprio teto, à
-// vista, porque é o que `check-edge-functions` exige de toda função pública (E14-S01 AC-6).
+// O teto de uso do ENDPOINT NÃO é montado aqui: cada `index.ts` chama `checarLimite` com o seu
+// próprio teto, à vista, porque é o que `check-edge-functions` exige de toda função pública (E14-S01
+// AC-6). O que mora aqui é a cota de IA por CONTATO (`cotaContato`, AV-05): ela mede gasto, não
+// tráfego, e só o pipeline sabe quando uma chamada paga vai acontecer.
 export function criarIOSupabase(): Omit<IOWebhook, "limite"> {
   let cliente: SupabaseClient | null = null;
   // Criação preguiçosa: ambiente incompleto vira erro de requisição (500), não queda no boot.
@@ -113,6 +116,16 @@ export function criarIOSupabase(): Omit<IOWebhook, "limite"> {
         async chaveOpenRouter(agenteId) {
           const segredo = await obterSegredo<SegredoOpenRouter>(sb(), escopoOpenRouter(agenteId));
           return segredo?.apiKey || null;
+        },
+
+        async cotaContato(contatoExterno) {
+          // Fail-closed (padrão de `checarLimitePorIdentidade`): limitador fora = sem chamada paga.
+          const { permitido } = await checarLimitePorIdentidade({
+            identidade: `${contaId}:${contatoExterno}`,
+            rota: "agente-ia-contato",
+            ...TETOS["agente-ia-contato"],
+          });
+          return permitido;
         },
 
         async historico(conversaId) {
