@@ -31,14 +31,50 @@ export interface Resultado {
   reiniciaEm: Date | null;
 }
 
+export interface ConfigOrigem {
+  /** Proxies confiáveis que anexam o IP do cliente a `x-forwarded-for` antes da função. */
+  proxiesConfiaveis: number;
+  /** Cabeçalho que a plataforma sobrescreve (ex.: `cf-connecting-ip`); vence `x-forwarded-for`. */
+  cabecalhoIp: string | null;
+}
+
 /**
- * Origem do pedido. Atrás do proxy do Netlify e do Supabase, `remoteAddr` é o proxy — o IP do
- * cliente vem no primeiro elemento de `x-forwarded-for`.
+ * Lê a configuração de origem. Padrão: 1 proxy (o gateway da plataforma), sem cabeçalho dedicado.
+ * Valor de proxies fora de 1..5 volta ao padrão: o erro seguro é confiar em MENOS proxies (balde
+ * compartilhado, visível), nunca em mais (balde forjável, silencioso). O `env` entra por parâmetro
+ * para a regra ser testável sem permissão de ambiente.
  */
-function origem(req: Request): string {
-  const encaminhado = req.headers.get("x-forwarded-for") ?? "";
-  const primeiro = encaminhado.split(",")[0]?.trim();
-  return primeiro || req.headers.get("cf-connecting-ip") || "desconhecido";
+export function lerConfigOrigem(env: (nome: string) => string | undefined): ConfigOrigem {
+  const n = Number.parseInt(env("RATE_LIMIT_PROXIES_CONFIAVEIS") ?? "", 10);
+  const cabecalho = env("RATE_LIMIT_IP_HEADER")?.trim().toLowerCase();
+  return {
+    proxiesConfiaveis: Number.isInteger(n) && n >= 1 && n <= 5 ? n : 1,
+    cabecalhoIp: cabecalho ? cabecalho : null,
+  };
+}
+
+/**
+ * Origem do pedido (AV-04). Cada proxy ANEXA ao fim de `x-forwarded-for` o IP de quem lhe falou;
+ * o que vem antes é o que o cliente mandou, e é forjável. Por isso a origem nunca é o primeiro
+ * elemento: é o N-ésimo a partir da DIREITA, com N = proxies confiáveis. Sem prova (cabeçalho curto
+ * demais ou ausente), a origem é "desconhecido" — todos no mesmo balde, que é incômodo e visível,
+ * em vez de um balde por valor inventado.
+ *
+ * `RATE_LIMIT_IP_HEADER` nomeia um cabeçalho que a PLATAFORMA sobrescreve; presente, ele vence.
+ * Qual dos dois vale em produção depende de quem fica na frente da função e precisa ser confirmado
+ * lá — ver `docs/SECURITY_DEBT.md` (AV-04).
+ */
+export function origemDoPedido(headers: Headers, cfg: ConfigOrigem): string {
+  if (cfg.cabecalhoIp) {
+    const valor = headers.get(cfg.cabecalhoIp)?.split(",")[0]?.trim();
+    if (valor) return valor;
+  }
+  const partes = (headers.get("x-forwarded-for") ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const n = cfg.proxiesConfiaveis;
+  return partes.length >= n ? partes[partes.length - n] : "desconhecido";
 }
 
 /**
@@ -46,29 +82,52 @@ function origem(req: Request): string {
  * e export numa tabela que existe só para contar. O segredo impede que alguém com acesso de
  * leitura à tabela reconstrua o IP por força bruta sobre o espaço de endereços (que é pequeno).
  */
-async function chaveDe(req: Request, rota: string): Promise<string> {
-  const segredo = Deno.env.get("RATE_LIMIT_SECRET") ?? "";
-  const dados = new TextEncoder().encode(`${origem(req)}:${segredo}:${rota}`);
+export async function chaveHash(sujeito: string, rota: string, segredo: string): Promise<string> {
+  const dados = new TextEncoder().encode(`${sujeito}:${segredo}:${rota}`);
   const digest = await crypto.subtle.digest("SHA-256", dados);
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
 
-export async function checarLimite({
-  req,
-  rota,
-  teto,
-  janelaSegundos,
-  falharFechado = true,
-}: OpcoesLimite): Promise<Resultado> {
+const segredoDoLimite = () => Deno.env.get("RATE_LIMIT_SECRET") ?? "";
+
+export function checarLimite(opcoes: OpcoesLimite): Promise<Resultado> {
+  return consumir(
+    () =>
+      chaveHash(
+        origemDoPedido(opcoes.req.headers, lerConfigOrigem((k) => Deno.env.get(k))),
+        opcoes.rota,
+        segredoDoLimite(),
+      ),
+    opcoes,
+  );
+}
+
+export interface OpcoesLimiteIdentidade extends Omit<OpcoesLimite, "req"> {
+  /**
+   * Quem consome a cota quando o sujeito NÃO é o IP — por exemplo, um contato de canal (AV-05). Entra
+   * hasheado na chave, junto com a rota.
+   */
+  identidade: string;
+}
+
+/** Cota por identidade (contato, conta) em vez de por origem de rede. Mesmo contrato de falha. */
+export function checarLimitePorIdentidade(opcoes: OpcoesLimiteIdentidade): Promise<Resultado> {
+  return consumir(() => chaveHash(`id:${opcoes.identidade}`, opcoes.rota, segredoDoLimite()), opcoes);
+}
+
+async function consumir(
+  chave: () => Promise<string>,
+  { rota, teto, janelaSegundos, falharFechado = true }: Omit<OpcoesLimite, "req">,
+): Promise<Resultado> {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       getSupabaseServiceKey(),
     );
     const { data, error } = await supabase.schema("seguranca").rpc("consumir_cota", {
-      p_chave: await chaveDe(req, rota),
+      p_chave: await chave(),
       p_teto: teto,
       p_janela_segundos: janelaSegundos,
     });
@@ -134,8 +193,21 @@ export const TETOS = {
   "lead-capturar": { teto: 5, janelaSegundos: 3600 },
   // Painel administrativo: poucas gravações, mas sempre fail-closed pois troca chaves e webhook.
   "integracoes-ia-salvar": { teto: 10, janelaSegundos: 3600 },
+  // Canal Evolution (E13-S15): configuração é rara, mas a tela consulta o estado a cada poucos
+  // segundos enquanto o QR está aberto — teto por hora folgado para isso, ainda fail-closed (a
+  // função troca chaves e instala webhook).
+  "canal-evolution": { teto: 600, janelaSegundos: 3600 },
+  // Transcrição de áudio (E13-S15, ADR-0022): cada chamada custa no provedor, e o webhook chega de um
+  // IP só — o teto é, na prática, o limite de gasto por hora. Estourar não perde a mensagem (ela
+  // vira anexo + encaminhamento). Fail-closed: sem limitador, não se gasta.
+  "transcricao-audio": { teto: 120, janelaSegundos: 3600 },
   // Evolution pode concentrar tráfego em um IP; teto protege Vault/LLM sem bloquear uso normal.
   "evolution-webhook": { teto: 120, janelaSegundos: 60 },
+  // AV-05: respostas de IA por CONTATO (conta + telefone), não por IP. Cada uma custa no provedor;
+  // 30 por hora é folga larga para uma conversa de verdade e barreira para quem despeja mensagens.
+  // Esgotar não perde a mensagem: ela vira encaminhamento à equipe. Fail-closed: sem limitador, não
+  // se gasta.
+  "agente-ia-contato": { teto: 30, janelaSegundos: 3600 },
   // Playground do admin: cada teste gasta crédito de LLM, então o teto é por hora, fail-closed.
   "agente-playground": { teto: 120, janelaSegundos: 3600 },
   // A Meta entrega em rajada (um evento por mensagem) a partir de poucos IPs; teto largo para não

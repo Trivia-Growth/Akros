@@ -278,3 +278,20 @@ Deno.test("sem segredo microsoft-graph no Vault bloqueia com 'reconectar conta M
   assertEquals(resultado, { processado: true, resultado: "bloqueado", motivo: MOTIVO_RECONECTAR });
   assertEquals(e.marcados.length, 1);
 });
+
+// AV-06: a presença de `checarLimite` no arquivo não prova que o handler a consulta. Este teste prova.
+Deno.test("AV-06: limite de uso é 429 com Retry-After e nenhum trabalho é adquirido", async () => {
+  const { io, e } = montarIO();
+  let adquiriu = false;
+  const handler = criarManipuladorArquivoProcessar({
+    autenticarServico: () => {},
+    limite: () => Promise.resolve({ permitido: false, reiniciaEm: new Date(Date.now() + 30_000) }),
+    io: { ...io, adquirirTrabalho: (...a) => { adquiriu = true; return io.adquirirTrabalho(...a); } },
+    graph: montarGraph(),
+  });
+  const resposta = await handler(new Request("https://fn.local/arquivo-processar", { method: "POST" }));
+  assertEquals(resposta.status, 429);
+  assertEquals(typeof resposta.headers.get("retry-after"), "string");
+  assertEquals(adquiriu, false);
+  assertEquals(e.marcados.length, 0);
+});

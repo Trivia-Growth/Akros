@@ -25,6 +25,7 @@ import {
   CANAL_INICIAL,
   type FormularioAgente,
   type FormularioCanal,
+  type ProvedorMeta,
   corpoDeSalvar,
   gerarTokenVerificacao,
   limparSegredos,
@@ -39,6 +40,8 @@ import type {
   ProvedorAgenda,
   ProvedorCanal,
 } from "../domain/types";
+import { CanalEvolutionPainel } from "./CanalEvolutionPainel";
+import { TranscricaoAudioPainel } from "./TranscricaoAudioPainel";
 
 const PROVEDOR_AGENDA: Record<ProvedorAgenda, string> = {
   google: "Google Workspace",
@@ -130,14 +133,15 @@ export function ConfiguracoesRealPage() {
         )}
       </Secao>
 
+      <CanalEvolutionPainel agentes={agentesIA} />
+      <TranscricaoAudioPainel />
       <IntegracaoAgentes contasCanal={contasCanal} agentesIA={agentesIA} aoSalvar={refetch} />
       <IntegracaoMicrosoftCard />
     </div>
   );
 }
 
-const ROTULO_CANAL: Record<ProvedorCanal, string> = {
-  evolution: "WhatsApp · Evolution",
+const ROTULO_CANAL: Record<ProvedorMeta, string> = {
   whatsapp_oficial: "WhatsApp · API oficial (Meta)",
   instagram: "Instagram · Direct (Meta)",
 };
@@ -162,7 +166,6 @@ function IntegracaoAgentes({
     webhookUrl: string;
   } | null>(null);
   const contasDoTipo = contasCanal.filter((conta) => conta.provedor === canal.provedor);
-  const ehMeta = canal.provedor !== "evolution";
   const primeiraVez = !canal.contaId;
   const urlProjeto = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   const urlDaConta = urlWebhookConta(urlProjeto, canal.provedor, canal.contaId);
@@ -175,7 +178,7 @@ function IntegracaoAgentes({
     setAgente((atual) => ({ ...atual, [chave]: valor }));
   }
 
-  function escolherTipo(provedor: ProvedorCanal) {
+  function escolherTipo(provedor: ProvedorMeta) {
     // Trocar o tipo zera tudo do canal: campo de um provedor não pode vazar para o corpo de outro.
     setCanal({
       ...CANAL_INICIAL,
@@ -195,8 +198,6 @@ function IntegracaoAgentes({
       nomeConta: conta?.nomeExibicao ?? CANAL_INICIAL.nomeConta,
       identificador: conta?.identificador ?? "",
       ativa: conta?.ativa ?? true,
-      baseUrl: conta?.evolution?.baseUrl ?? "",
-      instancia: conta?.evolution?.instancia ?? "",
       phoneNumberId: conta?.meta?.phoneNumberId ?? "",
       wabaId: conta?.meta?.wabaId ?? "",
       igAccountId: conta?.meta?.igAccountId ?? "",
@@ -250,7 +251,7 @@ function IntegracaoAgentes({
         agenteId: resposta.agenteId ?? atual.agenteId,
       }));
       await aoSalvar();
-      if (conectarCanal && ehMeta && resposta.webhookUrl) {
+      if (conectarCanal && resposta.webhookUrl) {
         // Meta: falta o passo no painel dela; mantém o diálogo aberto com o que copiar.
         setResultado({ provedor: canal.provedor, webhookUrl: resposta.webhookUrl });
       } else {
@@ -281,9 +282,9 @@ function IntegracaoAgentes({
                 : `${agentesIA.length} agente(s) configurado(s).`}
             </p>
             <p className="mt-1 max-w-2xl text-sm text-ink-soft">
-              Escolha o canal (Evolution, API oficial do WhatsApp ou Direct do Instagram). Chaves
-              são enviadas uma vez por HTTPS, guardadas cifradas no Vault e nunca aparecem de novo
-              nesta tela.
+              Escolha o canal (API oficial do WhatsApp ou Direct do Instagram; a Evolution tem
+              painel próprio, acima). Chaves são enviadas uma vez por HTTPS, guardadas cifradas no
+              Vault e nunca aparecem de novo nesta tela.
             </p>
           </div>
           <Button
@@ -386,9 +387,9 @@ function IntegracaoAgentes({
                 value={canal.provedor}
                 disabled={!primeiraVez}
                 hint={primeiraVez ? undefined : "O tipo não muda numa conta existente."}
-                onChange={(evento) => escolherTipo(evento.target.value as ProvedorCanal)}
+                onChange={(evento) => escolherTipo(evento.target.value as ProvedorMeta)}
               >
-                {(Object.keys(ROTULO_CANAL) as ProvedorCanal[]).map((tipo) => (
+                {(Object.keys(ROTULO_CANAL) as ProvedorMeta[]).map((tipo) => (
                   <option key={tipo} value={tipo}>
                     {ROTULO_CANAL[tipo]}
                   </option>
@@ -426,43 +427,7 @@ function IntegracaoAgentes({
                 />
               </div>
 
-              {canal.provedor === "evolution" ? (
-                <>
-                  <Input
-                    required
-                    type="url"
-                    label="URL HTTPS da Evolution"
-                    placeholder="https://evolution.suaempresa.com"
-                    value={canal.baseUrl}
-                    onChange={(evento) => alterarCanal("baseUrl", evento.target.value)}
-                  />
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Input
-                      required
-                      label="Nome da instância"
-                      value={canal.instancia}
-                      onChange={(evento) => alterarCanal("instancia", evento.target.value)}
-                    />
-                    <Input
-                      type="password"
-                      autoComplete="new-password"
-                      required={primeiraVez}
-                      label="API key Evolution"
-                      hint={
-                        primeiraVez
-                          ? "Obrigatória na primeira configuração."
-                          : "Vazio mantém a chave guardada."
-                      }
-                      value={canal.chaveEvolution}
-                      onChange={(evento) => alterarCanal("chaveEvolution", evento.target.value)}
-                    />
-                  </div>
-                  <p className="text-xs text-ink-soft">
-                    O webhook da Evolution é registrado automaticamente ao salvar. O número precisa
-                    estar pareado (QR) no painel da própria Evolution.
-                  </p>
-                </>
-              ) : (
+              {
                 <>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {canal.provedor === "whatsapp_oficial" ? (
@@ -551,7 +516,7 @@ function IntegracaoAgentes({
                     </p>
                   ) : null}
                 </>
-              )}
+              }
               <Checkbox
                 label="Canal conectado e apto a receber mensagens"
                 checked={canal.ativa}

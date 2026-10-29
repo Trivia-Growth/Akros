@@ -8,6 +8,34 @@ alwaysApply: false
 
 ## Agora
 
+- **Evolution confiável (E13-S15): implementada e verificada localmente em 2026-10-27/28**, branch
+  `feat/E13-S15-evolution-confiavel` (worktree `.claude/worktrees/E13-S15-evolution-confiavel`),
+  **commitada localmente (`4fcc33c`), não enviada** (push/PR é do @devops). Revisão adversarial do
+  projeto inteiro em 2026-10-28: **FAIL** por achados antigos de RLS do cliente, rate limit e custo de
+  IA, nenhum no código novo — ver `specs/006-evolution-confiavel/evidencias/revisao-adversarial-projeto.md`
+  (AV-01..AV-09). **Correções feitas em 2026-10-29** (migration `0041`, rate limit, cota de IA por
+  contato, corpo em stream, gate, guarda de build), cada uma com teste visto vermelho antes; **ainda
+  não commitadas** neste ponto, sem deploy, sem re-verificação independente. AV-04 só fecha depois de
+  um pedido de teste com `X-Forwarded-For` forjado na plataforma (runbook §2, `SECURITY_DEBT.md` P1). Espelha o que funciona no TriviAtende
+  (`origin/main` `2a6d0ab7`): servidor com versão **provada** (matriz editável), instância + webhook
+  **relido**, QR com aceite de risco, "conectado" só com o número cadastrado, mensagem de teste que
+  prova o envio antes de ativar, `@lid` sem telefone e anexos **guardados** (nada descartado em
+  silêncio), vínculo com cliente só quando único. **Áudio vira texto (2026-10-28, ADR-0022):**
+  Groq (padrão) ou OpenRouter, configuração única em Configurações → "Transcrição de áudio" (chave no
+  Vault, aceite do envio de dados por provedor, chave+modelo verificados antes de ligar, nasce
+  desligada); falha de qualquer tipo guarda o áudio, registra o motivo e envia o encaminhamento; teto
+  de 120/h. O `transcrever-audio` do TriviAtende **nunca foi testado ponta a ponta**, então o contrato
+  foi conferido nas docs oficiais (OpenAI `whisper-1` descontinuado em 2027-02-26: fora). Spec
+  `specs/006-evolution-confiavel/`, ADR-0021/0022, migrations `0039`/`0040`, função `canal-evolution`.
+  Corrigido de passagem: a `0039` recriava a regex do Vault **sem** os escopos do OneDrive
+  (`microsoft-graph`, `upload-sessao`); agora os mantém e o teste SQL 22 trava a regressão. Verificado:
+  Deno 361 (funções), SQL 23 testes em Postgres 17 limpo (41 migrations), vitest 359, typecheck, Biome,
+  `arch:check`, build, Squawk, `check:edge-functions`, gates 29 (números após as correções AV-01..AV-09).
+  **Falta (exige servidor e provedor reais):** rodar `scripts/evolution-contract-smoke.ts` no servidor
+  Evolution do Akros, registrar a versão, homologar com número de teste (`quickstart.md` passos 3 e 3b,
+  incluindo **áudio real de WhatsApp** — Opus em Ogg — e o tempo ponta a ponta) e só então ligar o
+  agente. E13-S16 (saída durável, saúde, resposta humana, transcrição fora do webhook) é o próximo
+  passo. Meta/Instagram não mudaram.
 - **Cliente 360 operacional (E03-S07): implementação em andamento desde 2026-10-11, progresso em
   2026-10-16.** Branch `feat/E03-S07-cliente-360-operacional`, worktree própria, **não enviada**
   (push/PR é do @devops). Execução via subagent-driven-development: um implementador por task,

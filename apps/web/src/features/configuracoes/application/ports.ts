@@ -70,3 +70,44 @@ export interface ConfiguracoesRepository {
 
   desconectarContaCanal(contaId: string): Promise<void>;
 }
+
+/**
+ * E13-S15 — canal Evolution. Leitura direta (RLS: só admin) e comandos pela Edge Function
+ * `canal-evolution`. Nenhum método devolve ou aceita de volta segredo: a chave do servidor entra uma
+ * vez em `salvarServidor` e nunca mais volta.
+ */
+export interface EvolutionCanalPort {
+  carregar(): Promise<import("../domain/evolution").DadosEvolution>;
+  salvarServidor(
+    urlBase: string,
+    apiKey: string,
+  ): Promise<import("../domain/evolution").ResultadoServidor>;
+  registrarCompatibilidade(entrada: {
+    versao: string;
+    capacidades: string[];
+    afetadaLogout: boolean;
+    evidencia: string;
+  }): Promise<{ compativel: boolean }>;
+  criarCanal(nomeExibicao: string, numero: string): Promise<{ contaId: string }>;
+  criarInstancia(contaId: string): Promise<void>;
+  instalarWebhook(contaId: string): Promise<void>;
+  aceitarRisco(contaId: string): Promise<void>;
+  gerarQr(contaId: string): Promise<{ qrBase64: string; expiraEm: string }>;
+  consultarEstado(contaId: string): Promise<import("../domain/evolution").ResultadoEstado>;
+  enviarTeste(contaId: string, numero: string): Promise<void>;
+  definirAtiva(contaId: string, ativa: boolean): Promise<void>;
+  vincularAgente(contaId: string, agenteId: string): Promise<void>;
+}
+
+/**
+ * E13-S15 (ADR-0022) — transcrição de áudio. Leitura direta (RLS: só admin); toda escrita passa
+ * pela função `canal-evolution`, que guarda a chave no cofre. A chave entra por `salvar` UMA vez e
+ * nunca volta.
+ */
+export interface TranscricaoAudioPort {
+  carregar(): Promise<import("../domain/transcricao").TranscricaoAudio | null>;
+  salvar(entrada: import("../domain/transcricao").EntradaTranscricao): Promise<void>;
+  /** Prova chave e modelo no provedor, sem gastar transcrição. */
+  testar(): Promise<void>;
+  definirAtiva(ativa: boolean): Promise<void>;
+}

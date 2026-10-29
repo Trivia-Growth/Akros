@@ -13,10 +13,14 @@ import { SupabaseComunicacaoAdminConsulta } from "@/features/comunicacao/infrast
 import { SupabaseComunicacaoConsulta } from "@/features/comunicacao/infrastructure/SupabaseComunicacaoConsulta";
 import type {
   ConfiguracoesConsulta,
+  EvolutionCanalPort,
   IntegracaoOneDriveConsulta,
+  TranscricaoAudioPort,
 } from "@/features/configuracoes/application/ports";
 import { SupabaseConfiguracoesConsulta } from "@/features/configuracoes/infrastructure/SupabaseConfiguracoesConsulta";
+import { SupabaseEvolutionCanal } from "@/features/configuracoes/infrastructure/SupabaseEvolutionCanal";
 import { SupabaseIntegracaoOneDriveConsulta } from "@/features/configuracoes/infrastructure/SupabaseIntegracaoOneDriveConsulta";
+import { SupabaseTranscricaoAudio } from "@/features/configuracoes/infrastructure/SupabaseTranscricaoAudio";
 import type {
   CasoComandos,
   Cliente360AdminConsulta,
@@ -69,6 +73,8 @@ let requisitosReais: RequisitoDocumentoRepository | undefined;
 let requisitosDemo: RequisitoDocumentoRepository | undefined;
 let configuracoesReais: ConfiguracoesConsulta | undefined;
 let integracaoOneDriveReal: IntegracaoOneDriveConsulta | undefined;
+let evolutionCanalReal: EvolutionCanalPort | undefined;
+let transcricaoAudioReal: TranscricaoAudioPort | undefined;
 let agendaReal: AgendaConsulta | undefined;
 let jornadaReal: JornadaConsulta | undefined;
 let documentosReal: DocumentosConsulta | undefined;
@@ -110,6 +116,19 @@ export function obterConsultaConfiguracoesReais(): ConfiguracoesConsulta {
 export function obterConsultaIntegracaoOneDriveReal(): IntegracaoOneDriveConsulta {
   if (!integracaoOneDriveReal) integracaoOneDriveReal = new SupabaseIntegracaoOneDriveConsulta();
   return integracaoOneDriveReal;
+}
+
+/** E13-S15 — canal Evolution (servidor, instância, webhook, QR, estado). Sem variante Mock: só existe
+ *  com backend real. */
+export function obterEvolutionCanalReal(): EvolutionCanalPort {
+  if (!evolutionCanalReal) evolutionCanalReal = new SupabaseEvolutionCanal();
+  return evolutionCanalReal;
+}
+
+/** E13-S15 (ADR-0022) — transcrição de áudio. Sem variante Mock: só existe com backend real. */
+export function obterTranscricaoAudioReal(): TranscricaoAudioPort {
+  if (!transcricaoAudioReal) transcricaoAudioReal = new SupabaseTranscricaoAudio();
+  return transcricaoAudioReal;
 }
 
 export function obterConsultaJornadaReal(): JornadaConsulta {

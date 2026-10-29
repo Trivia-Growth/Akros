@@ -32,5 +32,10 @@ export function useComunicacaoAdminSupabase() {
     void refetch();
   }, [refetch]);
 
-  return { ...dados, carregando, erro, refetch };
+  const urlDoAnexo = useCallback(
+    (caminho: string) => obterConsultaComunicacaoAdminReal().urlDoAnexo(caminho),
+    [],
+  );
+
+  return { ...dados, carregando, erro, refetch, urlDoAnexo };
 }

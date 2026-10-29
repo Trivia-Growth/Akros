@@ -18,6 +18,7 @@ import { corsHeaders } from "./cors.ts";
 import { requireCsrfHeader } from "./csrf.ts";
 import type { IOGraphMicrosoftOAuth } from "./graph-microsoft.ts";
 import { comIdempotencia, type IOIdempotencia } from "./idempotencia.ts";
+import { lerTextoComLimite } from "./corpo.ts";
 
 const FN = "caso-comandos";
 // Payload é só texto/número/UUID (sem upload) — teto generoso para a lista de condições do
@@ -305,8 +306,8 @@ export function criarManipuladorCasoComandos(io: IOCasoComandos) {
       // Nunca confia em identidade vinda do body — userId sempre resolvido pela sessão.
       const { userId } = await io.autenticarAdmin(req);
 
-      const bruto = await req.text();
-      if (new TextEncoder().encode(bruto).byteLength > MAX_BYTES) {
+      const bruto = await lerTextoComLimite(req, MAX_BYTES);
+      if (bruto === null) {
         throw new HttpError(413, "Dados excedem limite");
       }
 

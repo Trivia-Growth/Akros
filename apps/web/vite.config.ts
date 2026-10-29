@@ -1,9 +1,23 @@
 import { URL, fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
+import { loadEnv } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
+import { verificarAmbienteDeBuild } from "./vite.guardas";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      // AV-08: só no `vite build` (o dev server e o e2e rodam com demo desligado e sem backend de
+      // propósito). Falhar aqui é melhor que publicar /admin e /portal sem guarda por esquecimento.
+      name: "akros:guarda-ambiente-de-build",
+      apply: "build",
+      config(_, { mode }) {
+        const erro = verificarAmbienteDeBuild(loadEnv(mode, process.cwd(), "VITE_"));
+        if (erro) throw new Error(erro);
+      },
+    },
+  ],
   // E12-S03: e2e/ é suite do Playwright (@playwright/test), não do Vitest — os dois definem
   // `test`/`expect` globais e colidem se o Vitest tentar coletar os arquivos .spec.ts de lá.
   test: {

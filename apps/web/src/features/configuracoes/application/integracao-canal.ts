@@ -1,9 +1,14 @@
 // Formulário de canal + agente (E13-S13). Funções puras: o componente só liga estado e rede.
 import type { ProvedorCanal } from "../domain/types";
 
+/**
+ * Canais configurados por este formulário (Meta). A Evolution tem fluxo próprio, com servidor,
+ * instância, webhook relido, QR e estado (E13-S15): ver `CanalEvolutionPainel`.
+ */
+export type ProvedorMeta = Exclude<ProvedorCanal, "evolution">;
+
 /** Edge Function que recebe os eventos de cada tipo de canal (espelha `integracoes-schema.ts`). */
-export const FUNCAO_WEBHOOK: Record<ProvedorCanal, string> = {
-  evolution: "evolution-webhook",
+export const FUNCAO_WEBHOOK: Record<ProvedorMeta, string> = {
   whatsapp_oficial: "meta-whatsapp-webhook",
   instagram: "meta-instagram-webhook",
 };
@@ -11,7 +16,7 @@ export const FUNCAO_WEBHOOK: Record<ProvedorCanal, string> = {
 /** Endereço público do webhook da conta: é o que se cola no painel da Meta. Sem segredo. */
 export function urlWebhookConta(
   urlProjeto: string | undefined,
-  provedor: ProvedorCanal,
+  provedor: ProvedorMeta,
   contaId: string,
 ): string | null {
   if (!urlProjeto || !contaId) return null;
@@ -25,15 +30,11 @@ export function gerarTokenVerificacao(): string {
 }
 
 export interface FormularioCanal {
-  provedor: ProvedorCanal;
+  provedor: ProvedorMeta;
   contaId: string;
   nomeConta: string;
   identificador: string;
   ativa: boolean;
-  // Evolution
-  baseUrl: string;
-  instancia: string;
-  chaveEvolution: string;
   // Meta (WhatsApp oficial e Instagram)
   phoneNumberId: string;
   wabaId: string;
@@ -56,14 +57,11 @@ export interface FormularioAgente {
 }
 
 export const CANAL_INICIAL: FormularioCanal = {
-  provedor: "evolution",
+  provedor: "whatsapp_oficial",
   contaId: "",
   nomeConta: "WhatsApp Akros",
   identificador: "",
   ativa: true,
-  baseUrl: "",
-  instancia: "",
-  chaveEvolution: "",
   phoneNumberId: "",
   wabaId: "",
   igAccountId: "",
@@ -107,32 +105,24 @@ export function corpoDeSalvar(
     ativa: canal.ativa,
   };
   const dadosCanal =
-    canal.provedor === "evolution"
+    canal.provedor === "whatsapp_oficial"
       ? {
-          provedor: "evolution" as const,
+          provedor: "whatsapp_oficial" as const,
           ...comum,
-          baseUrl: canal.baseUrl.trim(),
-          instancia: canal.instancia.trim(),
-          ...seDigitado("apiKey", canal.chaveEvolution),
+          phoneNumberId: canal.phoneNumberId.trim(),
+          wabaId: canal.wabaId.trim(),
+          ...seDigitado("accessToken", canal.accessToken),
+          ...seDigitado("appSecret", canal.appSecret),
+          ...seDigitado("verifyToken", canal.verifyToken),
         }
-      : canal.provedor === "whatsapp_oficial"
-        ? {
-            provedor: "whatsapp_oficial" as const,
-            ...comum,
-            phoneNumberId: canal.phoneNumberId.trim(),
-            wabaId: canal.wabaId.trim(),
-            ...seDigitado("accessToken", canal.accessToken),
-            ...seDigitado("appSecret", canal.appSecret),
-            ...seDigitado("verifyToken", canal.verifyToken),
-          }
-        : {
-            provedor: "instagram" as const,
-            ...comum,
-            igAccountId: canal.igAccountId.trim(),
-            ...seDigitado("accessToken", canal.accessToken),
-            ...seDigitado("appSecret", canal.appSecret),
-            ...seDigitado("verifyToken", canal.verifyToken),
-          };
+      : {
+          provedor: "instagram" as const,
+          ...comum,
+          igAccountId: canal.igAccountId.trim(),
+          ...seDigitado("accessToken", canal.accessToken),
+          ...seDigitado("appSecret", canal.appSecret),
+          ...seDigitado("verifyToken", canal.verifyToken),
+        };
   return {
     ...(incluirCanal ? { canal: dadosCanal } : {}),
     agente: {
@@ -155,5 +145,5 @@ export function corpoDeSalvar(
  * nem lê mensagem) e o administrador precisa copiá-lo para o painel DEPOIS de salvar aqui.
  */
 export function limparSegredos(canal: FormularioCanal): FormularioCanal {
-  return { ...canal, chaveEvolution: "", accessToken: "", appSecret: "" };
+  return { ...canal, accessToken: "", appSecret: "" };
 }

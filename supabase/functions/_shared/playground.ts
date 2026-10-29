@@ -12,6 +12,7 @@ import { LIMITE_TEXTO_SAIDA } from "./canais/tipos.ts";
 import { corsHeaders } from "./cors.ts";
 import { requireCsrfHeader } from "./csrf.ts";
 import { ErroIA, explicarErroIA, instrucoes, modeloDoAgente, type RegraAgente } from "./openrouter.ts";
+import { lerTextoComLimite } from "./corpo.ts";
 
 const MAX_BYTES = 64 * 1024;
 const texto = z.string().trim().min(1).max(2000);
@@ -63,8 +64,8 @@ export function criarManipuladorPlayground(io: IOPlayground) {
       requireCsrfHeader(req);
       await io.autenticarAdmin(req);
 
-      const bruto = await req.text();
-      if (new TextEncoder().encode(bruto).byteLength > MAX_BYTES) throw new HttpError(413, "Conversa grande demais");
+      const bruto = await lerTextoComLimite(req, MAX_BYTES);
+      if (bruto === null) throw new HttpError(413, "Conversa grande demais");
       let entrada: z.infer<typeof EntradaPlayground>;
       try {
         entrada = EntradaPlayground.parse(JSON.parse(bruto));
