@@ -22,6 +22,9 @@ export interface Etapa {
   /** E09-S02 — datas reais para calcular o fator de ritmo. Fixture-only enquanto não há backend. */
   iniciadaEm?: string;
   concluidaRealEm?: string;
+  /** E03-S07 (migration 0019) — trava de revisão otimista para `decidir_etapa`. Ausente em
+   * jornada mockada (demo), sempre presente na jornada real. */
+  revisao?: number;
 }
 
 export interface Fase {
@@ -31,6 +34,9 @@ export interface Fase {
   descricao: string;
   status: FaseStatus;
   etapas: Etapa[];
+  /** E03-S07 (migration 0019) — trava de revisão otimista para `liberar_fase`. Ausente em
+   * jornada mockada (demo), sempre presente na jornada real. */
+  revisao?: number;
 }
 
 export interface Jornada {

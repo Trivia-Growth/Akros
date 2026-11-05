@@ -281,14 +281,14 @@ export const router = createBrowserRouter([
       },
       {
         path: "pagamentos",
-        element: isDemoMode ? (
-          rota(admin, () =>
-            import("@/features/pagamentos/interfaces/ConciliacaoPage").then((m) => ({
-              default: m.ConciliacaoPage,
-            })),
-          )
-        ) : (
-          <Navigate to="/admin" replace />
+        element: rota(admin, () =>
+          isDemoMode
+            ? import("@/features/pagamentos/interfaces/ConciliacaoPage").then((m) => ({
+                default: m.ConciliacaoPage,
+              }))
+            : import("@/features/pagamentos/interfaces/ConciliacaoRealPage").then((m) => ({
+                default: m.ConciliacaoRealPage,
+              })),
         ),
       },
       {
@@ -309,6 +309,20 @@ export const router = createBrowserRouter([
             : import("@/features/jornada/interfaces/OperacaoRealPage").then((m) => ({
                 default: m.OperacaoRealPage,
               })),
+        ),
+      },
+      {
+        // E03-S07 (Fase 8/US5): feature nova, sem equivalente mock — existe só fora do demo
+        // (oposto do padrão `demoOnly`: aqui a demo é quem não tem a tela).
+        path: "carteira",
+        element: isDemoMode ? (
+          <Navigate to="/admin" replace />
+        ) : (
+          rota(admin, () =>
+            import("@/features/crm/interfaces/CarteiraRealPage").then((m) => ({
+              default: m.CarteiraRealPage,
+            })),
+          )
         ),
       },
       {

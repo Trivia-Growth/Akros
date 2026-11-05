@@ -93,3 +93,32 @@ export function diasParado(etapa: Etapa, agora: Date = new Date()): number {
     Math.round((agora.getTime() - new Date(etapa.desdeEm).getTime()) / 86_400_000),
   );
 }
+
+/**
+ * E03-S07 (Fase 9/US7) — espelha `jornada.progresso_caso` (migration 0044). O cálculo pesado
+ * (percentual, critério) é feito no banco — este tipo só nomeia o formato que a projeção devolve.
+ * `percentual: null` com `criterio: 'cadastro_incompleto'` nunca pode "parecer" 0% (FR-013).
+ */
+export interface ProgressoCaso {
+  percentual: number | null;
+  requisitosTotal: number;
+  requisitosConcluidos: number;
+  etapasTotal: number;
+  etapasConcluidas: number;
+  criterio: "cadastro_incompleto" | "documentos" | "etapas" | "sem_dado";
+  calculadoEm: string;
+}
+
+/**
+ * E03-S07 (Fase 9/US7) — espelha `jornada.previsao_protocolo` (migration 0044). Fórmula aberta
+ * (mesmo espírito de `calcularPrevisao`/E09-S02): soma o ritmo histórico de aprovações do caso
+ * com o prazo contratual de análise da Akros, por requisito ainda não aprovado. NUNCA estima
+ * decisão do USCIS — só a data em que a Akros teria protocolado o caso.
+ */
+export interface PrevisaoProtocolo {
+  dataEstimada: string | null;
+  motivoSemPrevisao: "historico_insuficiente" | "sem_contrato" | null;
+  entregasConsideradas: number;
+  ritmoDiasPorRequisito: number | null;
+  calculadoEm: string;
+}

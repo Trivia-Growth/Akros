@@ -1,6 +1,8 @@
+import { obterCasoComandosReal } from "@/app/real-repositories";
 import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
 import type { Documento } from "@/features/documentos/domain/types";
-import type { Jornada } from "@/features/jornada/domain/types";
+import { useJornadaComandos } from "@/features/jornada/application/useJornadaComandos";
+import type { Fase, Jornada } from "@/features/jornada/domain/types";
 import type { Pagamento } from "@/features/pagamentos/domain/types";
 import {
   Avatar,
@@ -13,6 +15,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
 } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
 import {
@@ -20,14 +23,18 @@ import {
   ArrowLeft,
   ArrowUpRight,
   CalendarDays,
+  CheckCircle2,
   CircleAlert,
+  Clock,
   Clock3,
   Compass,
   FileSignature,
   FileText,
+  LockOpen,
   Mail,
   MessageCircle,
   Search,
+  Undo2,
   UserRound,
   UsersRound,
   WalletCards,
@@ -37,6 +44,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCliente360AdminSupabase } from "../application/useCliente360AdminSupabase";
 import { type SituacaoCaso, calcularProximaAcao } from "../domain/caso";
+import type { Contrato } from "../domain/contrato";
 import type { Cliente } from "../domain/types";
 import { ContratoFormulario } from "./ContratoFormulario";
 import { ParticipantesPainel } from "./ParticipantesPainel";
@@ -450,18 +458,24 @@ export function Cliente360Real({
           <DadosCliente cliente={cliente} />
         </TabsContent>
         <TabsContent value="journey">
-          <Card>
-            <p className="mb-3 text-sm font-semibold text-navy">
-              {faseAtual ? `Em andamento: ${faseAtual.titulo}` : "Sem jornada ativa"}
-            </p>
-            {steps.length ? (
-              <div className="overflow-x-auto">
-                <Stepper items={steps} />
-              </div>
-            ) : (
-              <p className="text-sm text-ink-muted">Nenhuma jornada real cadastrada.</p>
+          <div className="flex flex-col gap-4">
+            {jornada && (
+              <EtapasParaAprovarReal jornada={jornada} onDecidido={() => void refetch()} />
             )}
-          </Card>
+            {jornada && <LiberarProximaFase jornada={jornada} onLiberado={() => void refetch()} />}
+            <Card>
+              <p className="mb-3 text-sm font-semibold text-navy">
+                {faseAtual ? `Em andamento: ${faseAtual.titulo}` : "Sem jornada ativa"}
+              </p>
+              {steps.length ? (
+                <div className="overflow-x-auto">
+                  <Stepper items={steps} />
+                </div>
+              ) : (
+                <p className="text-sm text-ink-muted">Nenhuma jornada real cadastrada.</p>
+              )}
+            </Card>
+          </div>
         </TabsContent>
         <TabsContent value="documents">
           {jornada && (
@@ -475,6 +489,13 @@ export function Cliente360Real({
           <ListaDocumentos documentos={documentos} />
         </TabsContent>
         <TabsContent value="payments">
+          {contrato && (
+            <CobrancasContratoPainel
+              contrato={contrato}
+              pagamentos={pagamentos}
+              onCadastrado={() => void refetch()}
+            />
+          )}
           <ListaPagamentos pagamentos={pagamentos} />
         </TabsContent>
         <TabsContent value="meetings">
@@ -491,6 +512,143 @@ export function Cliente360Real({
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+/** E03-S07 (Fase 6/US3) — admin aprova/devolve etapas em análise, contra `revisao-comandos`. */
+function EtapasParaAprovarReal({
+  jornada,
+  onDecidido,
+}: { jornada: Jornada; onDecidido: () => void }) {
+  const { decidirEtapa, processandoId, erro } = useJornadaComandos();
+  const [devolvendoId, setDevolvendoId] = useState<string | null>(null);
+  const [motivo, setMotivo] = useState("");
+
+  const emAnalise = jornada.fases.flatMap((fase) =>
+    fase.etapas.filter((etapa) => etapa.status === "em_analise").map((etapa) => ({ etapa, fase })),
+  );
+  if (emAnalise.length === 0) return null;
+
+  async function aprovar(etapaId: string, revisaoEsperada: number) {
+    const ok = await decidirEtapa({ etapaId, decisao: "concluida", revisaoEsperada });
+    if (ok) onDecidido();
+  }
+
+  async function devolver(etapaId: string, revisaoEsperada: number) {
+    if (!motivo.trim()) return;
+    const ok = await decidirEtapa({ etapaId, decisao: "pendente", motivo, revisaoEsperada });
+    if (ok) {
+      setDevolvendoId(null);
+      setMotivo("");
+      onDecidido();
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-gold-200 bg-gold-50/40 p-4">
+      <div className="flex items-center gap-2">
+        <Clock className="h-4 w-4 text-gold-700" aria-hidden />
+        <p className="text-sm font-semibold text-navy">
+          Aguardando sua avaliação ({emAnalise.length})
+        </p>
+      </div>
+      {erro && <p className="text-xs text-red-700">Não foi possível concluir. Tente de novo.</p>}
+      <div className="flex flex-col gap-2">
+        {emAnalise.map(({ etapa, fase }) => (
+          <div key={etapa.id} className="rounded-lg border border-border bg-white p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium text-navy">{etapa.titulo}</p>
+                <p className="text-xs text-ink-muted">{fase.titulo}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setDevolvendoId(devolvendoId === etapa.id ? null : etapa.id)}
+                  disabled={processandoId === etapa.id}
+                >
+                  <Undo2 className="h-3.5 w-3.5" aria-hidden />
+                  Devolver p/ ajuste
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => void aprovar(etapa.id, etapa.revisao ?? 1)}
+                  loading={processandoId === etapa.id && devolvendoId !== etapa.id}
+                  disabled={processandoId === etapa.id}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                  Aprovar
+                </Button>
+              </div>
+            </div>
+            {devolvendoId === etapa.id && (
+              <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+                <Textarea
+                  placeholder="O que o cliente precisa corrigir ou completar?"
+                  rows={2}
+                  value={motivo}
+                  onChange={(event) => setMotivo(event.target.value)}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="self-start"
+                  onClick={() => void devolver(etapa.id, etapa.revisao ?? 1)}
+                  loading={processandoId === etapa.id}
+                  disabled={processandoId === etapa.id || !motivo.trim()}
+                >
+                  Confirmar devolução
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** E03-S07 (Fase 6/US3) — libera a próxima fase bloqueada quando a anterior está concluída,
+ *  contra `revisao-comandos`. A RPC `liberar_fase` recusa (422) se houver documento da fase
+ *  anterior sem aprovação — este botão não tenta prever isso, só mostra o erro devolvido. */
+function LiberarProximaFase({ jornada, onLiberado }: { jornada: Jornada; onLiberado: () => void }) {
+  const { liberarFase, processandoId, erro } = useJornadaComandos();
+  const faseAtualIdx = jornada.fases.findIndex((fase) => fase.status === "em_andamento");
+  const proximaBloqueadaIdx = jornada.fases.findIndex((fase) => fase.status === "bloqueada");
+  if (proximaBloqueadaIdx === -1) return null;
+
+  const proximaFase: Fase = jornada.fases[proximaBloqueadaIdx];
+  const faseAtualConcluida =
+    faseAtualIdx === -1 || jornada.fases[faseAtualIdx]?.status === "concluida";
+
+  return (
+    <Card className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <LockOpen className="h-4 w-4 text-gold-700" aria-hidden />
+        <div>
+          <p className="text-sm font-medium text-navy">Próxima fase: {proximaFase.titulo}</p>
+          {!faseAtualConcluida && (
+            <p className="text-xs text-ink-muted">Conclua a fase atual antes de liberar.</p>
+          )}
+          {erro && <p className="text-xs text-red-700">{erro}</p>}
+        </div>
+      </div>
+      <Button
+        size="sm"
+        variant="gold"
+        onClick={() =>
+          void liberarFase({
+            faseId: proximaFase.id,
+            revisaoEsperada: proximaFase.revisao ?? 1,
+          }).then((ok) => ok && onLiberado())
+        }
+        loading={processandoId === proximaFase.id}
+        disabled={processandoId === proximaFase.id || !faseAtualConcluida}
+      >
+        Liberar próxima fase
+      </Button>
+    </Card>
   );
 }
 
@@ -540,6 +698,69 @@ function ListaDocumentos({ documentos }: { documentos: Documento[] }) {
     <Vazio texto="Nenhum documento real cadastrado." />
   );
 }
+/** E03-S07 (Fase 7/US4) — condições do contrato sem cobrança ainda, com botão de cadastrar
+ *  (`crm.cadastrar_cobranca`, migration 0045). Condição do tipo 'outro' não gera cobrança
+ *  automática (recusada pelo servidor com 422) — some da lista aqui para não oferecer uma ação
+ *  que sempre falharia. */
+function CobrancasContratoPainel({
+  contrato,
+  pagamentos,
+  onCadastrado,
+}: { contrato: Contrato; pagamentos: Pagamento[]; onCadastrado: () => void }) {
+  const [processandoId, setProcessandoId] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const condicoesSemCobranca = contrato.condicoes.filter(
+    (condicao) =>
+      condicao.tipo !== "outro" &&
+      !pagamentos.some((pagamento) => pagamento.contratoCondicaoId === condicao.id),
+  );
+  if (condicoesSemCobranca.length === 0) return null;
+
+  async function cadastrar(condicaoId: string) {
+    setErro(null);
+    setProcessandoId(condicaoId);
+    try {
+      await obterCasoComandosReal().cadastrarCobranca({
+        contratoCondicaoId: condicaoId,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      onCadastrado();
+    } catch {
+      setErro("Não foi possível cadastrar a cobrança. Tente de novo.");
+    } finally {
+      setProcessandoId(null);
+    }
+  }
+
+  return (
+    <Card className="mb-3 flex flex-col gap-3">
+      <p className="text-sm font-semibold text-navy">Condições do contrato sem cobrança</p>
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
+      {condicoesSemCobranca.map((condicao) => (
+        <div key={condicao.id} className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-navy">{condicao.descricao}</p>
+            <p className="text-xs text-ink-muted">
+              {formatarMoeda(condicao.valor, condicao.moeda)} · vence{" "}
+              {formatarData(condicao.vencimento)}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => void cadastrar(condicao.id)}
+            loading={processandoId === condicao.id}
+            disabled={processandoId === condicao.id}
+          >
+            Cadastrar cobrança
+          </Button>
+        </div>
+      ))}
+    </Card>
+  );
+}
+
 function ListaPagamentos({ pagamentos }: { pagamentos: Pagamento[] }) {
   return pagamentos.length ? (
     <div className="flex flex-col gap-2">

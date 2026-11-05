@@ -143,7 +143,16 @@ export const VincularPastaSchema = z
   })
   .strict();
 
-// União discriminada por `acao` — novas ações futuras (T092) entram como mais um elemento desta
+// T092 (Fase 7/US4) — cria o pagamento a partir de uma condição contratual já registrada.
+export const CadastrarCobrancaSchema = z
+  .object({
+    acao: z.literal("cadastrar_cobranca"),
+    contratoCondicaoId: z.string().uuid(),
+    idempotencyKey: z.string().min(1),
+  })
+  .strict();
+
+// União discriminada por `acao` — novas ações futuras entram como mais um elemento desta
 // lista, sem tocar nos `case` já implementados no switch abaixo.
 const UniaoCasoComandos = z.discriminatedUnion("acao", [
   RegistrarContratoSchema,
@@ -152,6 +161,7 @@ const UniaoCasoComandos = z.discriminatedUnion("acao", [
   RevogarParticipanteSchema,
   SolicitarDocumentoSchema,
   VincularPastaSchema,
+  CadastrarCobrancaSchema,
 ]);
 
 // Validação cruzada `sujeitoTipo` ↔ campo companheiro, ANTES de a requisição chegar na RPC —
@@ -232,7 +242,8 @@ export interface IOCasoComandos {
       | "convidar_participante"
       | "revogar_participante"
       | "solicitar_documento"
-      | "vincular_pasta",
+      | "vincular_pasta"
+      | "cadastrar_cobranca",
     params: Record<string, unknown>,
   ): Promise<RespostaRpc<unknown>>;
 }
@@ -271,7 +282,8 @@ function statusDeSucesso(acao: EntradaCasoComandos["acao"]): number {
     acao === "registrar_contrato" ||
     acao === "convidar_participante" ||
     acao === "solicitar_documento" ||
-    acao === "vincular_pasta"
+    acao === "vincular_pasta" ||
+    acao === "cadastrar_cobranca"
   ) {
     return 201;
   }
@@ -424,6 +436,14 @@ export function criarManipuladorCasoComandos(io: IOCasoComandos) {
                 p_integracao_id: entrada.integracaoId,
                 p_folder_item_id: entrada.folderItemId,
                 p_caminho_exibicao: entrada.caminhoExibicao ?? null,
+                p_autor_id: userId,
+              });
+              if (error) throw erroDeNegocio(error);
+              return data;
+            }
+            case "cadastrar_cobranca": {
+              const { data, error } = await io.rpc("cadastrar_cobranca", {
+                p_contrato_condicao_id: entrada.contratoCondicaoId,
                 p_autor_id: userId,
               });
               if (error) throw erroDeNegocio(error);

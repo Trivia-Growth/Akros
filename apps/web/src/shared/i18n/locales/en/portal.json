@@ -1,4 +1,17 @@
 {
+  "progress": {
+    "title": "Filing estimate",
+    "requisitosConcluidos": "{{concluidos}} of {{total}} requirements gathered",
+    "etapasConcluidas": "{{concluidas}} of {{total}} steps completed",
+    "incomplete": "Incomplete record — finish the initial assessment to see your progress.",
+    "noData": "Not enough data yet to calculate progress.",
+    "estimateLabel": "Estimated filing",
+    "estimateDisclaimer": "Internal estimate of when the case could be filed. Not a prediction of a USCIS decision.",
+    "noForecastReason": {
+      "historico_insuficiente": "Not enough history of approved requirements yet to estimate filing.",
+      "sem_contrato": "An active contract is needed to calculate the filing timeline."
+    }
+  },
   "dashboard": {
     "greeting": "Hello, {{nome}}",
     "visaType": "Visa",

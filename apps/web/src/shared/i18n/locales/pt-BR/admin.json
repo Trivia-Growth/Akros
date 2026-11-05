@@ -1,4 +1,22 @@
 {
+  "portfolio": {
+    "title": "Carteira de casos",
+    "subtitle": "Todos os casos, priorizados por pendência — fila de trabalho da equipe.",
+    "searchPlaceholder": "Buscar por nome do cliente",
+    "indicatorTotal": "Total de casos",
+    "indicatorWaitingClient": "Aguardando cliente",
+    "indicatorWaitingAkros": "Aguardando Akros",
+    "indicatorFinanceLate": "Financeiro atrasado",
+    "indicatorIncomplete": "Cadastro incompleto",
+    "pendingTypeAll": "Qualquer pendência",
+    "pendingTypeDocument": "Pendência de documento",
+    "pendingTypePayment": "Pendência financeira",
+    "noActiveJourney": "Sem jornada ativa",
+    "loading": "Carregando carteira…",
+    "loadError": "Não foi possível carregar a carteira.",
+    "empty": "Nenhum caso encontrado para este filtro.",
+    "loadMore": "Carregar mais casos"
+  },
   "kanban": {
     "title": "Leads",
     "subtitle": "Gerencie o funil comercial arrastando os cards entre as colunas.",
@@ -212,6 +230,7 @@
     "adjustReasonLabel": "Motivo do ajuste (o cliente vai ler)",
     "adjustReasonPlaceholder": "Ex: falta a assinatura do responsável pela empresa",
     "requestChanges": "Pedir ajuste",
+    "confirmReturn": "Confirmar devolução",
     "approve": "Aprovar",
     "approved": "Documento aprovado.",
     "sentBackForChanges": "Documento devolvido para ajustes."
@@ -310,7 +329,10 @@
     "markDivergent": "Marcar divergência",
     "confirm": "Confirmar pagamento",
     "confirmed": "Pagamento confirmado.",
-    "divergenceRecorded": "Divergência registrada."
+    "divergenceRecorded": "Divergência registrada.",
+    "divergenceReasonLabel": "Motivo da divergência",
+    "divergenceReasonPlaceholder": "Ex: valor recebido menor que o esperado",
+    "viewReceipt": "Ver comprovante"
   },
   "reactivation": {
     "title": "Base de reativação",

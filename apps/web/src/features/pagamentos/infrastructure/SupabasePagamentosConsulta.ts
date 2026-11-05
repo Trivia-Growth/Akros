@@ -16,6 +16,11 @@ interface LinhaPagamento {
   anexado_em: string | null;
   valor_recebido: number | string | null;
   confirmado_por: string | null;
+  contrato_condicao_id?: string | null;
+  comprovante_versao_id?: string | null;
+  motivo_divergencia?: string | null;
+  confirmado_por_id?: string | null;
+  revisao?: number;
 }
 
 interface LinhaDadosRecebimento {
@@ -46,6 +51,11 @@ export function paraPagamento(linha: LinhaPagamento): Pagamento {
     ...(linha.anexado_em ? { anexadoEm: linha.anexado_em } : {}),
     ...(linha.valor_recebido === null ? {} : { valorRecebido: Number(linha.valor_recebido) }),
     ...(linha.confirmado_por ? { confirmadoPor: linha.confirmado_por } : {}),
+    ...(linha.contrato_condicao_id ? { contratoCondicaoId: linha.contrato_condicao_id } : {}),
+    ...(linha.comprovante_versao_id ? { comprovanteVersaoId: linha.comprovante_versao_id } : {}),
+    ...(linha.motivo_divergencia ? { motivoDivergencia: linha.motivo_divergencia } : {}),
+    ...(linha.confirmado_por_id ? { confirmadoPorId: linha.confirmado_por_id } : {}),
+    ...(typeof linha.revisao === "number" ? { revisao: linha.revisao } : {}),
   };
 }
 

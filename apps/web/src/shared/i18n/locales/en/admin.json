@@ -1,4 +1,22 @@
 {
+  "portfolio": {
+    "title": "Case portfolio",
+    "subtitle": "All cases, prioritized by pending item — the team's work queue.",
+    "searchPlaceholder": "Search by client name",
+    "indicatorTotal": "Total cases",
+    "indicatorWaitingClient": "Waiting on client",
+    "indicatorWaitingAkros": "Waiting on Akros",
+    "indicatorFinanceLate": "Finance overdue",
+    "indicatorIncomplete": "Incomplete record",
+    "pendingTypeAll": "Any pending item",
+    "pendingTypeDocument": "Document pending",
+    "pendingTypePayment": "Payment pending",
+    "noActiveJourney": "No active journey",
+    "loading": "Loading portfolio…",
+    "loadError": "Could not load the portfolio.",
+    "empty": "No case matches this filter.",
+    "loadMore": "Load more cases"
+  },
   "kanban": {
     "title": "Leads",
     "subtitle": "Manage the sales funnel by dragging cards between columns.",
@@ -212,6 +230,7 @@
     "adjustReasonLabel": "Reason for the adjustment (the client will read this)",
     "adjustReasonPlaceholder": "E.g.: missing the employer's signature",
     "requestChanges": "Request changes",
+    "confirmReturn": "Confirm return",
     "approve": "Approve",
     "approved": "Document approved.",
     "sentBackForChanges": "Document sent back for changes."
@@ -310,7 +329,10 @@
     "markDivergent": "Mark as divergent",
     "confirm": "Confirm payment",
     "confirmed": "Payment confirmed.",
-    "divergenceRecorded": "Divergence recorded."
+    "divergenceRecorded": "Divergence recorded.",
+    "divergenceReasonLabel": "Reason for divergence",
+    "divergenceReasonPlaceholder": "E.g.: received value lower than expected",
+    "viewReceipt": "View receipt"
   },
   "reactivation": {
     "title": "Reactivation base",

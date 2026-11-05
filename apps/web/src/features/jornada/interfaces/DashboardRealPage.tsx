@@ -1,10 +1,11 @@
 import { usePerfilClienteSupabase } from "@/features/crm/application/usePerfilClienteSupabase";
-import { Badge, Card, Progress, Stepper, type StepperItem } from "@/shared/ui";
+import { Card, Progress, Stepper, type StepperItem } from "@/shared/ui";
 import { ArrowRight, ArrowUpRight, CircleAlert, Map as MapIcon, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { calcularProgresso, obterFaseAtual } from "../application/calculos";
 import { useJornadaClienteReal } from "../application/real-hooks";
+import { PrevisaoProtocoloCard } from "./PrevisaoProtocoloCard";
 
 /** Portal inicial real: perfil e jornada vêm de portas Supabase, nunca do dashboard demo. */
 export function DashboardRealPage() {
@@ -113,17 +114,7 @@ export function DashboardRealPage() {
             <p className="mt-5 text-sm text-emerald-800">Nenhuma ação pendente nesta fase.</p>
           )}
         </Card>
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-label text-ink-soft">Panorama</p>
-          <p className="mt-3 text-sm text-ink-soft">
-            {jornada
-              ? `${jornada.fases.length} fases registradas`
-              : "Jornada ainda não registrada."}
-          </p>
-          <Badge variant="navy" className="mt-3">
-            Leitura protegida por RLS
-          </Badge>
-        </Card>
+        <PrevisaoProtocoloCard />
       </div>
       {etapas.length > 0 && (
         <Card>

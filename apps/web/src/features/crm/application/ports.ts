@@ -162,6 +162,69 @@ export interface CasoComandos {
     participanteId: string;
     idempotencyKey: string;
   }): Promise<Participante>;
+
+  /** E03-S07 (Fase 7/US4) — cadastra o pagamento a partir de uma condição contratual já
+   *  registrada (`crm.cadastrar_cobranca`, migration 0045). Recusa (422) condição do tipo
+   *  'outro' ou já com cobrança cadastrada (409). */
+  cadastrarCobranca(input: {
+    contratoCondicaoId: string;
+    idempotencyKey: string;
+  }): Promise<Pagamento>;
+}
+
+/** E03-S07 (Fase 8/US5) — uma linha da carteira (`crm.carteira_casos`). `responsavel` ausente
+ *  (`undefined`) significa "nenhuma pendência de verdade" — distinto de "akros"/"cliente". */
+export interface ItemCarteira {
+  clienteId: string;
+  clienteNome: string;
+  programaId?: string;
+  faseAtualTitulo?: string;
+  responsavel?: "cliente" | "akros";
+  documentosFaltantes: number;
+  documentosEmRevisao: number;
+  documentosEmAjustes: number;
+  pagamentosVencidos: number;
+  pagamentosEmConferencia: number;
+  situacaoFinanceira: "em_dia" | "atrasado";
+  levantamentoEstado: "incompleto" | "conferido";
+  prazoMaisProximo?: string;
+  atualizadoEm: string;
+}
+
+/** Agregado sobre TODO o conjunto filtrado, não só a página atual (design-tecnico.md §1.7). */
+export interface TotaisCarteira {
+  total: number;
+  aguardandoCliente: number;
+  aguardandoAkros: number;
+  financeiroAtrasado: number;
+  cadastroIncompleto: number;
+}
+
+export interface FiltrosCarteira {
+  busca?: string;
+  programa?: string;
+  fase?: string;
+  responsavel?: "cliente" | "akros";
+  tipoPendencia?: "documento" | "pagamento";
+  prazoAte?: string;
+}
+
+/** Opaco para quem consome: só o que a página anterior devolveu, devolvido de volta. */
+export interface CursorCarteira {
+  atualizadoEm: string;
+  clienteId: string;
+}
+
+/** E03-S07 (Fase 8/US5) — carteira inteira paginada por cursor, contra `crm.carteira_casos`. */
+export interface CarteiraConsulta {
+  buscar(
+    filtros: FiltrosCarteira,
+    cursor?: CursorCarteira | null,
+  ): Promise<{
+    itens: ItemCarteira[];
+    proximoCursor: CursorCarteira | null;
+    totais: TotaisCarteira;
+  }>;
 }
 
 export interface VinculoPastaConsulta {

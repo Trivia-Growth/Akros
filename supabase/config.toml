@@ -467,6 +467,11 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
+# revisao-comandos (E03-S07, Fase 6): admin-only (requireAdmin), mesmo critério de caso-comandos.
+[functions.revisao-comandos]
+enabled = true
+verify_jwt = false
+
 # onedrive-oauth (E03-S07, ADR-0019): admin é validado dentro da função (requireAdmin). `GET
 # /callback` é redirecionamento do consentimento da Microsoft, não pode carregar Bearer do
 # Supabase — por isso o gateway fica aberto, mesmo critério de caso-comandos.

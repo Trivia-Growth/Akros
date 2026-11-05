@@ -44,6 +44,9 @@ export interface Documento {
    * Um adapter real (LLM) não usaria este campo.
    */
   metadadosFixture?: { faltando?: string[]; ressalvas?: string[] };
+  /** E03-S07 (migration 0019) — trava de revisão otimista para `revisar_documento`. Ausente em
+   * documento mockado (demo), sempre presente no documento real. */
+  revisao?: number;
 }
 
 export type Aderencia = "atende" | "atende_com_ressalva" | "nao_atende" | "tipo_incorreto";

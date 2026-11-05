@@ -1,7 +1,9 @@
+import { totalizarPorMoeda } from "@/features/pagamentos/domain/conciliacao";
 import { Badge, Button, Card, Modal } from "@/shared/ui";
-import { CircleAlert, Copy, LockKeyhole, Wallet } from "lucide-react";
-import { useState } from "react";
+import { CircleAlert, Copy, Paperclip, Wallet } from "lucide-react";
+import { useRef, useState } from "react";
 import { usePagamentosClienteReal } from "../application/real-hooks";
+import { usePagamentoComandos } from "../application/usePagamentoComandos";
 import type { DadosRecebimento, Pagamento } from "../domain/types";
 
 const STATUS_VARIANT = {
@@ -13,11 +15,12 @@ const STATUS_VARIANT = {
 } as const;
 
 export function PagamentosRealPage() {
-  const { pagamentos, dadosRecebimento, carregando, erro } = usePagamentosClienteReal();
+  const { pagamentos, dadosRecebimento, carregando, erro, refetch } = usePagamentosClienteReal();
   const [selecionado, setSelecionado] = useState<Pagamento | null>(null);
   const totalPago = pagamentos.filter((pagamento) => pagamento.status === "pago").length;
   const totalPendente = pagamentos.filter((pagamento) => pagamento.status === "pendente").length;
   const proximoVencimento = pagamentos.find((pagamento) => pagamento.status === "pendente");
+  const totaisPorMoeda = totalizarPorMoeda(pagamentos);
 
   if (carregando) return <EstadoPagamentos mensagem="Carregando pagamentos reais…" />;
   if (erro) return <EstadoPagamentos mensagem="Não foi possível carregar pagamentos." erro />;
@@ -38,13 +41,25 @@ export function PagamentosRealPage() {
         />
       </div>
 
-      <Card className="flex gap-3 border-gold-200 bg-gold-50/45 text-sm text-ink-soft">
-        <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-gold-700" aria-hidden />
-        <p>
-          Anexar comprovante aguarda fluxo seguro de arquivo e conciliação. Esta tela não grava
-          pagamentos nem comprovantes diretamente pelo navegador.
-        </p>
-      </Card>
+      {/* Totais nunca somados entre moedas — um card por moeda presente. */}
+      {totaisPorMoeda.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {totaisPorMoeda.map((total) => (
+            <Card key={total.moeda} className="flex flex-col gap-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+                Total em {total.moeda}
+              </p>
+              <p className="font-display text-xl font-semibold text-navy">
+                {formatarValor(total.pago, total.moeda)} pago
+              </p>
+              <p className="text-xs text-ink-muted">
+                {formatarValor(total.pendente + total.atrasado, total.moeda)} pendente ·{" "}
+                {formatarValor(total.emConferencia, total.moeda)} em conferência
+              </p>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {pagamentos.length === 0 ? (
         <Card className="text-sm text-ink-muted">Nenhum pagamento real registrado ainda.</Card>
@@ -74,10 +89,18 @@ export function PagamentosRealPage() {
                   <Badge variant={STATUS_VARIANT[pagamento.status]}>
                     {rotuloStatus(pagamento.status)}
                   </Badge>
-                  {pagamento.status === "pendente" && dados && (
-                    <Button size="sm" variant="secondary" onClick={() => setSelecionado(pagamento)}>
-                      Ver dados de transferência
-                    </Button>
+                  {(pagamento.status === "pendente" || pagamento.status === "atrasado") &&
+                    dados && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setSelecionado(pagamento)}
+                      >
+                        Ver dados de transferência
+                      </Button>
+                    )}
+                  {(pagamento.status === "pendente" || pagamento.status === "atrasado") && (
+                    <EnvioComprovante pagamento={pagamento} onEnviado={() => void refetch()} />
                   )}
                 </div>
               </Card>
@@ -93,6 +116,51 @@ export function PagamentosRealPage() {
           onClose={() => setSelecionado(null)}
         />
       )}
+    </div>
+  );
+}
+
+function EnvioComprovante({
+  pagamento,
+  onEnviado,
+}: { pagamento: Pagamento; onEnviado: () => void }) {
+  const { estado, progresso, erro, enviarComprovante } = usePagamentoComandos(
+    pagamento.id,
+    pagamento.revisao ?? 1,
+  );
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function aoEscolherArquivo(arquivo: File | undefined) {
+    if (!arquivo) return;
+    const ok = await enviarComprovante(arquivo);
+    if (ok) onEnviado();
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  if (estado === "recebido") {
+    return <Badge variant="navy">Comprovante enviado — aguardando conferência</Badge>;
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={() => inputRef.current?.click()}
+        loading={estado === "reservando" || estado === "enviando"}
+        disabled={estado === "reservando" || estado === "enviando"}
+      >
+        <Paperclip className="h-3.5 w-3.5" aria-hidden />
+        {estado === "enviando" ? `Enviando… ${progresso}%` : "Anexar comprovante"}
+      </Button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf"
+        className="sr-only"
+        onChange={(evento) => void aoEscolherArquivo(evento.target.files?.[0])}
+      />
+      {erro && <p className="text-xs text-red-700">Não foi possível enviar. Tente de novo.</p>}
     </div>
   );
 }

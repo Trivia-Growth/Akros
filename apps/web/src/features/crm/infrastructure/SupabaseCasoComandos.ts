@@ -8,6 +8,7 @@
 // `agente-playground`/`integracoes-ia-salvar`), então sempre cairia no fallback genérico do SDK
 // — perdendo a mensagem real e o status HTTP. `erroCasoComandos` abaixo lê `error.context`
 // (a `Response` bruta) direto, sem passar por `erroDetalhado`.
+import { paraPagamento } from "@/features/pagamentos/infrastructure/SupabasePagamentosConsulta";
 import { getSupabase } from "@/shared/supabase/client";
 import type { CasoComandos } from "../application/ports";
 import { CasoComandoError } from "../application/ports";
@@ -139,5 +140,12 @@ export class SupabaseCasoComandos implements CasoComandos {
   ): Promise<Participante> {
     const data = await invocar("revogar_participante", { ...input });
     return paraParticipante(data as LinhaParticipanteSupabase);
+  }
+
+  async cadastrarCobranca(
+    input: Parameters<CasoComandos["cadastrarCobranca"]>[0],
+  ): ReturnType<CasoComandos["cadastrarCobranca"]> {
+    const data = await invocar("cadastrar_cobranca", { ...input });
+    return paraPagamento(data as Parameters<typeof paraPagamento>[0]);
   }
 }

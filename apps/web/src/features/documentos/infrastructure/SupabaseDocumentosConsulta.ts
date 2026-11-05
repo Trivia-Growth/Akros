@@ -23,6 +23,7 @@ interface LinhaDocumento {
   analise: unknown;
   enviado_apesar_do_alerta: boolean | null;
   decisao: unknown;
+  revisao?: number;
 }
 
 interface LinhaAssinatura {
@@ -117,6 +118,7 @@ export function paraDocumento(linha: LinhaDocumento): Documento {
     ...(analise ? { analise } : {}),
     ...(linha.enviado_apesar_do_alerta ? { enviadoApesarDoAlerta: true } : {}),
     ...(decisao ? { decisao } : {}),
+    ...(typeof linha.revisao === "number" ? { revisao: linha.revisao } : {}),
   };
 }
 

@@ -37,6 +37,19 @@ export interface VersoesConsulta {
   listarPorDocumento(documentoId: string): Promise<VersaoDocumento[]>;
 }
 
+/** E03-S07 (Fase 6/US3) — admin aprova ou devolve um documento em análise, contra a Edge
+ *  Function `revisao-comandos`. Grava `documentos.decisoes_revisao` (append-only) na mesma
+ *  transação da mudança de status. */
+export interface RevisaoDocumentoComandos {
+  revisar(input: {
+    documentoId: string;
+    versaoId: string;
+    decisao: "aprovado" | "ajustes";
+    justificativa?: string;
+    revisaoEsperada: number;
+  }): Promise<Documento>;
+}
+
 export interface ArquivoDownloadPort {
   baixar(versaoId: string): Promise<Blob>;
 }

@@ -22,6 +22,7 @@ import { SupabaseEvolutionCanal } from "@/features/configuracoes/infrastructure/
 import { SupabaseIntegracaoOneDriveConsulta } from "@/features/configuracoes/infrastructure/SupabaseIntegracaoOneDriveConsulta";
 import { SupabaseTranscricaoAudio } from "@/features/configuracoes/infrastructure/SupabaseTranscricaoAudio";
 import type {
+  CarteiraConsulta,
   CasoComandos,
   Cliente360AdminConsulta,
   ClienteRepository,
@@ -31,6 +32,7 @@ import type {
   VinculoPastaConsulta,
 } from "@/features/crm/application/ports";
 import type { PropostasConsulta } from "@/features/crm/application/ports";
+import { SupabaseCarteiraConsulta } from "@/features/crm/infrastructure/SupabaseCarteiraConsulta";
 import { SupabaseCasoComandos } from "@/features/crm/infrastructure/SupabaseCasoComandos";
 import { SupabaseCliente360AdminConsulta } from "@/features/crm/infrastructure/SupabaseCliente360AdminConsulta";
 import { SupabaseClienteRepository } from "@/features/crm/infrastructure/SupabaseClienteRepository";
@@ -45,17 +47,34 @@ import type {
   DocumentosConsulta,
   EnvioArquivoPort,
   EnvioDocumentoComandos,
+  RevisaoDocumentoComandos,
   VersoesConsulta,
 } from "@/features/documentos/application/ports";
 import { SupabaseArquivoDownload } from "@/features/documentos/infrastructure/SupabaseArquivoDownload";
 import { SupabaseDocumentosAdminConsulta } from "@/features/documentos/infrastructure/SupabaseDocumentosAdminConsulta";
 import { SupabaseDocumentosConsulta } from "@/features/documentos/infrastructure/SupabaseDocumentosConsulta";
 import { SupabaseEnvioComandos } from "@/features/documentos/infrastructure/SupabaseEnvioComandos";
+import { SupabaseRevisaoComandos } from "@/features/documentos/infrastructure/SupabaseRevisaoComandos";
 import { SupabaseVersoesConsulta } from "@/features/documentos/infrastructure/SupabaseVersoesConsulta";
-import type { JornadaConsulta, OperacaoAdminConsulta } from "@/features/jornada/application/ports";
+import type {
+  JornadaComandos,
+  JornadaConsulta,
+  OperacaoAdminConsulta,
+  ProgressoConsulta,
+} from "@/features/jornada/application/ports";
+import { SupabaseJornadaComandos } from "@/features/jornada/infrastructure/SupabaseJornadaComandos";
 import { SupabaseJornadaConsulta } from "@/features/jornada/infrastructure/SupabaseJornadaConsulta";
 import { SupabaseOperacaoAdminConsulta } from "@/features/jornada/infrastructure/SupabaseOperacaoAdminConsulta";
-import type { PagamentosConsulta } from "@/features/pagamentos/application/ports";
+import { SupabaseProgressoConsulta } from "@/features/jornada/infrastructure/SupabaseProgressoConsulta";
+import type {
+  ConciliacaoComandos,
+  PagamentoComandos,
+  PagamentosAdminConsulta,
+  PagamentosConsulta,
+} from "@/features/pagamentos/application/ports";
+import { SupabaseConciliacaoComandos } from "@/features/pagamentos/infrastructure/SupabaseConciliacaoComandos";
+import { SupabasePagamentoComandos } from "@/features/pagamentos/infrastructure/SupabasePagamentoComandos";
+import { SupabasePagamentosAdminConsulta } from "@/features/pagamentos/infrastructure/SupabasePagamentosAdminConsulta";
 import { SupabasePagamentosConsulta } from "@/features/pagamentos/infrastructure/SupabasePagamentosConsulta";
 import type {
   ProgramaRepository,
@@ -80,6 +99,8 @@ let jornadaReal: JornadaConsulta | undefined;
 let documentosReal: DocumentosConsulta | undefined;
 let documentosAdminReal: DocumentosAdminConsulta | undefined;
 let envioDocumentoReal: EnvioDocumentoComandos | undefined;
+let revisaoDocumentoReal: RevisaoDocumentoComandos | undefined;
+let jornadaComandosReal: JornadaComandos | undefined;
 let versoesDocumentoReal: VersoesConsulta | undefined;
 let envioArquivoReal: EnvioArquivoPort | undefined;
 let arquivoDownloadReal: ArquivoDownloadPort | undefined;
@@ -94,6 +115,18 @@ let perfilClienteReal: PerfilClienteConsulta | undefined;
 let casoComandosReal: CasoComandos | undefined;
 let participantesReal: ParticipantesConsulta | undefined;
 let vinculoPastaReal: VinculoPastaConsulta | undefined;
+let carteiraReal: CarteiraConsulta | undefined;
+let progressoReal: ProgressoConsulta | undefined;
+let pagamentosAdminReal: PagamentosAdminConsulta | undefined;
+let pagamentoComandosReal: PagamentoComandos | undefined;
+let conciliacaoComandosReal: ConciliacaoComandos | undefined;
+
+/** E03-S07 (Fase 8/US5) — carteira inteira paginada por cursor, contra `crm.carteira_casos`.
+ *  Sem variante Mock: feature nova, só existe fora do modo demo. */
+export function obterConsultaCarteiraReal(): CarteiraConsulta {
+  if (!carteiraReal) carteiraReal = new SupabaseCarteiraConsulta();
+  return carteiraReal;
+}
 
 export function obterVinculoPastaReal(): VinculoPastaConsulta {
   if (!vinculoPastaReal) vinculoPastaReal = new SupabaseVinculoPastaConsulta();
@@ -136,6 +169,12 @@ export function obterConsultaJornadaReal(): JornadaConsulta {
   return jornadaReal;
 }
 
+/** E03-S07 (Fase 9/US7) — progresso e previsão de protocolo do caso ativo (portal). */
+export function obterConsultaProgressoReal(): ProgressoConsulta {
+  if (!progressoReal) progressoReal = new SupabaseProgressoConsulta();
+  return progressoReal;
+}
+
 export function obterConsultaDocumentosReal(): DocumentosConsulta {
   if (!documentosReal) documentosReal = new SupabaseDocumentosConsulta();
   return documentosReal;
@@ -149,6 +188,18 @@ export function obterConsultaDocumentosAdminReal(): DocumentosAdminConsulta {
 export function obterComandosEnvioDocumento(): EnvioDocumentoComandos {
   if (!envioDocumentoReal) envioDocumentoReal = new SupabaseEnvioComandos();
   return envioDocumentoReal;
+}
+
+/** E03-S07 (Fase 6/US3) — aprovar/devolver documento em análise, contra `revisao-comandos`. */
+export function obterRevisaoDocumentoReal(): RevisaoDocumentoComandos {
+  if (!revisaoDocumentoReal) revisaoDocumentoReal = new SupabaseRevisaoComandos();
+  return revisaoDocumentoReal;
+}
+
+/** E03-S07 (Fase 6/US3) — decidir etapa e liberar fase, contra `revisao-comandos`. */
+export function obterJornadaComandosReal(): JornadaComandos {
+  if (!jornadaComandosReal) jornadaComandosReal = new SupabaseJornadaComandos();
+  return jornadaComandosReal;
 }
 
 export function obterConsultaVersoesDocumento(): VersoesConsulta {
@@ -175,6 +226,24 @@ export function obterEnvioArquivoReal(): EnvioArquivoPort {
 export function obterConsultaPagamentosReal(): PagamentosConsulta {
   if (!pagamentosReal) pagamentosReal = new SupabasePagamentosConsulta();
   return pagamentosReal;
+}
+
+/** E03-S07 (Fase 7/US4) — fila admin de conciliação. */
+export function obterConsultaPagamentosAdminReal(): PagamentosAdminConsulta {
+  if (!pagamentosAdminReal) pagamentosAdminReal = new SupabasePagamentosAdminConsulta();
+  return pagamentosAdminReal;
+}
+
+/** E03-S07 (Fase 7/US4) — envio de comprovante pelo portal. */
+export function obterComandosPagamentoReal(): PagamentoComandos {
+  if (!pagamentoComandosReal) pagamentoComandosReal = new SupabasePagamentoComandos();
+  return pagamentoComandosReal;
+}
+
+/** E03-S07 (Fase 7/US4) — conciliação admin (pago/divergente). */
+export function obterComandosConciliacaoReal(): ConciliacaoComandos {
+  if (!conciliacaoComandosReal) conciliacaoComandosReal = new SupabaseConciliacaoComandos();
+  return conciliacaoComandosReal;
 }
 
 export function obterConsultaComunicacaoReal(): ComunicacaoConsulta {

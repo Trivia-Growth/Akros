@@ -218,6 +218,9 @@ export const TETOS = {
   // equipe, não tráfego de alto volume — teto baixo por hora, fail-closed (mesmo critério de
   // "integracoes-ia-salvar": sem limitador, endpoint admin de escrita fica aberto).
   "caso-comandos": { teto: 60, janelaSegundos: 3600 },
+  // Revisão de documento/etapa/fase (E03-S07 Fase 6): gravação pontual de equipe, mesmo critério
+  // de "caso-comandos" — teto baixo por hora, fail-closed.
+  "revisao-comandos": { teto: 120, janelaSegundos: 3600 },
   // E03-S07 (Fase 5, ADR-0019): conectar/reconectar conta Microsoft é ação rara de admin —
   // teto baixo por hora, fail-closed (mesmo critério de "caso-comandos").
   "onedrive-oauth": { teto: 20, janelaSegundos: 3600 },

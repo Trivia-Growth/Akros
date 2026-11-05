@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { calcularProgresso, obterFaseAtual } from "../application/calculos";
 import { useJornadaClienteReal } from "../application/real-hooks";
 import type { Etapa } from "../domain/types";
+import { PrevisaoProtocoloCard } from "./PrevisaoProtocoloCard";
 
 export function JornadaRealPage() {
   const { t } = useTranslation("portal");
@@ -64,6 +65,8 @@ export function JornadaRealPage() {
         </div>
         <Progress value={progresso} className="mt-4" />
       </Card>
+
+      <PrevisaoProtocoloCard />
 
       <Card
         className="border-gold-200 bg-gold-50/45 text-sm text-ink-soft"
