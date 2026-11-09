@@ -44,6 +44,12 @@ export interface Documento {
    * Um adapter real (LLM) não usaria este campo.
    */
   metadadosFixture?: { faltando?: string[]; ressalvas?: string[] };
+  /** E03-S07 (migration 0019) — trava de revisão otimista para `revisar_documento`. Ausente em
+   * documento mockado (demo), sempre presente no documento real. */
+  revisao?: number;
+  /** E04-S17 — marca se este documento pode entrar na pasta compartilhada com o advogado
+   * parceiro. Nunca por padrão (FR-001). */
+  compartilhavelAdvogado?: boolean;
 }
 
 export type Aderencia = "atende" | "atende_com_ressalva" | "nao_atende" | "tipo_incorreto";

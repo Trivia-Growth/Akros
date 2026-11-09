@@ -29,6 +29,9 @@ vi.mock("../application/hooks", () => ({
   }),
 }));
 
+// O painel da Evolution (E13-S15) tem teste próprio; aqui só o formulário de agente e canais Meta.
+vi.mock("./CanalEvolutionPainel", () => ({ CanalEvolutionPainel: () => null }));
+
 const useIntegracaoOneDriveMock = vi.fn();
 vi.mock("../application/useIntegracaoOneDrive", () => ({
   useIntegracaoOneDrive: () => useIntegracaoOneDriveMock(),
@@ -99,25 +102,26 @@ describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
     expect(document.body.innerHTML).not.toContain("sk-or-v1-secreta");
   });
 
-  it("começa em Evolution e mostra só os campos dela", () => {
+  it("começa em WhatsApp oficial: a Evolution tem painel próprio e não aparece neste formulário", () => {
     const d = abrir();
     conectarCanal(d);
-    expect(within(d).getByLabelText(/URL HTTPS da Evolution/i)).toBeTruthy();
-    expect(within(d).queryByLabelText(/ID do número de telefone/i)).toBeNull();
+    expect(within(d).getByLabelText(/ID do número de telefone/i)).toBeTruthy();
+    expect(within(d).getByLabelText(/Token de acesso permanente/i)).toBeTruthy();
     expect(within(d).queryByLabelText(/ID da conta do Instagram/i)).toBeNull();
+    expect(within(d).queryByLabelText(/URL HTTPS da Evolution/i)).toBeNull();
+    const tipos = Array.from(
+      (within(d).getByLabelText("Tipo de canal") as HTMLSelectElement).options,
+    ).map((o) => o.value);
+    expect(tipos).toEqual(["whatsapp_oficial", "instagram"]);
   });
 
-  it("trocar para WhatsApp oficial troca os campos e esconde os da Evolution", () => {
+  it("trocar para Instagram troca os campos e esconde os do WhatsApp oficial", () => {
     const d = abrir();
     conectarCanal(d);
-    fireEvent.change(within(d).getByLabelText("Tipo de canal"), {
-      target: { value: "whatsapp_oficial" },
-    });
-    expect(within(d).getByLabelText(/ID do número de telefone/i)).toBeTruthy();
-    expect(within(d).getByLabelText(/ID da conta WhatsApp Business/i)).toBeTruthy();
-    expect(within(d).getByLabelText(/Token de acesso permanente/i)).toBeTruthy();
-    expect(within(d).getByLabelText(/App Secret/i)).toBeTruthy();
-    expect(within(d).queryByLabelText(/URL HTTPS da Evolution/i)).toBeNull();
+    fireEvent.change(within(d).getByLabelText("Tipo de canal"), { target: { value: "instagram" } });
+    expect(within(d).getByLabelText(/ID da conta do Instagram/i)).toBeTruthy();
+    expect(within(d).queryByLabelText(/ID do número de telefone/i)).toBeNull();
+    expect(within(d).queryByLabelText(/ID da conta WhatsApp Business/i)).toBeNull();
   });
 
   it("Instagram pede o id da conta e o Page Access Token", () => {
@@ -192,9 +196,11 @@ describe("ConfiguracoesRealPage — canal e agente (E13-S13)", () => {
     const d = abrir();
     conectarCanal(d);
     preencher(d, /Número WhatsApp/i, "5511999999999");
-    preencher(d, /URL HTTPS da Evolution/i, "https://evo.exemplo.com");
-    preencher(d, /Nome da instância/i, "akros");
-    preencher(d, /API key Evolution/i, "chave-evolution");
+    preencher(d, /ID do número de telefone/i, "123456789012345");
+    preencher(d, /ID da conta WhatsApp Business/i, "987654321098765");
+    preencher(d, /Token de acesso permanente/i, "EAAB-token-secreto");
+    preencher(d, /App Secret/i, "app-secret-1");
+    preencher(d, /Token de verificação/i, "meu-token-verificacao");
     preencher(d, /API key OpenRouter/i, "sk-or-secreta");
     fireEvent.submit(d.querySelector("form") as HTMLFormElement);
     await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));

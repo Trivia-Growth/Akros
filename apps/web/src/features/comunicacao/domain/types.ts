@@ -1,6 +1,18 @@
 export type CanalComunicacao = "whatsapp_oficial" | "evolution" | "instagram";
 export type AutorMensagem = "cliente" | "agente_ia" | "humano";
-export type TipoMensagem = "texto" | "imagem" | "audio" | "arquivo";
+export type TipoMensagem = "texto" | "imagem" | "audio" | "arquivo" | "video";
+
+/** Anexo recebido por canal externo (E13-S15). `baixado=false` ainda é uma mensagem: o motivo diz por quê. */
+export interface AnexoMensagem {
+  /** Caminho no armazenamento privado; só existe quando `baixado`. */
+  caminho?: string;
+  mime: string;
+  tamanhoBytes: number | null;
+  baixado: boolean;
+  motivo?: "tamanho" | "tipo" | "download";
+  /** Só em áudio, e só quando a transcrição estava ligada (E13-S15, ADR-0022). O texto vai em `Mensagem.texto`. */
+  transcricao?: { estado: "concluida" | "falhou"; motivo?: string };
+}
 
 /**
  * Timeline unificada (E08-S01 / ADR-0006). Absorve o antigo `Interacao` do CRM.
@@ -48,6 +60,8 @@ export interface Mensagem {
   midiaNome?: string;
   /** Presente só em tipo "audio". */
   duracaoSegundos?: number;
+  /** E13-S15 — arquivo recebido pelo WhatsApp (imagem, documento, áudio, vídeo). */
+  anexo?: AnexoMensagem;
   /** Preenchido quando o admin clica "Transcrever" num áudio. */
   transcricao?: string;
   /**
@@ -65,6 +79,8 @@ export interface Conversa {
   canal: CanalComunicacao;
   mensagens: Mensagem[];
   atendidoPorIA: boolean;
+  /** `nao_identificada`: sem telefone comprovado; visível só à equipe, sem cliente (E13-S15). */
+  identificacao?: "identificada" | "nao_identificada";
   /** Custo acumulado (USD) do atendimento por IA nesta conversa. Só presente quando atendidoPorIA. */
   custoIA?: number;
 }

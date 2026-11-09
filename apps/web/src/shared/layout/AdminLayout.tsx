@@ -6,6 +6,7 @@ import { cn } from "@/shared/ui/utils/cn";
 import {
   Activity,
   BookOpen,
+  Briefcase,
   CalendarClock,
   CheckCircle2,
   FileSearch,
@@ -32,6 +33,9 @@ const NAV_ITEMS: {
   end?: boolean;
   /** E13-S11 Task 5 (AC-4): rota ainda mock — some da navegação fora do modo demo. */
   demoOnly?: boolean;
+  /** E03-S07 (Fase 8/US5): feature nova sem equivalente mock — some da navegação em modo demo
+   *  (oposto de `demoOnly`). */
+  realOnly?: boolean;
   descricao: string;
 }[] = [
   {
@@ -77,7 +81,6 @@ const NAV_ITEMS: {
     to: "/admin/pagamentos",
     icon: Wallet,
     label: "Conciliação",
-    demoOnly: true,
     descricao: "Concilia comprovantes de transferência enviados pelos clientes.",
   },
   {
@@ -91,6 +94,13 @@ const NAV_ITEMS: {
     icon: Activity,
     label: "Operação",
     descricao: "Onde os casos travam, por quanto tempo, e alertas de inatividade.",
+  },
+  {
+    to: "/admin/carteira",
+    icon: Briefcase,
+    label: "Carteira",
+    realOnly: true,
+    descricao: "Todos os casos priorizados por pendência — fila de trabalho da equipe.",
   },
   {
     to: "/admin/reativacao",
@@ -156,7 +166,9 @@ function SidebarContent({
         Operação
       </p>
       <nav className="mt-3 flex flex-1 flex-col gap-1" aria-label="Navegação do admin">
-        {NAV_ITEMS.filter((item) => isDemoMode || !item.demoOnly).map((item) => (
+        {NAV_ITEMS.filter(
+          (item) => (isDemoMode || !item.demoOnly) && (!isDemoMode || !item.realOnly),
+        ).map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

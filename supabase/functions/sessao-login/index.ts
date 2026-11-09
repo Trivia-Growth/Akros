@@ -5,11 +5,14 @@ import { setCookie } from "https://deno.land/std@0.224.0/http/cookie.ts";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { lerTextoComLimite } from "../_shared/corpo.ts";
 import { TETOS, checarLimite, resposta429 } from "../_shared/rate-limit.ts";
 import { HttpError } from "../_shared/auth.ts";
 
 const FN = "sessao-login";
 export const REFRESH_COOKIE = "akros_refresh_token";
+// Login é anônimo: o corpo (e-mail + senha) cabe em poucos KiB; o resto é abuso (AV-07).
+const MAX_BYTES = 4 * 1024;
 
 const InputSchema = z.object({
   email: z.string().email(),
@@ -31,7 +34,9 @@ serve(async (req) => {
   );
 
   try {
-    const { email, senha } = InputSchema.parse(await req.json());
+    const bruto = await lerTextoComLimite(req, MAX_BYTES);
+    if (bruto === null) throw new HttpError(413, "Dados excedem limite");
+    const { email, senha } = InputSchema.parse(JSON.parse(bruto));
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -75,6 +80,7 @@ function problem(status: number, detail: string, reqId: string, cors: Record<str
   const titles: Record<number, string> = {
     400: "Bad Request",
     401: "Unauthorized",
+    413: "Payload Too Large",
     422: "Unprocessable Entity",
     500: "Internal Server Error",
   };

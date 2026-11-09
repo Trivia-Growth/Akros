@@ -174,3 +174,20 @@ Deno.test("sem versaoId → 422", async () => {
   );
   assertEquals(resposta.status, 422);
 });
+
+// AV-06: a presença de `checarLimite` no arquivo não prova que o handler a consulta. Este teste prova.
+Deno.test("AV-06: limite de uso é 429 com Retry-After, antes de autenticar ou tocar no banco", async () => {
+  let autenticou = false;
+  let consultou = false;
+  const io = montarIO();
+  const handler = criarManipuladorArquivoBaixar({
+    io: { ...io, carregarVersao: () => { consultou = true; return io.carregarVersao("versao-1"); } },
+    graph: montarGraph(),
+    autenticar: () => { autenticou = true; return Promise.resolve({ userId: USER_ID, ehAdmin: false }); },
+    limite: () => Promise.resolve({ permitido: false, reiniciaEm: new Date(Date.now() + 30_000) }),
+  });
+  const resposta = await handler(req());
+  assertEquals(resposta.status, 429);
+  assertEquals(typeof resposta.headers.get("retry-after"), "string");
+  assertEquals([autenticou, consultou], [false, false]);
+});

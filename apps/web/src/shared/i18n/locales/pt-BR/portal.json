@@ -1,4 +1,17 @@
 {
+  "progress": {
+    "title": "Estimativa de protocolo",
+    "requisitosConcluidos": "{{concluidos}} de {{total}} requisitos reunidos",
+    "etapasConcluidas": "{{concluidas}} de {{total}} etapas concluídas",
+    "incomplete": "Cadastro incompleto — conclua o levantamento inicial para ver seu avanço.",
+    "noData": "Ainda não há dado suficiente para calcular o avanço.",
+    "estimateLabel": "Protocolo estimado",
+    "estimateDisclaimer": "Estimativa interna de quando o processo pode ser protocolado. Não é previsão de decisão da USCIS.",
+    "noForecastReason": {
+      "historico_insuficiente": "Ainda não há histórico suficiente de requisitos aprovados para estimar o protocolo.",
+      "sem_contrato": "Falta um contrato ativo para calcular o prazo de protocolo."
+    }
+  },
   "dashboard": {
     "greeting": "Olá, {{nome}}",
     "visaType": "Visto",

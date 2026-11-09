@@ -17,18 +17,6 @@ const baseConta = {
   ativa: z.boolean(),
 };
 
-const evolution = z
-  .object({
-    provedor: z.literal("evolution"),
-    ...baseConta,
-    identificador: texto(8, 30),
-    baseUrl: z.string().trim().url().max(300)
-      .refine((v) => new URL(v).protocol === "https:", "Evolution precisa de HTTPS"),
-    instancia: z.string().trim().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/),
-    apiKey: segredo.optional(),
-  })
-  .strict();
-
 const whatsappOficial = z
   .object({
     provedor: z.literal("whatsapp_oficial"),
@@ -54,7 +42,8 @@ const instagram = z
   })
   .strict();
 
-export const CanalSchema = z.discriminatedUnion("provedor", [evolution, whatsappOficial, instagram]);
+// Evolution NÃO entra aqui (E13-S15): servidor, instância, webhook e QR são da função `canal-evolution`.
+export const CanalSchema = z.discriminatedUnion("provedor", [whatsappOficial, instagram]);
 
 export const AgenteSchema = z
   .object({
@@ -84,7 +73,6 @@ export type EntradaIntegracao = z.infer<typeof EntradaSchema>;
 
 /** Nome da Edge Function que recebe os eventos de cada provedor. */
 export const FUNCAO_WEBHOOK = {
-  evolution: "evolution-webhook",
   whatsapp_oficial: "meta-whatsapp-webhook",
   instagram: "meta-instagram-webhook",
 } as const;

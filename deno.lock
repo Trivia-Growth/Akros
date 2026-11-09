@@ -53,7 +53,8 @@
     "https://deno.land/x/zod@v3.23.8/locales/en.ts": "a7a25cd23563ccb5e0eed214d9b31846305ddbcdb9c5c8f508b108943366ab4c",
     "https://deno.land/x/zod@v3.23.8/mod.ts": "ec6e2b1255c1a350b80188f97bd0a6bac45801bb46fc48f50b9763aa66046039",
     "https://deno.land/x/zod@v3.23.8/types.ts": "1b172c90782b1eaa837100ebb6abd726d79d6c1ec336350c8e851e0fd706bf5c",
-    "https://esm.sh/@supabase/supabase-js@2.108.2": "7fbe17c4ef67b80d388cef1f0a0c7ecb28b2b1c3c4110875925a4bc82ff28e13"
+    "https://esm.sh/@supabase/supabase-js@2.108.2": "7fbe17c4ef67b80d388cef1f0a0c7ecb28b2b1c3c4110875925a4bc82ff28e13",
+    "https://esm.sh/pdf-lib@1.17.1": "cf7c5527829cb9bbb3aa20d339c530067441c10eb98880360aea9e77c3c87ff8"
   },
   "workspace": {
     "packageJson": {
@@ -67,6 +68,44 @@
         "npm:turbo@^2.1.0",
         "npm:typescript@^5.6.0"
       ]
+    },
+    "members": {
+      "apps/web": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@fontsource/fraunces@^5.1.1",
+            "npm:@fontsource/inter@^5.1.1",
+            "npm:@playwright/test@^1.62.1",
+            "npm:@supabase/supabase-js@^2.112.4",
+            "npm:@testing-library/jest-dom@^6.6.3",
+            "npm:@testing-library/react@^16.1.0",
+            "npm:@types/react-dom@^19.0.3",
+            "npm:@types/react@^19.0.7",
+            "npm:@vitejs/plugin-react@^4.3.4",
+            "npm:@vitest/coverage-v8@^2.1.9",
+            "npm:autoprefixer@^10.4.20",
+            "npm:axe-core@^4.13.0",
+            "npm:clsx@^2.1.1",
+            "npm:i18next-browser-languagedetector@^8.0.2",
+            "npm:i18next@^24.2.0",
+            "npm:jsdom@^25.0.1",
+            "npm:lucide-react@0.469",
+            "npm:postcss@^8.4.49",
+            "npm:react-dom@19",
+            "npm:react-i18next@^15.4.0",
+            "npm:react-router-dom@^7.1.0",
+            "npm:react@19",
+            "npm:tailwind-merge@^2.6.0",
+            "npm:tailwindcss@^3.4.17",
+            "npm:tus-js-client@^4.3.1",
+            "npm:typescript@^5.6.0",
+            "npm:vite@^6.0.7",
+            "npm:vitest@^2.1.8",
+            "npm:zod@^3.24.1",
+            "npm:zustand@^5.0.2"
+          ]
+        }
+      }
     }
   }
 }

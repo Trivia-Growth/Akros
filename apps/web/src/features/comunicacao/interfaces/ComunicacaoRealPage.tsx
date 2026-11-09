@@ -1,15 +1,17 @@
 import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
-import { Badge, Card, Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui";
-import { CircleAlert, LockKeyhole, Mail, MessageCircle, Sparkles } from "lucide-react";
+import { Badge, Button, Card, Tabs, TabsContent, TabsList, TabsTrigger, toast } from "@/shared/ui";
+import { CircleAlert, LockKeyhole, Mail, MessageCircle, Paperclip, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useComunicacaoAdminSupabase } from "../application/useComunicacaoAdminSupabase";
+import type { Conversa, Mensagem } from "../domain/types";
 import { PlaygroundAgente } from "./PlaygroundAgente";
 
 /** Admin real: todas as coleções vêm do Supabase; envio e configuração aguardam fluxos seguros. */
 export function ComunicacaoRealPage() {
   const { t } = useTranslation("admin");
-  const { conversas, emails, eventos, agentes, fontes, carregando, erro } =
+  const { conversas, emails, eventos, agentes, fontes, carregando, erro, urlDoAnexo } =
     useComunicacaoAdminSupabase();
 
   if (carregando) return <EstadoComunicacao mensagem="Carregando comunicação real…" />;
@@ -48,7 +50,7 @@ export function ComunicacaoRealPage() {
           <TabsTrigger value="knowledge">Base de conhecimento</TabsTrigger>
         </TabsList>
         <TabsContent value="inbox">
-          <ListaConversas conversas={conversas} />
+          <ListaConversas conversas={conversas} urlDoAnexo={urlDoAnexo} />
         </TabsContent>
         <TabsContent value="email">
           <ListaEmails emails={emails} />
@@ -72,37 +74,133 @@ export function ComunicacaoRealPage() {
   );
 }
 
+type AbrirAnexo = (caminho: string) => Promise<string>;
+
 function ListaConversas({
   conversas,
-}: { conversas: ReturnType<typeof useComunicacaoAdminSupabase>["conversas"] }) {
+  urlDoAnexo,
+}: { conversas: Conversa[]; urlDoAnexo?: AbrirAnexo }) {
   if (conversas.length === 0)
     return <Card className="text-sm text-ink-muted">Nenhuma conversa real registrada ainda.</Card>;
 
   return (
     <div className="flex flex-col gap-3">
-      {conversas.map((conversa) => {
-        const ultima = conversa.mensagens.at(-1);
-        return (
-          <Card key={conversa.id} className="flex items-start gap-3" data-testid="conversa-real">
-            <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-navy" aria-hidden />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-medium text-navy">{conversa.clienteNome}</p>
-                <Badge variant={conversa.atendidoPorIA ? "navy" : "neutral"}>
-                  {conversa.atendidoPorIA ? "IA" : "Humano"}
-                </Badge>
-              </div>
-              <p className="mt-1 text-xs text-ink-muted">
-                {conversa.canal} · {conversa.mensagens.length} mensagem(ns)
-              </p>
-              {ultima && (
-                <p className="mt-2 truncate text-sm text-ink-soft">{ultima.texto || "Mídia"}</p>
-              )}
-            </div>
-          </Card>
-        );
-      })}
+      {conversas.map((conversa) => (
+        <CartaoConversa key={conversa.id} conversa={conversa} urlDoAnexo={urlDoAnexo} />
+      ))}
     </div>
+  );
+}
+
+function resumoDaMensagem(mensagem: Mensagem, t: (k: string) => string): string {
+  if (mensagem.texto) return mensagem.texto;
+  if (mensagem.anexo)
+    return `${t("comunicacao.anexo.semTexto")}: ${mensagem.midiaNome ?? mensagem.anexo.mime}`;
+  return "Mídia";
+}
+
+function CartaoConversa({ conversa, urlDoAnexo }: { conversa: Conversa; urlDoAnexo?: AbrirAnexo }) {
+  const { t } = useTranslation("admin");
+  const [aberta, setAberta] = useState(false);
+  const ultima = conversa.mensagens.at(-1);
+  const naoIdentificada = conversa.identificacao === "nao_identificada";
+
+  return (
+    <Card className="flex items-start gap-3" data-testid="conversa-real">
+      <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-navy" aria-hidden />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium text-navy">{conversa.clienteNome}</p>
+          <div className="flex items-center gap-2">
+            {naoIdentificada && <Badge variant="warning">{t("comunicacao.naoIdentificada")}</Badge>}
+            <Badge variant={conversa.atendidoPorIA ? "navy" : "neutral"}>
+              {conversa.atendidoPorIA ? "IA" : "Humano"}
+            </Badge>
+          </div>
+        </div>
+        <p className="mt-1 text-xs text-ink-muted">
+          {conversa.canal} · {conversa.mensagens.length} mensagem(ns)
+        </p>
+        {naoIdentificada && (
+          <p className="mt-1 text-xs text-amber-700">{t("comunicacao.naoIdentificadaAjuda")}</p>
+        )}
+        {ultima && (
+          <p className="mt-2 truncate text-sm text-ink-soft">{resumoDaMensagem(ultima, t)}</p>
+        )}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="mt-2 px-0"
+          aria-expanded={aberta}
+          onClick={() => setAberta((v) => !v)}
+        >
+          {aberta ? t("comunicacao.ocultarMensagens") : t("comunicacao.verMensagens")}
+        </Button>
+        {aberta && (
+          <ul
+            className="mt-2 flex flex-col gap-2 border-t border-border pt-3"
+            data-testid="mensagens-da-conversa"
+          >
+            {conversa.mensagens.map((mensagem) => (
+              <LinhaMensagem key={mensagem.id} mensagem={mensagem} urlDoAnexo={urlDoAnexo} />
+            ))}
+          </ul>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function LinhaMensagem({ mensagem, urlDoAnexo }: { mensagem: Mensagem; urlDoAnexo?: AbrirAnexo }) {
+  const { t } = useTranslation("admin");
+  const anexo = mensagem.anexo;
+
+  async function abrir() {
+    if (!anexo?.caminho || !urlDoAnexo) return;
+    try {
+      const url = await urlDoAnexo(anexo.caminho);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error(t("comunicacao.anexo.erroAbrir"));
+    }
+  }
+
+  return (
+    <li className="text-sm">
+      <p className="text-xs text-ink-muted">
+        {t(`comunicacao.autor.${mensagem.autor}`)} · {new Date(mensagem.enviadoEm).toLocaleString()}
+      </p>
+      {mensagem.texto && <p className="whitespace-pre-wrap text-ink-soft">{mensagem.texto}</p>}
+      {anexo?.transcricao?.estado === "concluida" && (
+        <p className="mt-0.5 text-xs italic text-ink-muted">
+          {t("comunicacao.transcricao.concluida")}
+        </p>
+      )}
+      {anexo?.transcricao?.estado === "falhou" && (
+        <Badge variant="warning" className="mt-1">
+          {t("comunicacao.transcricao.falhou")}
+          {anexo.transcricao.motivo
+            ? ` · ${t(`comunicacao.transcricao.motivos.${anexo.transcricao.motivo}`, { defaultValue: anexo.transcricao.motivo })}`
+            : ""}
+        </Badge>
+      )}
+      {anexo && (
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+          <Paperclip className="h-3.5 w-3.5 text-navy" aria-hidden />
+          <span className="text-ink-soft">{mensagem.midiaNome ?? anexo.mime}</span>
+          {anexo.baixado && anexo.caminho ? (
+            <Button size="sm" variant="secondary" onClick={abrir}>
+              {t("comunicacao.anexo.abrir")}
+            </Button>
+          ) : (
+            <Badge variant="warning">
+              {t("comunicacao.anexo.indisponivel")}
+              {anexo.motivo ? ` · ${t(`comunicacao.anexo.${anexo.motivo}`)}` : ""}
+            </Badge>
+          )}
+        </div>
+      )}
+    </li>
   );
 }
 

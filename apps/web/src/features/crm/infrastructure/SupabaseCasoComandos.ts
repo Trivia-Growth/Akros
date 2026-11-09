@@ -8,6 +8,7 @@
 // `agente-playground`/`integracoes-ia-salvar`), então sempre cairia no fallback genérico do SDK
 // — perdendo a mensagem real e o status HTTP. `erroCasoComandos` abaixo lê `error.context`
 // (a `Response` bruta) direto, sem passar por `erroDetalhado`.
+import { paraPagamento } from "@/features/pagamentos/infrastructure/SupabasePagamentosConsulta";
 import { getSupabase } from "@/shared/supabase/client";
 import type { CasoComandos } from "../application/ports";
 import { CasoComandoError } from "../application/ports";
@@ -139,5 +140,41 @@ export class SupabaseCasoComandos implements CasoComandos {
   ): Promise<Participante> {
     const data = await invocar("revogar_participante", { ...input });
     return paraParticipante(data as LinhaParticipanteSupabase);
+  }
+
+  async cadastrarCobranca(
+    input: Parameters<CasoComandos["cadastrarCobranca"]>[0],
+  ): ReturnType<CasoComandos["cadastrarCobranca"]> {
+    const data = await invocar("cadastrar_cobranca", { ...input });
+    return paraPagamento(data as Parameters<typeof paraPagamento>[0]);
+  }
+
+  async definirIaApoio(
+    input: Parameters<CasoComandos["definirIaApoio"]>[0],
+  ): ReturnType<CasoComandos["definirIaApoio"]> {
+    const data = (await invocar("definir_ia_apoio", {
+      clienteId: input.clienteId,
+      ativa: input.ativa,
+      idempotencyKey: input.idempotencyKey,
+    })) as { id: string; ia_apoio_ativa: boolean };
+    return { id: data.id, iaApoioAtiva: data.ia_apoio_ativa };
+  }
+
+  async vincularPastaAdvogado(
+    input: Parameters<CasoComandos["vincularPastaAdvogado"]>[0],
+  ): ReturnType<CasoComandos["vincularPastaAdvogado"]> {
+    const data = (await invocar("vincular_pasta_advogado", { ...input })) as { id: string };
+    return { id: data.id };
+  }
+
+  async marcarCompartilhavelAdvogado(
+    input: Parameters<CasoComandos["marcarCompartilhavelAdvogado"]>[0],
+  ): ReturnType<CasoComandos["marcarCompartilhavelAdvogado"]> {
+    const data = (await invocar("marcar_compartilhavel_advogado", {
+      documentoId: input.documentoId,
+      compartilhavel: input.compartilhavel,
+      idempotencyKey: input.idempotencyKey,
+    })) as { id: string; compartilhavel_advogado: boolean };
+    return { id: data.id, compartilhavelAdvogado: data.compartilhavel_advogado };
   }
 }

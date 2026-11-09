@@ -32,6 +32,11 @@ export interface DepsAgente {
   /** Agente ATIVO que atende esta conta, ou `null`. */
   agenteDaConta(): Promise<RegraAgente | null>;
   chaveOpenRouter(agenteId: string): Promise<string | null>;
+  /**
+   * Consome UMA resposta de IA da cota deste contato (AV-05). `false` = cota esgotada ou limitador
+   * indisponível: o pipeline não chama o modelo e só encaminha à equipe.
+   */
+  cotaContato(contatoExterno: string): Promise<boolean>;
   historico(conversaId: string): Promise<unknown>;
   gerarResposta(
     regra: RegraAgente,
@@ -58,6 +63,21 @@ const PEDE_HUMANO =
 export function precisaDeHumano(texto: string): boolean {
   const normalizado = texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   return PEDE_HUMANO.test(normalizado);
+}
+
+/** Janela em que o mesmo encaminhamento não é repetido (cliente que manda 10 fotos recebe UM aviso). */
+export const JANELA_REENCAMINHAMENTO_MS = 10 * 60_000;
+
+/** O último texto do agente nesta conversa é este mesmo encaminhamento, enviado há pouco? */
+export function encaminhadoRecentemente(historico: unknown, texto: string, agora = Date.now()): boolean {
+  if (!Array.isArray(historico)) return false;
+  for (let i = historico.length - 1; i >= 0; i--) {
+    const m = historico[i] as { autor?: unknown; texto?: unknown; enviadoEm?: unknown } | null;
+    if (m?.autor !== "agente_ia") continue;
+    const quando = typeof m.enviadoEm === "string" ? Date.parse(m.enviadoEm) : Number.NaN;
+    return m.texto === texto && Number.isFinite(quando) && agora - quando < JANELA_REENCAMINHAMENTO_MS;
+  }
+  return false;
 }
 
 export type Decisao =
@@ -100,10 +120,12 @@ export async function processarEntrada(
   entrada: EntradaCanal,
   opcoes: OpcoesPipeline,
 ): Promise<ResultadoPipeline> {
-  const cliente = await deps.vincularCliente(entrada.contatoExterno);
+  // Sem telefone comprovado não se tenta vincular a cliente: a conversa fica só com a equipe.
+  const naoIdentificada = entrada.identificacao === "nao_identificada";
+  const cliente = naoIdentificada ? null : await deps.vincularCliente(entrada.contatoExterno);
   const recibo = await deps.registrar({
     clienteId: cliente?.id ?? null,
-    clienteNome: cliente?.nome ?? entrada.nome ?? "Contato",
+    clienteNome: cliente?.nome ?? entrada.nome ?? (naoIdentificada ? "Contato não identificado" : "Contato"),
     entrada,
   });
   if (!recibo.processar || !recibo.conversaId) return "duplicada";
@@ -115,7 +137,8 @@ export async function processarEntrada(
   ) => deps.concluir({ conversaId, origemId: entrada.origemId, status, ...extra });
 
   try {
-    if (!opcoes.contaAtiva) {
+    // Contato não identificado: mensagem guardada para a equipe; ninguém responde por palpite.
+    if (naoIdentificada || !opcoes.contaAtiva) {
       await fechar("ignorado");
       return "ignorado";
     }
@@ -123,6 +146,29 @@ export async function processarEntrada(
     if (!agente) {
       await fechar("ignorado");
       return "ignorado";
+    }
+
+    const encaminhar = async (): Promise<ResultadoPipeline> => {
+      const texto = agente.mensagem_handoff.slice(0, opcoes.limiteSaida);
+      if (encaminhadoRecentemente(await deps.historico(conversaId), texto)) {
+        await fechar("handoff"); // já avisado há pouco: registra, não repete a mensagem
+        return "handoff";
+      }
+      await deps.enviar(texto);
+      await fechar("handoff", { textoSaida: texto });
+      return "handoff";
+    };
+
+    // Anexo, figurinha ou tipo não suportado: o agente não interpreta, só encaminha à equipe.
+    if (entrada.encaminhar) return await encaminhar();
+
+    // AV-05: cada resposta de IA custa no provedor. A cota é por CONTATO, antes da chamada paga:
+    // um remetente que fala demais não esgota a conta nem o balde dos demais. Pedido que já vai
+    // para a equipe (`precisaDeHumano`) não chama o modelo e, por isso, não consome cota.
+    if (!precisaDeHumano(entrada.texto) && !(await deps.cotaContato(entrada.contatoExterno))) {
+      // Sem telefone no log: o excesso fica observável, o contato não.
+      deps.log({ nivel: "warn", msg: "cota de IA do contato esgotada" });
+      return await encaminhar();
     }
 
     const decisao = await decidirResposta(

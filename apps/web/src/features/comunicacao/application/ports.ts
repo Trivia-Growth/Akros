@@ -56,6 +56,8 @@ export interface ComunicacaoAdminConsulta {
     agentes: ResumoAgenteIA[];
     fontes: FonteConhecimento[];
   }>;
+  /** Link temporário para abrir um anexo de conversa (E13-S15). Só admin; expira em instantes. */
+  urlDoAnexo(caminho: string): Promise<string>;
 }
 
 export interface AgenteService {

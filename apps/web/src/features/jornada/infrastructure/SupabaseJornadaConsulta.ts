@@ -24,6 +24,7 @@ interface LinhaFase {
   titulo: string;
   descricao: string;
   status: Fase["status"];
+  revisao?: number;
 }
 
 interface LinhaEtapa {
@@ -39,6 +40,7 @@ interface LinhaEtapa {
   desde_em: string | null;
   iniciada_em: string | null;
   concluida_real_em: string | null;
+  revisao?: number;
 }
 
 export function paraJornada(
@@ -56,6 +58,7 @@ export function paraJornada(
       titulo: fase.titulo,
       descricao: fase.descricao,
       status: fase.status,
+      ...(typeof fase.revisao === "number" ? { revisao: fase.revisao } : {}),
       etapas: etapas
         .filter((etapa) => etapa.fase_id === fase.id)
         .map((etapa) => ({
@@ -74,6 +77,7 @@ export function paraJornada(
           ...(etapa.desde_em ? { desdeEm: etapa.desde_em } : {}),
           ...(etapa.iniciada_em ? { iniciadaEm: etapa.iniciada_em } : {}),
           ...(etapa.concluida_real_em ? { concluidaRealEm: etapa.concluida_real_em } : {}),
+          ...(typeof etapa.revisao === "number" ? { revisao: etapa.revisao } : {}),
         })),
     })),
     ...(jornada.programa_id ? { programaId: jornada.programa_id } : {}),

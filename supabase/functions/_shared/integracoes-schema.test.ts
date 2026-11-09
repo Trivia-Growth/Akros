@@ -11,31 +11,23 @@ const ig = { provedor: "instagram", nomeExibicao: "Instagram Akros", identificad
 
 const ok = (canal: unknown, agente: unknown = AGENTE) => EntradaSchema.safeParse({ canal, agente });
 
-Deno.test("aceita os três provedores", () => {
-  for (const canal of [evo, wa, ig]) assert(ok(canal).success, JSON.stringify(canal));
+Deno.test("aceita WhatsApp oficial e Instagram; Evolution foi para a função canal-evolution", () => {
+  for (const canal of [wa, ig]) assert(ok(canal).success, JSON.stringify(canal));
+  assert(!ok(evo).success, "a Evolution não é mais configurada por aqui (E13-S15)");
 });
 
 Deno.test("chaves são opcionais (editar sem trocar chave) e o schema não as exige", () => {
-  const { apiKey: _a, ...semChave } = evo;
-  assert(ok(semChave).success);
   const { accessToken: _t, appSecret: _s, verifyToken: _v, ...semMeta } = wa;
   assert(ok(semMeta).success);
 });
 
 Deno.test("recusa campo desconhecido (strict), provedor desconhecido e mistura de campos de outro provedor", () => {
-  assert(!ok({ ...evo, extra: 1 }).success);
-  assert(!ok({ ...evo, provedor: "telegram" }).success);
-  assert(!ok({ ...evo, wabaId: "123456" }).success, "campo de Meta em canal Evolution");
+  assert(!ok({ ...wa, extra: 1 }).success);
+  assert(!ok({ ...wa, provedor: "telegram" }).success);
+  assert(!ok({ ...ig, wabaId: "123456" }).success, "campo de WhatsApp em canal Instagram");
   assert(!ok({ ...wa, baseUrl: "https://x.com" }).success, "campo de Evolution em canal Meta");
-  assert(!EntradaSchema.safeParse({ canal: evo, agente: AGENTE, extra: 1 }).success);
+  assert(!EntradaSchema.safeParse({ canal: wa, agente: AGENTE, extra: 1 }).success);
   assert(!EntradaSchema.safeParse({ evolution: evo, agente: AGENTE }).success, "formato antigo (E13-S12) não vale mais");
-});
-
-Deno.test("Evolution: só HTTPS e instância sem caracteres perigosos", () => {
-  assert(!ok({ ...evo, baseUrl: "http://evo.exemplo.com" }).success);
-  assert(!ok({ ...evo, baseUrl: "javascript:alert(1)" }).success);
-  assert(!ok({ ...evo, instancia: "../etc/passwd" }).success);
-  assert(!ok({ ...evo, instancia: "a b" }).success);
 });
 
 Deno.test("Meta: ids só com dígitos; token de verificação seguro para query string", () => {
@@ -47,15 +39,14 @@ Deno.test("Meta: ids só com dígitos; token de verificação seguro para query 
 });
 
 Deno.test("segredos curtos demais são recusados", () => {
-  assert(!ok({ ...evo, apiKey: "1234567" }).success);
   assert(!ok({ ...wa, accessToken: "curto" }).success);
-  assert(!ok(evo, { ...AGENTE, apiKeyOpenRouter: "curto" }).success);
+  assert(!ok(wa, { ...AGENTE, apiKeyOpenRouter: "curto" }).success);
 });
 
 Deno.test("agente: orientação mínima e tamanhos máximos", () => {
-  assert(!ok(evo, { ...AGENTE, alma: "curta" }).success);
-  assert(!ok(evo, { ...AGENTE, alma: "x".repeat(16001) }).success);
-  assert(!ok(evo, { ...AGENTE, agenteId: "nao-uuid" }).success);
+  assert(!ok(wa, { ...AGENTE, alma: "curta" }).success);
+  assert(!ok(wa, { ...AGENTE, alma: "x".repeat(16001) }).success);
+  assert(!ok(wa, { ...AGENTE, agenteId: "nao-uuid" }).success);
 });
 
 Deno.test("canal é opcional: dá para salvar só o agente (teste no Playground antes de conectar)", () => {
@@ -64,14 +55,13 @@ Deno.test("canal é opcional: dá para salvar só o agente (teste no Playground 
 });
 
 Deno.test("canal sem agente continua inválido; o agente aceita orientação longa (até 16 mil)", () => {
-  assert(!EntradaSchema.safeParse({ canal: evo }).success);
-  assert(ok(evo, { ...AGENTE, alma: "x".repeat(16000) }).success);
-  assert(!ok(evo, { ...AGENTE, alma: "x".repeat(16001) }).success);
+  assert(!EntradaSchema.safeParse({ canal: wa }).success);
+  assert(ok(wa, { ...AGENTE, alma: "x".repeat(16000) }).success);
+  assert(!ok(wa, { ...AGENTE, alma: "x".repeat(16001) }).success);
 });
 
 Deno.test("URL do webhook por provedor", () => {
   const id = "11111111-1111-4111-8111-111111111111";
-  assertEquals(urlWebhook("https://p.supabase.co/", "evolution", id), `https://p.supabase.co/functions/v1/evolution-webhook?conta=${id}`);
   assertEquals(urlWebhook("https://p.supabase.co", "whatsapp_oficial", id), `https://p.supabase.co/functions/v1/meta-whatsapp-webhook?conta=${id}`);
   assertEquals(urlWebhook("https://p.supabase.co", "instagram", id), `https://p.supabase.co/functions/v1/meta-instagram-webhook?conta=${id}`);
 });

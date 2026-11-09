@@ -1,14 +1,20 @@
 import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
-import { Card } from "@/shared/ui";
-import { CircleAlert, LockKeyhole, MessageCircle } from "lucide-react";
-import { useMemo } from "react";
+import { usePerfilClienteSupabase } from "@/features/crm/application/usePerfilClienteSupabase";
+import { Button, Card, Textarea } from "@/shared/ui";
+import { CircleAlert, MessageCircle } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useComunicacaoClienteReal } from "../application/real-hooks";
+import { useChatPortal } from "../application/useChatPortal";
 
-/** Portal real: consulta eventos autorizados por RLS; criação aguarda função Edge autenticada. */
+/** Portal real (E08-S05): chat do portal real, envio via `comunicacao-chat-portal`. Layout já é
+ *  mobile-first (flex-col, sem largura fixa) — usável no celular por herança do design system. */
 export function MensagensRealPage() {
   const { t } = useTranslation("portal");
-  const { eventos, carregando, erro } = useComunicacaoClienteReal();
+  const { eventos, carregando, erro, refetch } = useComunicacaoClienteReal();
+  const perfil = usePerfilClienteSupabase();
+  const { enviar, enviando, erro: erroEnvio } = useChatPortal();
+  const [texto, setTexto] = useState("");
   const timeline = useMemo(
     () => eventos.filter((evento) => evento.canal !== "whatsapp" && evento.canal !== "email"),
     [eventos],
@@ -16,6 +22,15 @@ export function MensagensRealPage() {
 
   if (carregando) return <EstadoMensagens mensagem="Carregando mensagens reais…" />;
   if (erro) return <EstadoMensagens mensagem="Não foi possível carregar mensagens." erro />;
+
+  async function handleEnviar() {
+    if (!perfil.cliente) return;
+    const ok = await enviar(perfil.cliente.id, texto);
+    if (ok) {
+      setTexto("");
+      void refetch();
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6" data-testid="mensagens-real">
@@ -29,12 +44,26 @@ export function MensagensRealPage() {
         <Timeline eventos={timeline} emptyLabel={t("messages.empty")} />
       </Card>
 
-      <Card className="flex gap-3 border-gold-200 bg-gold-50/45 text-sm text-ink-soft">
-        <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-gold-700" aria-hidden />
-        <p>
-          Envio pelo portal aguarda função segura de mensageria. Esta tela não grava conversas nem
-          eventos diretamente pelo navegador.
-        </p>
+      <Card className="flex flex-col gap-2">
+        <Textarea
+          placeholder="Escreva uma mensagem para a equipe Akros…"
+          rows={3}
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+        />
+        {erroEnvio && (
+          <p className="text-xs text-red-700">Não foi possível enviar. Tente de novo.</p>
+        )}
+        <Button
+          size="sm"
+          variant="gold"
+          className="self-end"
+          onClick={() => void handleEnviar()}
+          loading={enviando}
+          disabled={enviando || !texto.trim() || !perfil.cliente}
+        >
+          Enviar
+        </Button>
       </Card>
     </div>
   );

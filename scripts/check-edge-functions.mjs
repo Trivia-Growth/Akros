@@ -105,17 +105,51 @@ for (const name of folders) {
 const SEM_RATE_LIMIT_OK = new Set([
   // Nenhuma exceção hoje. Para abrir uma, escreva aqui o motivo — não basta acrescentar o nome.
 ]);
+// AV-06 (revisão adversarial, 2026-10-28): este gate já passou verde com a chamada trocada por
+// `{ permitido: true }` e o `import` deixado no arquivo — ele testava a PRESENÇA da palavra, não o
+// uso. Agora exige uma CHAMADA (`checarLimite(`) fora de comentário. E, para as funções finas que só
+// entregam o limitador a um handler compartilhado, exige que esse handler tenha um teste que prove o
+// 429 (abaixo): o gate estático não vê o que o handler faz com `deps.limite`.
+function semComentarios(texto) {
+  return texto.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+}
+const CHAMA_LIMITE = /\bchecarLimite\s*\(/;
 for (const name of folders) {
   if (SEM_RATE_LIMIT_OK.has(name)) continue;
   const entrada = join(FUNCTIONS_DIR, name, "index.ts");
   if (!existsSync(entrada)) continue;
-  const texto = readFileSync(entrada, "utf8");
-  if (!/\bcheckarLimite\b|\bchecarLimite\b/.test(texto)) {
+  const texto = semComentarios(readFileSync(entrada, "utf8"));
+  if (!CHAMA_LIMITE.test(texto)) {
     errors.push(
-      `Função sem rate limit: supabase/functions/${name}/index.ts não chama ` +
-        "`checarLimite` (E14-S01 AC-6, fecha SD-01). Use `_shared/rate-limit.ts` e declare o teto " +
-        "em `TETOS`, ou registre a exceção com motivo em SEM_RATE_LIMIT_OK.",
+      `Função sem rate limit: supabase/functions/${name}/index.ts não CHAMA ` +
+        "`checarLimite(` (importar não basta — AV-06; E14-S01 AC-6, fecha SD-01). Use " +
+        "`_shared/rate-limit.ts` e declare o teto em `TETOS`, ou registre a exceção com motivo em " +
+        "SEM_RATE_LIMIT_OK.",
     );
+  }
+}
+
+// AV-06: handler compartilhado que consulta o limitador (`<io|deps|d>.limite(req)`) precisa de um
+// teste que o importe e afirme 429. Sem isso, trocar a consulta por "sempre permitido" não quebra nada.
+const SHARED_DIR = join(FUNCTIONS_DIR, "_shared");
+if (existsSync(SHARED_DIR)) {
+  const todosTs = walkTsFiles(FUNCTIONS_DIR);
+  const testes = todosTs
+    .filter((f) => f.endsWith(".test.ts"))
+    .map((f) => readFileSync(f, "utf8"));
+  const CONSULTA_LIMITE = /\b\w+\.limite\w*\(\s*req\s*\)/;
+  for (const arquivo of todosTs) {
+    if (!arquivo.startsWith(SHARED_DIR) || arquivo.endsWith(".test.ts")) continue;
+    if (!CONSULTA_LIMITE.test(semComentarios(readFileSync(arquivo, "utf8")))) continue;
+    const base = arquivo.slice(arquivo.lastIndexOf("/") + 1);
+    const provado = testes.some((t) => t.includes(`/${base}"`) && /\b429\b/.test(t));
+    if (!provado) {
+      errors.push(
+        `Handler sem prova de 429: supabase/functions/_shared/${base} consulta o limitador, mas ` +
+          "nenhum teste o importa e afirma o status 429 (AV-06). Teste com um `limite` que nega e " +
+          "espere 429 antes de qualquer outra coisa.",
+      );
+    }
   }
 }
 

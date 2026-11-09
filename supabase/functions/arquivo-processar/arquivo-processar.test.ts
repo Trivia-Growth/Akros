@@ -43,6 +43,7 @@ interface Espiao {
   segredosSalvos: Array<{ escopo: string; valor: Record<string, string> }>;
   segredoSessaoDescartado: string[];
   progresso: Array<{ trabalhoId: string; bytesEnviados: number; sessaoReferencia: string | null }>;
+  preAnalises: Array<{ versaoId: string; resultado: unknown }>;
 }
 
 function montarIO(a: {
@@ -51,7 +52,13 @@ function montarIO(a: {
   segredoGraph?: SegredoMicrosoftGraph | null;
   bytesObjeto?: Uint8Array;
 } = {}): { io: IOArquivoProcessar; e: Espiao } {
-  const e: Espiao = { marcados: [], segredosSalvos: [], segredoSessaoDescartado: [], progresso: [] };
+  const e: Espiao = {
+    marcados: [],
+    segredosSalvos: [],
+    segredoSessaoDescartado: [],
+    progresso: [],
+    preAnalises: [],
+  };
   const trabalho = a.trabalho === undefined ? TRABALHO : a.trabalho;
   const resultadoContexto =
     a.contexto === undefined
@@ -87,6 +94,11 @@ function montarIO(a: {
     },
     marcarBloqueado: (args) => {
       e.marcados.push({ tipo: "bloqueado", args });
+      return Promise.resolve();
+    },
+    // E07-S05 (US1) — pré-análise local, melhor esforço; fake só registra a chamada.
+    gravarPreAnalise: (args) => {
+      e.preAnalises.push(args);
       return Promise.resolve();
     },
   };
@@ -277,4 +289,21 @@ Deno.test("sem segredo microsoft-graph no Vault bloqueia com 'reconectar conta M
   const resultado = await processarUmTrabalho({ io, graph: montarGraph() });
   assertEquals(resultado, { processado: true, resultado: "bloqueado", motivo: MOTIVO_RECONECTAR });
   assertEquals(e.marcados.length, 1);
+});
+
+// AV-06: a presença de `checarLimite` no arquivo não prova que o handler a consulta. Este teste prova.
+Deno.test("AV-06: limite de uso é 429 com Retry-After e nenhum trabalho é adquirido", async () => {
+  const { io, e } = montarIO();
+  let adquiriu = false;
+  const handler = criarManipuladorArquivoProcessar({
+    autenticarServico: () => {},
+    limite: () => Promise.resolve({ permitido: false, reiniciaEm: new Date(Date.now() + 30_000) }),
+    io: { ...io, adquirirTrabalho: (...a) => { adquiriu = true; return io.adquirirTrabalho(...a); } },
+    graph: montarGraph(),
+  });
+  const resposta = await handler(new Request("https://fn.local/arquivo-processar", { method: "POST" }));
+  assertEquals(resposta.status, 429);
+  assertEquals(typeof resposta.headers.get("retry-after"), "string");
+  assertEquals(adquiriu, false);
+  assertEquals(e.marcados.length, 0);
 });

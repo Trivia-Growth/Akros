@@ -172,4 +172,29 @@ export class MockAnalisadorDocumento implements AnalisadorDocumentoPort {
     };
     return new Promise((resolve) => setTimeout(() => resolve(analise), 2500));
   }
+
+  /** E07-S05/US1 — fixture determinística: demo nunca precisa processar PDF de verdade. */
+  async obterPreAnalise(versaoId: string) {
+    return {
+      versaoId,
+      paginaCompleta: true,
+      resolucaoSuficiente: true,
+      tipoConteudo: "texto_pesquisavel" as const,
+      calculadoEm: new Date().toISOString(),
+    };
+  }
+
+  /** E07-S05/US3 — fixture determinística: demo nunca chama provedor de IA. */
+  async rascunharResposta(documentoId: string) {
+    return {
+      id: `rascunho-${documentoId}`,
+      documentoId,
+      texto:
+        "Olá! Recebemos seu documento e identificamos um ajuste necessário. Nossa equipe vai detalhar " +
+        "o que falta em breve, dentro do prazo de análise previsto em contrato.",
+      prazoRespostaDiasUteisUsado: 10,
+      prioridadeUsada: "padrao" as const,
+      geradoEm: new Date().toISOString(),
+    };
+  }
 }

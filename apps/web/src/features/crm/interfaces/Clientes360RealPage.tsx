@@ -1,6 +1,10 @@
+import { obterCasoComandosReal } from "@/app/real-repositories";
+import { useChatPortal } from "@/features/comunicacao/application/useChatPortal";
+import type { EventoComunicacao } from "@/features/comunicacao/domain/types";
 import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
 import type { Documento } from "@/features/documentos/domain/types";
-import type { Jornada } from "@/features/jornada/domain/types";
+import { useJornadaComandos } from "@/features/jornada/application/useJornadaComandos";
+import type { Fase, Jornada } from "@/features/jornada/domain/types";
 import type { Pagamento } from "@/features/pagamentos/domain/types";
 import {
   Avatar,
@@ -13,6 +17,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
 } from "@/shared/ui";
 import { cn } from "@/shared/ui/utils/cn";
 import {
@@ -20,26 +25,32 @@ import {
   ArrowLeft,
   ArrowUpRight,
   CalendarDays,
+  CheckCircle2,
   CircleAlert,
+  Clock,
   Clock3,
   Compass,
   FileSignature,
   FileText,
+  LockOpen,
   Mail,
   MessageCircle,
   Search,
+  Undo2,
   UserRound,
   UsersRound,
   WalletCards,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCliente360AdminSupabase } from "../application/useCliente360AdminSupabase";
 import { type SituacaoCaso, calcularProximaAcao } from "../domain/caso";
+import type { Contrato } from "../domain/contrato";
 import type { Cliente } from "../domain/types";
 import { ContratoFormulario } from "./ContratoFormulario";
 import { ParticipantesPainel } from "./ParticipantesPainel";
+import { PastaAdvogadoPainel } from "./PastaAdvogadoPainel";
 import { PastaCasoPainel } from "./PastaCasoPainel";
 import { SolicitarDocumentoPainel } from "./SolicitarDocumentoPainel";
 
@@ -450,18 +461,24 @@ export function Cliente360Real({
           <DadosCliente cliente={cliente} />
         </TabsContent>
         <TabsContent value="journey">
-          <Card>
-            <p className="mb-3 text-sm font-semibold text-navy">
-              {faseAtual ? `Em andamento: ${faseAtual.titulo}` : "Sem jornada ativa"}
-            </p>
-            {steps.length ? (
-              <div className="overflow-x-auto">
-                <Stepper items={steps} />
-              </div>
-            ) : (
-              <p className="text-sm text-ink-muted">Nenhuma jornada real cadastrada.</p>
+          <div className="flex flex-col gap-4">
+            {jornada && (
+              <EtapasParaAprovarReal jornada={jornada} onDecidido={() => void refetch()} />
             )}
-          </Card>
+            {jornada && <LiberarProximaFase jornada={jornada} onLiberado={() => void refetch()} />}
+            <Card>
+              <p className="mb-3 text-sm font-semibold text-navy">
+                {faseAtual ? `Em andamento: ${faseAtual.titulo}` : "Sem jornada ativa"}
+              </p>
+              {steps.length ? (
+                <div className="overflow-x-auto">
+                  <Stepper items={steps} />
+                </div>
+              ) : (
+                <p className="text-sm text-ink-muted">Nenhuma jornada real cadastrada.</p>
+              )}
+            </Card>
+          </div>
         </TabsContent>
         <TabsContent value="documents">
           {jornada && (
@@ -472,15 +489,28 @@ export function Cliente360Real({
               onSalvo={() => void refetch()}
             />
           )}
-          <ListaDocumentos documentos={documentos} />
+          <PastaAdvogadoPainel clienteId={cliente.id} />
+          <ListaDocumentos documentos={documentos} onAlterado={() => void refetch()} />
         </TabsContent>
         <TabsContent value="payments">
+          {contrato && (
+            <CobrancasContratoPainel
+              contrato={contrato}
+              pagamentos={pagamentos}
+              onCadastrado={() => void refetch()}
+            />
+          )}
           <ListaPagamentos pagamentos={pagamentos} />
         </TabsContent>
         <TabsContent value="meetings">
           <ListaReunioes reunioes={reunioes} />
         </TabsContent>
         <TabsContent value="conversations">
+          <ChatPortalAdminPainel
+            clienteId={cliente.id}
+            eventos={eventos}
+            onEnviado={() => void refetch()}
+          />
           <ListaConversas conversas={conversas} emails={emails} />
         </TabsContent>
         <TabsContent value="participants">
@@ -491,6 +521,143 @@ export function Cliente360Real({
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+/** E03-S07 (Fase 6/US3) — admin aprova/devolve etapas em análise, contra `revisao-comandos`. */
+function EtapasParaAprovarReal({
+  jornada,
+  onDecidido,
+}: { jornada: Jornada; onDecidido: () => void }) {
+  const { decidirEtapa, processandoId, erro } = useJornadaComandos();
+  const [devolvendoId, setDevolvendoId] = useState<string | null>(null);
+  const [motivo, setMotivo] = useState("");
+
+  const emAnalise = jornada.fases.flatMap((fase) =>
+    fase.etapas.filter((etapa) => etapa.status === "em_analise").map((etapa) => ({ etapa, fase })),
+  );
+  if (emAnalise.length === 0) return null;
+
+  async function aprovar(etapaId: string, revisaoEsperada: number) {
+    const ok = await decidirEtapa({ etapaId, decisao: "concluida", revisaoEsperada });
+    if (ok) onDecidido();
+  }
+
+  async function devolver(etapaId: string, revisaoEsperada: number) {
+    if (!motivo.trim()) return;
+    const ok = await decidirEtapa({ etapaId, decisao: "pendente", motivo, revisaoEsperada });
+    if (ok) {
+      setDevolvendoId(null);
+      setMotivo("");
+      onDecidido();
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-gold-200 bg-gold-50/40 p-4">
+      <div className="flex items-center gap-2">
+        <Clock className="h-4 w-4 text-gold-700" aria-hidden />
+        <p className="text-sm font-semibold text-navy">
+          Aguardando sua avaliação ({emAnalise.length})
+        </p>
+      </div>
+      {erro && <p className="text-xs text-red-700">Não foi possível concluir. Tente de novo.</p>}
+      <div className="flex flex-col gap-2">
+        {emAnalise.map(({ etapa, fase }) => (
+          <div key={etapa.id} className="rounded-lg border border-border bg-white p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium text-navy">{etapa.titulo}</p>
+                <p className="text-xs text-ink-muted">{fase.titulo}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setDevolvendoId(devolvendoId === etapa.id ? null : etapa.id)}
+                  disabled={processandoId === etapa.id}
+                >
+                  <Undo2 className="h-3.5 w-3.5" aria-hidden />
+                  Devolver p/ ajuste
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => void aprovar(etapa.id, etapa.revisao ?? 1)}
+                  loading={processandoId === etapa.id && devolvendoId !== etapa.id}
+                  disabled={processandoId === etapa.id}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                  Aprovar
+                </Button>
+              </div>
+            </div>
+            {devolvendoId === etapa.id && (
+              <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+                <Textarea
+                  placeholder="O que o cliente precisa corrigir ou completar?"
+                  rows={2}
+                  value={motivo}
+                  onChange={(event) => setMotivo(event.target.value)}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="self-start"
+                  onClick={() => void devolver(etapa.id, etapa.revisao ?? 1)}
+                  loading={processandoId === etapa.id}
+                  disabled={processandoId === etapa.id || !motivo.trim()}
+                >
+                  Confirmar devolução
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** E03-S07 (Fase 6/US3) — libera a próxima fase bloqueada quando a anterior está concluída,
+ *  contra `revisao-comandos`. A RPC `liberar_fase` recusa (422) se houver documento da fase
+ *  anterior sem aprovação — este botão não tenta prever isso, só mostra o erro devolvido. */
+function LiberarProximaFase({ jornada, onLiberado }: { jornada: Jornada; onLiberado: () => void }) {
+  const { liberarFase, processandoId, erro } = useJornadaComandos();
+  const faseAtualIdx = jornada.fases.findIndex((fase) => fase.status === "em_andamento");
+  const proximaBloqueadaIdx = jornada.fases.findIndex((fase) => fase.status === "bloqueada");
+  if (proximaBloqueadaIdx === -1) return null;
+
+  const proximaFase: Fase = jornada.fases[proximaBloqueadaIdx];
+  const faseAtualConcluida =
+    faseAtualIdx === -1 || jornada.fases[faseAtualIdx]?.status === "concluida";
+
+  return (
+    <Card className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <LockOpen className="h-4 w-4 text-gold-700" aria-hidden />
+        <div>
+          <p className="text-sm font-medium text-navy">Próxima fase: {proximaFase.titulo}</p>
+          {!faseAtualConcluida && (
+            <p className="text-xs text-ink-muted">Conclua a fase atual antes de liberar.</p>
+          )}
+          {erro && <p className="text-xs text-red-700">{erro}</p>}
+        </div>
+      </div>
+      <Button
+        size="sm"
+        variant="gold"
+        onClick={() =>
+          void liberarFase({
+            faseId: proximaFase.id,
+            revisaoEsperada: proximaFase.revisao ?? 1,
+          }).then((ok) => ok && onLiberado())
+        }
+        loading={processandoId === proximaFase.id}
+        disabled={processandoId === proximaFase.id || !faseAtualConcluida}
+      >
+        Liberar próxima fase
+      </Button>
+    </Card>
   );
 }
 
@@ -506,6 +673,7 @@ function DadosCliente({ cliente }: { cliente: Cliente }) {
         <Campo label="Case manager" value={cliente.caseManager} />
         <Campo label="Cliente desde" value={formatarData(cliente.criadoEm)} />
       </Card>
+      <ToggleIaApoio clienteId={cliente.id} />
       <Card>
         <p className="mb-4 font-semibold text-navy">Dados do processo</p>
         {!perfil ? (
@@ -523,16 +691,112 @@ function DadosCliente({ cliente }: { cliente: Cliente }) {
   );
 }
 
-function ListaDocumentos({ documentos }: { documentos: Documento[] }) {
+/** E07-S05 (FR-010) — liga/desliga a IA de apoio ao processo para este caso. Estado próprio
+ *  (não propagado pelo mapper de `Cliente` por escopo desta sessão): lê/escreve
+ *  `crm.clientes.ia_apoio_ativa` direto. */
+function ToggleIaApoio({ clienteId }: { clienteId: string }) {
+  const [ativa, setAtiva] = useState<boolean | null>(null);
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    let cancelado = false;
+    void (async () => {
+      try {
+        const { getSupabase } = await import("@/shared/supabase/client");
+        const { data } = await getSupabase()
+          .schema("crm")
+          .from("clientes")
+          .select("ia_apoio_ativa")
+          .eq("id", clienteId)
+          .maybeSingle<{ ia_apoio_ativa: boolean }>();
+        if (!cancelado) setAtiva(data?.ia_apoio_ativa ?? true);
+      } catch {
+        if (!cancelado) setAtiva(true);
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [clienteId]);
+
+  async function alternar() {
+    if (ativa === null || salvando) return;
+    setSalvando(true);
+    try {
+      const resultado = await obterCasoComandosReal().definirIaApoio({
+        clienteId,
+        ativa: !ativa,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      setAtiva(resultado.iaApoioAtiva);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Card className="flex items-center justify-between gap-3">
+      <div>
+        <p className="text-sm font-medium text-navy">IA de apoio ao processo</p>
+        <p className="text-xs text-ink-muted">
+          Pré-análise, cruzamento com requisito e rascunho de resposta para este caso.
+        </p>
+      </div>
+      <Button
+        size="sm"
+        variant={ativa ? "gold" : "secondary"}
+        onClick={() => void alternar()}
+        loading={salvando}
+        disabled={ativa === null || salvando}
+      >
+        {ativa ? "Ligada" : "Desligada"}
+      </Button>
+    </Card>
+  );
+}
+
+function ListaDocumentos({
+  documentos,
+  onAlterado,
+}: { documentos: Documento[]; onAlterado: () => void }) {
+  const [processandoId, setProcessandoId] = useState<string | null>(null);
+
+  async function alternarCompartilhamento(documento: Documento) {
+    setProcessandoId(documento.id);
+    try {
+      await obterCasoComandosReal().marcarCompartilhavelAdvogado({
+        documentoId: documento.id,
+        compartilhavel: !documento.compartilhavelAdvogado,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      onAlterado();
+    } finally {
+      setProcessandoId(null);
+    }
+  }
+
   return documentos.length ? (
     <div className="flex flex-col gap-2">
       {documentos.map((documento) => (
-        <Card key={documento.id} className="flex items-center justify-between">
+        <Card key={documento.id} className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm text-navy">{documento.nome}</p>
             <p className="text-xs text-ink-muted">{documento.tipo}</p>
           </div>
-          <Badge variant={DOCUMENTO_VARIANT[documento.status]}>{documento.status}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={DOCUMENTO_VARIANT[documento.status]}>{documento.status}</Badge>
+            <Button
+              size="sm"
+              variant={documento.compartilhavelAdvogado ? "gold" : "secondary"}
+              onClick={() => void alternarCompartilhamento(documento)}
+              loading={processandoId === documento.id}
+              disabled={processandoId === documento.id}
+            >
+              {documento.compartilhavelAdvogado
+                ? "Compartilhável c/ advogado"
+                : "Marcar p/ advogado"}
+            </Button>
+          </div>
         </Card>
       ))}
     </div>
@@ -540,6 +804,69 @@ function ListaDocumentos({ documentos }: { documentos: Documento[] }) {
     <Vazio texto="Nenhum documento real cadastrado." />
   );
 }
+/** E03-S07 (Fase 7/US4) — condições do contrato sem cobrança ainda, com botão de cadastrar
+ *  (`crm.cadastrar_cobranca`, migration 0045). Condição do tipo 'outro' não gera cobrança
+ *  automática (recusada pelo servidor com 422) — some da lista aqui para não oferecer uma ação
+ *  que sempre falharia. */
+function CobrancasContratoPainel({
+  contrato,
+  pagamentos,
+  onCadastrado,
+}: { contrato: Contrato; pagamentos: Pagamento[]; onCadastrado: () => void }) {
+  const [processandoId, setProcessandoId] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const condicoesSemCobranca = contrato.condicoes.filter(
+    (condicao) =>
+      condicao.tipo !== "outro" &&
+      !pagamentos.some((pagamento) => pagamento.contratoCondicaoId === condicao.id),
+  );
+  if (condicoesSemCobranca.length === 0) return null;
+
+  async function cadastrar(condicaoId: string) {
+    setErro(null);
+    setProcessandoId(condicaoId);
+    try {
+      await obterCasoComandosReal().cadastrarCobranca({
+        contratoCondicaoId: condicaoId,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      onCadastrado();
+    } catch {
+      setErro("Não foi possível cadastrar a cobrança. Tente de novo.");
+    } finally {
+      setProcessandoId(null);
+    }
+  }
+
+  return (
+    <Card className="mb-3 flex flex-col gap-3">
+      <p className="text-sm font-semibold text-navy">Condições do contrato sem cobrança</p>
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
+      {condicoesSemCobranca.map((condicao) => (
+        <div key={condicao.id} className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-navy">{condicao.descricao}</p>
+            <p className="text-xs text-ink-muted">
+              {formatarMoeda(condicao.valor, condicao.moeda)} · vence{" "}
+              {formatarData(condicao.vencimento)}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => void cadastrar(condicao.id)}
+            loading={processandoId === condicao.id}
+            disabled={processandoId === condicao.id}
+          >
+            Cadastrar cobrança
+          </Button>
+        </div>
+      ))}
+    </Card>
+  );
+}
+
 function ListaPagamentos({ pagamentos }: { pagamentos: Pagamento[] }) {
   return pagamentos.length ? (
     <div className="flex flex-col gap-2">
@@ -578,6 +905,60 @@ function ListaReunioes({
     <Vazio texto="Nenhuma reunião real cadastrada." />
   );
 }
+/** E08-S05 — admin lê e responde o chat do portal (eventos canal='chat_portal'/'sistema'). */
+function ChatPortalAdminPainel({
+  clienteId,
+  eventos,
+  onEnviado,
+}: { clienteId: string; eventos: EventoComunicacao[]; onEnviado: () => void }) {
+  const { enviar, enviando, erro } = useChatPortal();
+  const [texto, setTexto] = useState("");
+  const mensagens = eventos.filter((e) => e.canal === "chat_portal" || e.canal === "sistema");
+
+  async function handleEnviar() {
+    const ok = await enviar(clienteId, texto);
+    if (ok) {
+      setTexto("");
+      onEnviado();
+    }
+  }
+
+  return (
+    <Card className="mb-3 flex flex-col gap-3">
+      <p className="text-sm font-semibold text-navy">Chat do portal</p>
+      {mensagens.length === 0 ? (
+        <p className="text-sm text-ink-muted">Nenhuma mensagem no chat do portal ainda.</p>
+      ) : (
+        <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+          {[...mensagens].reverse().map((m) => (
+            <div key={m.id} className="rounded-md bg-cream-100 p-2 text-sm">
+              <p className="text-xs font-medium text-navy">{m.autor}</p>
+              <p className="text-ink-soft">{m.conteudo}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      <Textarea
+        placeholder="Responder ao cliente pelo chat do portal…"
+        rows={2}
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+      />
+      {erro && <p className="text-xs text-red-700">Não foi possível enviar. Tente de novo.</p>}
+      <Button
+        size="sm"
+        variant="gold"
+        className="self-end"
+        onClick={() => void handleEnviar()}
+        loading={enviando}
+        disabled={enviando || !texto.trim()}
+      >
+        Enviar
+      </Button>
+    </Card>
+  );
+}
+
 function ListaConversas({
   conversas,
   emails,

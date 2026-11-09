@@ -81,6 +81,19 @@ vão ao Supabase Vault via RPC service-role, capability token autentica webhook 
 volta ao browser. Quando Google/Meta/Calendly/Whisper/Fireflies virarem reais, seguem o mesmo
 padrão — o roteiro está em `specs/E13-S12-integracao-evolution-openrouter/`.
 
+### Origem do rate limit depende de configuração confirmada na plataforma (AV-04, revisão adversarial 2026-10-28)
+`_shared/rate-limit.ts` deixou de usar o **primeiro** elemento de `x-forwarded-for` (forjável pelo
+cliente: a discussão pública do Supabase mostra `spoofado,<IP real>`) e passou a usar o **N-ésimo a
+partir da direita** (`RATE_LIMIT_PROXIES_CONFIAVEIS`, padrão 1) ou um cabeçalho que a plataforma
+sobrescreve (`RATE_LIMIT_IP_HEADER`, ex.: `cf-connecting-ip`). **Não sei** quantos proxies ficam na
+frente da função em produção nem se o rewrite do Netlify (`/api/sessao/*`, `/api/leads`) repassa o IP
+real: com o padrão 1 e um proxy extra, todos os pedidos pelo Netlify podem cair no mesmo balde (login:
+10 por 15 min para o sistema inteiro) — incômodo e visível, em vez do limite decorativo de antes.
+**Antes de publicar as funções:** (1) mandar um pedido de teste por cada caminho (direto ao Supabase e
+pelo Netlify) com `X-Forwarded-For` forjado e conferir, em `seguranca.rate_limit`, que o balde NÃO muda
+com o valor forjado; (2) ajustar `RATE_LIMIT_PROXIES_CONFIAVEIS`/`RATE_LIMIT_IP_HEADER` nos secrets das
+Edge Functions até as origens reais se distinguirem. Dono: @devops (precisa de acesso ao ambiente).
+
 ## P2 — aceito, monitorar
 
 ### Credenciais coladas em texto puro no histórico desta sessão de chat
@@ -132,6 +145,83 @@ não tem como cobrir isso.
 caminho normal não tem como pular silenciosamente.
 **Fecha em:** ambiente de teste separado do de produção — aí o e2e pode voltar para a CI sem os
 dois problemas que o tiraram dela.
+
+### E13-S15 — canal Evolution (aceito, monitorar)
+
+- **Mensagem de teste é um vetor de spam do próprio admin.** `enviar_teste` manda um texto fixo a
+  qualquer número informado, limitado só pelo teto da função (600/h). Admin é confiável e a ação é
+  auditada por log de função; se o número virar problema, criar teto próprio por canal.
+- **Admin pode registrar uma versão como "provada" sem rodar o smoke.** A evidência é texto livre.
+  Aceito: o admin é dono da instalação; a matriz tem auditoria (`audit.registrar_mudanca`).
+- **Chave global do servidor Evolution é usada em runtime** (instância e envio). Vazamento exige trocar
+  a chave no servidor e na tela. Reavaliar token por instância após o smoke no servidor do Akros.
+- **Envio ainda síncrono dentro do webhook** (perde a resposta se a Evolution falhar): fecha na E13-S16.
+- **Áudio do cliente sai do Akros para um provedor de transcrição (Groq ou OpenRouter).** Voz, nome e
+  endereço falados vão ao terceiro a cada transcrição; a retenção do lado dele não é controlada nem
+  declarada nas páginas consultadas, e o `provider.zdr` do OpenRouter só existe no corpo JSON (o Akros
+  envia multipart). Mitigação: nasce desligada, aceite explícito por provedor, contrato de dados
+  conferido pelo escritório antes de ligar (ADR-0022). Fecha com: enviar JSON com `zdr` se exigido.
+- **Transcrição é síncrona no webhook** (até 20 s a mais) e pode ser feita duas vezes se a Evolution
+  reentregar antes do recibo (gasto duplicado, mensagem não). Teto de 120/h limita o dano. Fecha na
+  E13-S16 (fila).
+- **Whisper pode alucinar em áudio com ruído/silêncio.** Aviso "pode conter erros" na tela e áudio
+  original à mão; áudio vazio cai no encaminhamento. Sem filtro de confiança.
+- **Anexos de cliente (documentos de imigração) ficam no bucket privado sem varredura de malware.**
+  Só admin abre, por link de 60 s, e a lista de tipos exclui HTML/executável. Varredura = story futura.
+
+- **Cota de IA por contato é um número inicial (AV-05).** `TETOS["agente-ia-contato"]` = 30 respostas por
+  hora por (conta, telefone); esgotar vira encaminhamento à equipe, sem perder a mensagem. Ajustar com o
+  log `cota de IA do contato esgotada`. Contato com muitas contas/telefones diferentes ainda soma gasto
+  (teto global do webhook continua valendo).
+- **DNS rebinding na URL do servidor Evolution (AV-09).** `validarUrl` resolve e confere o destino a cada
+  chamada, mas o `fetch` do Deno resolve de novo e o IP não é fixado: um DNS controlado pelo atacante
+  poderia devolver IP público na conferência e interno no `fetch`. A URL só é configurada pelo admin
+  (já autenticado, CSRF e teto), então o risco é baixo. Fecha com: fixar o IP resolvido na conexão
+  (cliente HTTP com `resolve`/lookup próprio) ou rede de saída restrita.
+- **Pagamentos visíveis a qualquer participante ativo do caso (pergunta ao dono do produto).**
+  `participante_ve_pagamentos_do_caso` e o download de versão ligada a pagamento valem também para
+  `familiar_apoio`. Pode ser decisão da spec 005; a spec não diz. Se não for, restringir por papel.
+- **Modo demo continua aberto por padrão (AV-08).** `isDemoMode` vale `VITE_DEMO_MODE !== "false"` por
+  decisão registrada (AJUSTES A-01, protótipo mockado). O build agora FALHA se `VITE_SUPABASE_URL` existir
+  com o demo ainda ligado (`apps/web/vite.guardas.ts`), então o esquecimento deixou de publicar
+  `/admin` e `/portal` sem guarda. Fecha de vez com A-01 (modo real no Netlify).
+
+- **E07-S05 (IA de apoio ao processo) — checagens locais e extração de texto por heurística, não
+  por biblioteca validada.** `pre-analise-pdf.ts` usa bytes-por-página como proxy de resolução (não
+  DPI efetivo real) e `extrator-texto-pdf.ts` extrai texto por regex nos operadores `Tj`/`TJ` do
+  PDF (não um parser completo) — nenhum dos dois foi validado contra arquivo real nesta sessão.
+  Falso-negativo possível em ambos (documento bom marcado com problema, ou texto incompleto sem
+  detecção). Mitigado por FR-012 (sem confiança suficiente, marca "requer revisão manual" em vez
+  de inventar certeza) — mas a precisão real só se prova com documento de verdade. Fecha
+  substituindo por biblioteca de imagem/PDF validada quando houver tempo de spike dedicado.
+- **E07-S05 — OCR de imagem escaneada fora de escopo nesta entrega.** US2 só processa documento com
+  texto pesquisável; documento puramente escaneado (foto/scan sem camada de texto) vai sempre para
+  "requer revisão manual", nunca passa por OCR real (Tesseract.js não foi integrado — research.md
+  item 4 já sinalizava risco de não caber numa Edge Function). Não é falha silenciosa: o motivo
+  aparece explicitamente para a equipe.
+- **E07-S05 — chave OpenRouter dedicada (`openrouter:ia-apoio-processo`) sem UI de configuração.**
+  A chave precisa ser gravada via `configuracoes.salvar_segredo_integracao` diretamente (SQL/RPC),
+  não existe tela em Configurações para isso ainda. Sem a chave configurada, US2/US3 respondem
+  "indisponível" e a revisão humana continua funcionando (FR-011) — não é um buraco de segurança,
+  é lacuna de produto. Fecha com a tela de configuração (mesmo padrão de `CanalEvolutionPainel`).
+- **E07-S05 — `objetivoRequisito` do cruzamento é o `tipo` do documento, não o texto rico do
+  catálogo do programa.** `documento-cruzamento.ts` não navega `programas.programas.fases_template`
+  por `requisito_id` para achar `RequisitoDocumento.objetivo` — usa só o tipo (ex.: "carta_experiencia")
+  como contexto do prompt. Parecer da IA fica mais genérico que o que o mock já produzia. Não é
+  risco de segurança; é qualidade de produto a melhorar.
+
+- **E04-S17 — cópia de arquivo para a pasta do advogado é manual.** Vínculo e marcação existem;
+  a cópia via Microsoft Graph entre pastas não foi implementada (sem método de cópia validado
+  nesta sessão). Equipe copia manualmente pelo OneDrive até a automação existir.
+- **E08-S05 — canal privado (exceção à visibilidade de equipe) não implementado.** A spec pede um
+  canal reservado entre cliente e uma pessoa específica da equipe; decisão de produto pendente
+  (quem é "a pessoa" — case manager do caso, ou escolha do cliente?) impediu implementar sem
+  resposta. Hoje todo chat do portal é visível a toda a equipe (comportamento igual a E08-S04).
+- **E10-S05 — só detecção/registro do lembrete de vencimento, sem envio real.** Não existe
+  mecanismo de envio proativo de WhatsApp no repositório (só resposta dentro de webhook) nem
+  provedor de e-mail configurado; link de pagamento depende de E10-S03 (não implementada — API
+  QuickBooks/Global Pays não confirmada). `pagamentos.gerar_lembretes_vencimento()` (cron diário)
+  só grava o alerta em `comunicacao.eventos`, a equipe ainda avisa o cliente manualmente.
 
 ## Referências
 - `seguranca/baseline-minimo.md`, `seguranca/os-grade.md` — checklists que geraram estas entradas.

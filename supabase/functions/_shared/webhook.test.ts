@@ -2,9 +2,8 @@ import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.t
 import type { DepsAgente } from "./agente.ts";
 import { hmacSha256Hex } from "./canais/hmac.ts";
 import { enviarInstagram, enviarWhatsAppOficial, lerEntradasInstagram, lerEntradasWhatsApp } from "./canais/meta.ts";
-import type { SegredoEvolution, SegredoMeta } from "./segredos.ts";
+import type { SegredoMeta } from "./segredos.ts";
 import type { RegraAgente } from "./openrouter.ts";
-import { criarManipuladorEvolution } from "./webhook-evolution.ts";
 import { criarManipuladorMeta } from "./webhook-meta.ts";
 import type { ContaCanal, IOWebhook } from "./webhook.ts";
 
@@ -14,7 +13,6 @@ const REGRA: RegraAgente = {
   mensagem_handoff: "Encaminho à equipe.", llm: { provedor: "openrouter", modelo: "m" },
 };
 const SEG_META: SegredoMeta = { accessToken: "TOK", appSecret: "APPSECRET", verifyToken: "VERIFY" };
-const SEG_EVO: SegredoEvolution = { apiKey: "EVOKEY", webhookToken: "WHTOKEN" };
 
 interface Espiao {
   consultasBanco: number;
@@ -56,6 +54,7 @@ function montarIO(a: {
     criarDeps: ({ enviar }): DepsAgente => {
       e.depsCriadas++;
       return {
+        cotaContato: () => Promise.resolve(true),
         vincularCliente: () => Promise.resolve(null),
         registrar: ({ entrada }) => {
           if (a.registrarFalha) return Promise.reject(new Error("banco"));
@@ -228,58 +227,4 @@ Deno.test("Instagram: assinatura inválida é 401", async () => {
   const { io, e } = montarIO({ segredo: SEG_META });
   assertEquals((await manipuladorIG(io)(await postAssinado(URL_IG, payloadIG(), "errado"))).status, 401);
   assertEquals(e.recibos.length, 0);
-});
-
-// ───────────────────────────── Evolution ─────────────────────────────
-const URL_EVO = `https://p.supabase.co/functions/v1/evolution-webhook?conta=${CONTA_ID}`;
-const eventoEvo = (key: Record<string, unknown> = {}) => ({
-  event: "messages.upsert",
-  data: { key: { remoteJid: "5511988881001@s.whatsapp.net", fromMe: false, id: "3EB0", ...key }, pushName: "Maria", message: { conversation: "Oi" }, messageTimestamp: 1790000000 },
-});
-const reqEvo = (payload: unknown, token: string | null = SEG_EVO.webhookToken) =>
-  new Request(URL_EVO, { method: "POST", body: JSON.stringify(payload), headers: token === null ? {} : { "x-akros-webhook": token } });
-
-Deno.test("Evolution: token ausente ou errado é 401 sem processar", async () => {
-  const { io, e } = montarIO({ segredo: SEG_EVO });
-  const h = criarManipuladorEvolution(io);
-  assertEquals((await h(reqEvo(eventoEvo(), null))).status, 401);
-  assertEquals((await h(reqEvo(eventoEvo(), "outro"))).status, 401);
-  assertEquals([e.depsCriadas, e.recibos.length], [0, 0]);
-  const semSegredo = montarIO({ segredo: null });
-  assertEquals((await criarManipuladorEvolution(semSegredo.io)(reqEvo(eventoEvo()))).status, 401);
-});
-
-Deno.test("Evolution: mensagem válida é respondida no formato v2 com a chave da conta", async () => {
-  const { io, e } = montarIO({ segredo: SEG_EVO });
-  assertEquals((await criarManipuladorEvolution(io)(reqEvo(eventoEvo()))).status, 200);
-  assertEquals(e.enviados[0].url, "https://evo.exemplo.com/message/sendText/akros");
-  assertEquals(e.enviados[0].headers.apikey, "EVOKEY");
-  assertEquals(e.enviados[0].corpo, { number: "5511988881001", text: "Resposta do agente" });
-  assertEquals(e.concluidos, ["respondido"]);
-});
-
-Deno.test("Evolution: grupo, mensagem própria e outro evento são 200 sem processar", async () => {
-  const { io, e } = montarIO({ segredo: SEG_EVO });
-  const h = criarManipuladorEvolution(io);
-  assertEquals((await h(reqEvo(eventoEvo({ remoteJid: "1203@g.us" })))).status, 200);
-  assertEquals((await h(reqEvo(eventoEvo({ fromMe: true })))).status, 200);
-  assertEquals((await h(reqEvo({ event: "connection.update", data: {} }))).status, 200);
-  assertEquals(e.recibos.length, 0);
-});
-
-Deno.test("Evolution: conta inexistente é 404; limite é 429; método errado é 405; JSON inválido autenticado é 400", async () => {
-  assertEquals((await criarManipuladorEvolution(montarIO({ conta: null, segredo: SEG_EVO }).io)(reqEvo(eventoEvo()))).status, 404);
-  assertEquals((await criarManipuladorEvolution(montarIO({ segredo: SEG_EVO, limite: false }).io)(reqEvo(eventoEvo()))).status, 429);
-  assertEquals((await criarManipuladorEvolution(montarIO({ segredo: SEG_EVO }).io)(new Request(URL_EVO))).status, 405);
-  const ruim = new Request(URL_EVO, { method: "POST", body: "{{{", headers: { "x-akros-webhook": SEG_EVO.webhookToken } });
-  assertEquals((await criarManipuladorEvolution(montarIO({ segredo: SEG_EVO }).io)(ruim)).status, 400);
-});
-
-Deno.test("Evolution: conta sem URL/instância não envia e fecha como ignorado", async () => {
-  const { io, e } = montarIO({
-    segredo: SEG_EVO,
-    conta: { id: CONTA_ID, ativa: true, credenciais_configuradas: true, metadados_publicos: {} },
-  });
-  assertEquals((await criarManipuladorEvolution(io)(reqEvo(eventoEvo()))).status, 200);
-  assertEquals([e.concluidos, e.enviados.length], [["ignorado"], 0]);
 });

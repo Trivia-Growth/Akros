@@ -433,6 +433,12 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
+# Admin é validado dentro da função (Auth + role + CSRF); gateway aberto permite OPTIONS/CORS.
+# Servidor, instância, webhook, QR e estado do canal Evolution (E13-S15).
+[functions.canal-evolution]
+enabled = true
+verify_jwt = false
+
 # Evolution não envia JWT Supabase. O capability token por conta vai no header x-akros-webhook.
 [functions.evolution-webhook]
 enabled = true
@@ -458,6 +464,27 @@ verify_jwt = false
 # gateway aberto para o navegador conseguir o preflight CORS, mesmo critério de
 # integracoes-ia-salvar/agente-playground.
 [functions.caso-comandos]
+enabled = true
+verify_jwt = false
+
+# revisao-comandos (E03-S07, Fase 6): admin-only (requireAdmin), mesmo critério de caso-comandos.
+[functions.revisao-comandos]
+enabled = true
+verify_jwt = false
+
+# documento-ocr-cruzamento / documento-rascunho-resposta (E07-S05): admin-only (requireAdmin),
+# mesmo critério de caso-comandos — disparo manual pela equipe, nunca automático.
+[functions.documento-ocr-cruzamento]
+enabled = true
+verify_jwt = false
+
+[functions.documento-rascunho-resposta]
+enabled = true
+verify_jwt = false
+
+# comunicacao-chat-portal (E08-S05): participante ou admin, validado dentro da função
+# (requireAuth), mesmo critério de envio-comandos.
+[functions.comunicacao-chat-portal]
 enabled = true
 verify_jwt = false
 

@@ -2,12 +2,26 @@
 // OpenRouter e rate limit. Tudo que decide está em `agente.ts`/`webhook-*.ts`; aqui só há encanamento.
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { DepsAgente } from "./agente.ts";
-import { clienteServico, escopoOpenRouter, obterSegredo, type SegredoOpenRouter } from "./integracoes.ts";
+import { resolverEnderecosPublicos, validarUrlServidor } from "./canais/evolution-url.ts";
+import {
+  clienteServico,
+  escopoOpenRouter,
+  escopoServidorEvolution,
+  escopoTranscricao,
+  obterSegredo,
+  type SegredoOpenRouter,
+  type SegredoServidorEvolution,
+  type SegredoTranscricao,
+} from "./integracoes.ts";
 import { gerarRespostaOpenRouter, type RegraAgente } from "./openrouter.ts";
-import type { ContaCanal, IOWebhook } from "./webhook.ts";
+import { TETOS, checarLimitePorIdentidade } from "./rate-limit.ts";
+import type { ProvedorTranscricao } from "./canais/transcricao.ts";
+import type { ContaCanal, IOEvolution, IOWebhook } from "./webhook.ts";
 
-// O teto de uso NÃO é montado aqui: cada `index.ts` chama `checarLimite` com o seu próprio teto, à
-// vista, porque é o que `check-edge-functions` exige de toda função pública (E14-S01 AC-6).
+// O teto de uso do ENDPOINT NÃO é montado aqui: cada `index.ts` chama `checarLimite` com o seu
+// próprio teto, à vista, porque é o que `check-edge-functions` exige de toda função pública (E14-S01
+// AC-6). O que mora aqui é a cota de IA por CONTATO (`cotaContato`, AV-05): ela mede gasto, não
+// tráfego, e só o pipeline sabe quando uma chamada paga vai acontecer.
 export function criarIOSupabase(): Omit<IOWebhook, "limite"> {
   let cliente: SupabaseClient | null = null;
   // Criação preguiçosa: ambiente incompleto vira erro de requisição (500), não queda no boot.
@@ -20,7 +34,7 @@ export function criarIOSupabase(): Omit<IOWebhook, "limite"> {
       const { data, error } = await sb()
         .schema("configuracoes")
         .from("contas_canal")
-        .select("id,ativa,credenciais_configuradas,metadados_publicos")
+        .select("id,ativa,credenciais_configuradas,metadados_publicos,nome_instancia,estado_conexao,identificador")
         .eq("id", contaId)
         .eq("provedor", provedor)
         .is("deleted_at", null)
@@ -37,7 +51,8 @@ export function criarIOSupabase(): Omit<IOWebhook, "limite"> {
           if (!usaTelefone) return null;
           const { data, error } = await sb()
             .schema("crm")
-            .rpc("obter_cliente_por_telefone", { p_telefone: contatoExterno })
+            // Só vincula quando há EXATAMENTE um cliente com o telefone (E13-S15, FR-018).
+            .rpc("obter_cliente_unico_por_telefone", { p_telefone: contatoExterno })
             .maybeSingle<{ id: string; nome: string }>();
           if (error) throw new Error("falha ao localizar contato");
           return data;
@@ -54,6 +69,19 @@ export function criarIOSupabase(): Omit<IOWebhook, "limite"> {
               p_origem_id: entrada.origemId,
               p_texto: entrada.texto,
               p_ocorrido_em: entrada.ocorridoEm,
+              p_tipo: entrada.tipo ?? "texto",
+              p_anexo: entrada.anexo
+                ? {
+                  nome: entrada.anexo.nome,
+                  mime: entrada.anexo.mime,
+                  tamanhoBytes: entrada.anexo.tamanhoBytes,
+                  baixado: entrada.anexo.baixado,
+                  ...(entrada.anexo.caminho ? { caminho: entrada.anexo.caminho } : {}),
+                  ...(entrada.anexo.motivo ? { motivo: entrada.anexo.motivo } : {}),
+                  ...(entrada.anexo.transcricao ? { transcricao: entrada.anexo.transcricao } : {}),
+                }
+                : null,
+              p_identificacao: entrada.identificacao ?? "identificada",
             })
             .single<{ processar: boolean; conversa_id: string | null }>();
           if (error) throw new Error("falha ao registrar mensagem");
@@ -90,6 +118,16 @@ export function criarIOSupabase(): Omit<IOWebhook, "limite"> {
           return segredo?.apiKey || null;
         },
 
+        async cotaContato(contatoExterno) {
+          // Fail-closed (padrão de `checarLimitePorIdentidade`): limitador fora = sem chamada paga.
+          const { permitido } = await checarLimitePorIdentidade({
+            identidade: `${contaId}:${contatoExterno}`,
+            rota: "agente-ia-contato",
+            ...TETOS["agente-ia-contato"],
+          });
+          return permitido;
+        },
+
         async historico(conversaId) {
           const { data, error } = await sb()
             .schema("comunicacao")
@@ -109,6 +147,85 @@ export function criarIOSupabase(): Omit<IOWebhook, "limite"> {
         log: (evento) =>
           console.warn(JSON.stringify({ ts: new Date().toISOString(), contaId, ...evento })),
       };
+    },
+  };
+}
+
+/** E/S do webhook da Evolution: a base + servidor compatível, estado da conexão e anexos (E13-S15). */
+export function criarIOEvolution(): Omit<IOEvolution, "limite" | "limiteTranscricao"> {
+  const base = criarIOSupabase();
+  let cliente: SupabaseClient | null = null;
+  const sb = () => (cliente ??= clienteServico());
+
+  return {
+    ...base,
+
+    async servidorEvolution() {
+      const { data, error } = await sb()
+        .schema("configuracoes")
+        .from("evolution_servidor")
+        .select("id,url_base")
+        .eq("estado", "compativel")
+        .limit(1)
+        .maybeSingle<{ id: string; url_base: string }>();
+      if (error) throw new Error("falha ao carregar o servidor Evolution");
+      if (!data) return null;
+      const segredo = await obterSegredo<SegredoServidorEvolution>(sb(), escopoServidorEvolution(data.id));
+      return segredo?.apiKey ? { urlBase: data.url_base, apiKey: segredo.apiKey } : null;
+    },
+
+    async atualizarConexao(contaId, estado, codigoErro) {
+      const { error } = await sb()
+        .schema("configuracoes")
+        .from("contas_canal")
+        .update({ estado_conexao: estado, ultimo_erro_codigo: codigoErro, updated_at: new Date().toISOString() })
+        .eq("id", contaId);
+      if (error) throw new Error("falha ao atualizar o estado da conexão");
+    },
+
+    async jaRecebida(contaId, origemId) {
+      const { data, error } = await sb()
+        .schema("comunicacao")
+        .from("webhooks_canal")
+        .select("id")
+        .eq("conta_canal_id", contaId)
+        .eq("origem_id", origemId)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error("falha ao conferir recebimento");
+      return data !== null;
+    },
+
+    async guardarAnexo({ contaId, origemId, bytes, mime }) {
+      const caminho = `${contaId}/${origemId.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120)}`;
+      const { error } = await sb().storage.from("comunicacao-anexos").upload(caminho, bytes, {
+        contentType: mime,
+        upsert: false,
+      });
+      // Mesmo caminho já gravado (reentrega que passou pela checagem): o arquivo certo já está lá.
+      if (error && !/exists|duplicate/i.test(error.message)) throw new Error("falha ao guardar anexo");
+      return caminho;
+    },
+
+    async validarUrl(url) {
+      const r = await validarUrlServidor(url, { resolverEnderecos: resolverEnderecosPublicos });
+      if (!r.valida) throw new Error("url_recusada");
+    },
+
+    async transcricao() {
+      const { data, error } = await sb()
+        .schema("configuracoes")
+        .from("transcricao_audio")
+        .select("id,provedor,modelo,idioma")
+        .eq("ativa", true)
+        .limit(1)
+        .maybeSingle<{ id: string; provedor: ProvedorTranscricao; modelo: string; idioma: string | null }>();
+      if (error) throw new Error("falha ao ler a transcrição de áudio");
+      if (!data) return null;
+      const segredo = await obterSegredo<SegredoTranscricao>(sb(), escopoTranscricao(data.id));
+      return segredo?.apiKey
+        ? { provedor: data.provedor, modelo: data.modelo, idioma: data.idioma, chave: segredo.apiKey }
+        : null;
     },
   };
 }
