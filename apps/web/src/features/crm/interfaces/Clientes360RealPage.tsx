@@ -701,14 +701,18 @@ function ToggleIaApoio({ clienteId }: { clienteId: string }) {
   useEffect(() => {
     let cancelado = false;
     void (async () => {
-      const { getSupabase } = await import("@/shared/supabase/client");
-      const { data } = await getSupabase()
-        .schema("crm")
-        .from("clientes")
-        .select("ia_apoio_ativa")
-        .eq("id", clienteId)
-        .maybeSingle<{ ia_apoio_ativa: boolean }>();
-      if (!cancelado) setAtiva(data?.ia_apoio_ativa ?? true);
+      try {
+        const { getSupabase } = await import("@/shared/supabase/client");
+        const { data } = await getSupabase()
+          .schema("crm")
+          .from("clientes")
+          .select("ia_apoio_ativa")
+          .eq("id", clienteId)
+          .maybeSingle<{ ia_apoio_ativa: boolean }>();
+        if (!cancelado) setAtiva(data?.ia_apoio_ativa ?? true);
+      } catch {
+        if (!cancelado) setAtiva(true);
+      }
     })();
     return () => {
       cancelado = true;
