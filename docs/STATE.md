@@ -8,6 +8,20 @@ alwaysApply: false
 
 ## Agora
 
+- **2026-11-09 — PR #14 (`feat/E03-S07-fases-6-a-9`) mergeado à `main` (`4117889`).** Fecha
+  E03-S07 fases 6-9 (revisão de documentos, conciliação financeira, carteira e previsão) +
+  E07-S05 (IA de apoio ao processo — prioridade nº 1 do Bruno), E04-S17 (pasta do advogado),
+  E08-S04/S05 (comunicação append-only + chat real), E10-S05 (lembrete de vencimento). CI
+  verde em `main` (`qualidade`/`seguranca`/`db-tests`/`ci`). Migrations `0017`-`0051` aplicadas
+  em produção (projeto `mhxopadkizktsenohnbm`); Edge Functions `documento-ocr-cruzamento`,
+  `documento-rascunho-resposta` e `comunicacao-chat-portal` publicadas (`--use-api`). **Achado e
+  corrigido no caminho:** migration `0045` tinha removido sem querer a checagem de autorização de
+  `arquivos.finalizar_envio` (0032) — vulnerabilidade já estava em produção; migration `0051`
+  restaura a checagem, aplicada em produção com autorização explícita do usuário. Detalhe por
+  story em `docs/epics/ROADMAP.md` (E03-S07, E04-S17, E07-S05, E08-S04, E08-S05, E10-S05).
+  **Pendente:** UI de configuração da chave de IA, OCR de imagem escaneada, cópia automática
+  para pasta do advogado, canal de assunto particular no chat, envio real de lembrete de
+  cobrança (ver `docs/SECURITY_DEBT.md`) — nenhum bloqueia o uso das features já publicadas.
 - **Evolution confiável (E13-S15): implementada e verificada localmente em 2026-10-27/28**, branch
   `feat/E13-S15-evolution-confiavel` (worktree `.claude/worktrees/E13-S15-evolution-confiavel`),
   **commitada localmente (`4fcc33c`), não enviada** (push/PR é do @devops). Revisão adversarial do
