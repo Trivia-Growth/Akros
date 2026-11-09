@@ -219,6 +219,11 @@
       "confidence": "confidence {{value}}%"
     }
   },
+  "aiSupport": {
+    "analyzeButton": "Analyze with AI",
+    "draftButton": "Generate reply draft",
+    "draftLabel": "Suggested draft (review before sending)"
+  },
   "docQueue": {
     "title": "Document review",
     "subtitle": "Queue prioritized by wait time. The AI's opinion is input; the decision is always human.",

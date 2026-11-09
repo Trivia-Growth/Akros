@@ -1,4 +1,6 @@
 import { obterCasoComandosReal } from "@/app/real-repositories";
+import { useChatPortal } from "@/features/comunicacao/application/useChatPortal";
+import type { EventoComunicacao } from "@/features/comunicacao/domain/types";
 import { Timeline } from "@/features/comunicacao/interfaces/Timeline";
 import type { Documento } from "@/features/documentos/domain/types";
 import { useJornadaComandos } from "@/features/jornada/application/useJornadaComandos";
@@ -40,7 +42,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCliente360AdminSupabase } from "../application/useCliente360AdminSupabase";
 import { type SituacaoCaso, calcularProximaAcao } from "../domain/caso";
@@ -48,6 +50,7 @@ import type { Contrato } from "../domain/contrato";
 import type { Cliente } from "../domain/types";
 import { ContratoFormulario } from "./ContratoFormulario";
 import { ParticipantesPainel } from "./ParticipantesPainel";
+import { PastaAdvogadoPainel } from "./PastaAdvogadoPainel";
 import { PastaCasoPainel } from "./PastaCasoPainel";
 import { SolicitarDocumentoPainel } from "./SolicitarDocumentoPainel";
 
@@ -486,7 +489,8 @@ export function Cliente360Real({
               onSalvo={() => void refetch()}
             />
           )}
-          <ListaDocumentos documentos={documentos} />
+          <PastaAdvogadoPainel clienteId={cliente.id} />
+          <ListaDocumentos documentos={documentos} onAlterado={() => void refetch()} />
         </TabsContent>
         <TabsContent value="payments">
           {contrato && (
@@ -502,6 +506,11 @@ export function Cliente360Real({
           <ListaReunioes reunioes={reunioes} />
         </TabsContent>
         <TabsContent value="conversations">
+          <ChatPortalAdminPainel
+            clienteId={cliente.id}
+            eventos={eventos}
+            onEnviado={() => void refetch()}
+          />
           <ListaConversas conversas={conversas} emails={emails} />
         </TabsContent>
         <TabsContent value="participants">
@@ -664,6 +673,7 @@ function DadosCliente({ cliente }: { cliente: Cliente }) {
         <Campo label="Case manager" value={cliente.caseManager} />
         <Campo label="Cliente desde" value={formatarData(cliente.criadoEm)} />
       </Card>
+      <ToggleIaApoio clienteId={cliente.id} />
       <Card>
         <p className="mb-4 font-semibold text-navy">Dados do processo</p>
         {!perfil ? (
@@ -681,16 +691,108 @@ function DadosCliente({ cliente }: { cliente: Cliente }) {
   );
 }
 
-function ListaDocumentos({ documentos }: { documentos: Documento[] }) {
+/** E07-S05 (FR-010) — liga/desliga a IA de apoio ao processo para este caso. Estado próprio
+ *  (não propagado pelo mapper de `Cliente` por escopo desta sessão): lê/escreve
+ *  `crm.clientes.ia_apoio_ativa` direto. */
+function ToggleIaApoio({ clienteId }: { clienteId: string }) {
+  const [ativa, setAtiva] = useState<boolean | null>(null);
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    let cancelado = false;
+    void (async () => {
+      const { getSupabase } = await import("@/shared/supabase/client");
+      const { data } = await getSupabase()
+        .schema("crm")
+        .from("clientes")
+        .select("ia_apoio_ativa")
+        .eq("id", clienteId)
+        .maybeSingle<{ ia_apoio_ativa: boolean }>();
+      if (!cancelado) setAtiva(data?.ia_apoio_ativa ?? true);
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [clienteId]);
+
+  async function alternar() {
+    if (ativa === null || salvando) return;
+    setSalvando(true);
+    try {
+      const resultado = await obterCasoComandosReal().definirIaApoio({
+        clienteId,
+        ativa: !ativa,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      setAtiva(resultado.iaApoioAtiva);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Card className="flex items-center justify-between gap-3">
+      <div>
+        <p className="text-sm font-medium text-navy">IA de apoio ao processo</p>
+        <p className="text-xs text-ink-muted">
+          Pré-análise, cruzamento com requisito e rascunho de resposta para este caso.
+        </p>
+      </div>
+      <Button
+        size="sm"
+        variant={ativa ? "gold" : "secondary"}
+        onClick={() => void alternar()}
+        loading={salvando}
+        disabled={ativa === null || salvando}
+      >
+        {ativa ? "Ligada" : "Desligada"}
+      </Button>
+    </Card>
+  );
+}
+
+function ListaDocumentos({
+  documentos,
+  onAlterado,
+}: { documentos: Documento[]; onAlterado: () => void }) {
+  const [processandoId, setProcessandoId] = useState<string | null>(null);
+
+  async function alternarCompartilhamento(documento: Documento) {
+    setProcessandoId(documento.id);
+    try {
+      await obterCasoComandosReal().marcarCompartilhavelAdvogado({
+        documentoId: documento.id,
+        compartilhavel: !documento.compartilhavelAdvogado,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      onAlterado();
+    } finally {
+      setProcessandoId(null);
+    }
+  }
+
   return documentos.length ? (
     <div className="flex flex-col gap-2">
       {documentos.map((documento) => (
-        <Card key={documento.id} className="flex items-center justify-between">
+        <Card key={documento.id} className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm text-navy">{documento.nome}</p>
             <p className="text-xs text-ink-muted">{documento.tipo}</p>
           </div>
-          <Badge variant={DOCUMENTO_VARIANT[documento.status]}>{documento.status}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={DOCUMENTO_VARIANT[documento.status]}>{documento.status}</Badge>
+            <Button
+              size="sm"
+              variant={documento.compartilhavelAdvogado ? "gold" : "secondary"}
+              onClick={() => void alternarCompartilhamento(documento)}
+              loading={processandoId === documento.id}
+              disabled={processandoId === documento.id}
+            >
+              {documento.compartilhavelAdvogado
+                ? "Compartilhável c/ advogado"
+                : "Marcar p/ advogado"}
+            </Button>
+          </div>
         </Card>
       ))}
     </div>
@@ -799,6 +901,60 @@ function ListaReunioes({
     <Vazio texto="Nenhuma reunião real cadastrada." />
   );
 }
+/** E08-S05 — admin lê e responde o chat do portal (eventos canal='chat_portal'/'sistema'). */
+function ChatPortalAdminPainel({
+  clienteId,
+  eventos,
+  onEnviado,
+}: { clienteId: string; eventos: EventoComunicacao[]; onEnviado: () => void }) {
+  const { enviar, enviando, erro } = useChatPortal();
+  const [texto, setTexto] = useState("");
+  const mensagens = eventos.filter((e) => e.canal === "chat_portal" || e.canal === "sistema");
+
+  async function handleEnviar() {
+    const ok = await enviar(clienteId, texto);
+    if (ok) {
+      setTexto("");
+      onEnviado();
+    }
+  }
+
+  return (
+    <Card className="mb-3 flex flex-col gap-3">
+      <p className="text-sm font-semibold text-navy">Chat do portal</p>
+      {mensagens.length === 0 ? (
+        <p className="text-sm text-ink-muted">Nenhuma mensagem no chat do portal ainda.</p>
+      ) : (
+        <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+          {[...mensagens].reverse().map((m) => (
+            <div key={m.id} className="rounded-md bg-cream-100 p-2 text-sm">
+              <p className="text-xs font-medium text-navy">{m.autor}</p>
+              <p className="text-ink-soft">{m.conteudo}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      <Textarea
+        placeholder="Responder ao cliente pelo chat do portal…"
+        rows={2}
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+      />
+      {erro && <p className="text-xs text-red-700">Não foi possível enviar. Tente de novo.</p>}
+      <Button
+        size="sm"
+        variant="gold"
+        className="self-end"
+        onClick={() => void handleEnviar()}
+        loading={enviando}
+        disabled={enviando || !texto.trim()}
+      >
+        Enviar
+      </Button>
+    </Card>
+  );
+}
+
 function ListaConversas({
   conversas,
   emails,

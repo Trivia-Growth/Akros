@@ -121,6 +121,39 @@ function problem(status: number, detail: string, reqId: string, cors: Record<str
   );
 }
 
+/** E07-S05 — reaproveita o passo "resolve versão → token Microsoft → baixa do Graph" sem o
+ *  encanamento HTTP de `criarManipuladorArquivoBaixar` (chamado internamente por um job, não por
+ *  requisição de usuário). Mesmas garantias: token nunca persiste em claro, refresh é salvo de
+ *  volta no Vault quando o Graph rotaciona. Lança `HttpError` nos mesmos casos do handler. */
+export async function baixarBytesDoGraph(
+  io: Pick<IOArquivoBaixar, "carregarVersao" | "integracaoDoCliente" | "obterSegredoVault" | "salvarSegredoVault">,
+  graph: IOGraphMicrosoftTransferencia,
+  versaoId: string,
+): Promise<{ bytes: Uint8Array; nomeOriginal: string; clienteId: string; documentoId: string | null }> {
+  const versao = await io.carregarVersao(versaoId);
+  if (!versao) throw new HttpError(404, NAO_ENCONTRADO);
+  if (versao.estadoArmazenamento !== "armazenado" || !versao.itemId || !versao.driveId) {
+    throw new HttpError(409, "Arquivo ainda em transferência, tente novamente em instantes");
+  }
+
+  const integracao = await io.integracaoDoCliente(versao.clienteId);
+  if (!integracao) throw new HttpError(409, "Integração Microsoft do caso não encontrada");
+
+  const segredo = await io.obterSegredoVault(`microsoft-graph:${integracao.integracaoId}`);
+  if (!segredo) throw new HttpError(409, "Conexão Microsoft indisponível, tente novamente em instantes");
+
+  const { accessToken, refreshTokenNovo } = await graph.trocarRefreshPorAccessToken(segredo);
+  if (refreshTokenNovo) {
+    await io.salvarSegredoVault(`microsoft-graph:${integracao.integracaoId}`, {
+      ...segredo,
+      refreshToken: refreshTokenNovo,
+    });
+  }
+
+  const bytes = await graph.baixarConteudo({ accessToken, driveId: versao.driveId, itemId: versao.itemId });
+  return { bytes, nomeOriginal: versao.nomeOriginal, clienteId: versao.clienteId, documentoId: versao.documentoId };
+}
+
 export function criarManipuladorArquivoBaixar(deps: DepsHandlerArquivoBaixar) {
   return async (req: Request): Promise<Response> => {
     const cors = corsHeaders(req.headers.get("Origin"));

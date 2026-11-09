@@ -186,6 +186,43 @@ dois problemas que o tiraram dela.
   com o demo ainda ligado (`apps/web/vite.guardas.ts`), então o esquecimento deixou de publicar
   `/admin` e `/portal` sem guarda. Fecha de vez com A-01 (modo real no Netlify).
 
+- **E07-S05 (IA de apoio ao processo) — checagens locais e extração de texto por heurística, não
+  por biblioteca validada.** `pre-analise-pdf.ts` usa bytes-por-página como proxy de resolução (não
+  DPI efetivo real) e `extrator-texto-pdf.ts` extrai texto por regex nos operadores `Tj`/`TJ` do
+  PDF (não um parser completo) — nenhum dos dois foi validado contra arquivo real nesta sessão.
+  Falso-negativo possível em ambos (documento bom marcado com problema, ou texto incompleto sem
+  detecção). Mitigado por FR-012 (sem confiança suficiente, marca "requer revisão manual" em vez
+  de inventar certeza) — mas a precisão real só se prova com documento de verdade. Fecha
+  substituindo por biblioteca de imagem/PDF validada quando houver tempo de spike dedicado.
+- **E07-S05 — OCR de imagem escaneada fora de escopo nesta entrega.** US2 só processa documento com
+  texto pesquisável; documento puramente escaneado (foto/scan sem camada de texto) vai sempre para
+  "requer revisão manual", nunca passa por OCR real (Tesseract.js não foi integrado — research.md
+  item 4 já sinalizava risco de não caber numa Edge Function). Não é falha silenciosa: o motivo
+  aparece explicitamente para a equipe.
+- **E07-S05 — chave OpenRouter dedicada (`openrouter:ia-apoio-processo`) sem UI de configuração.**
+  A chave precisa ser gravada via `configuracoes.salvar_segredo_integracao` diretamente (SQL/RPC),
+  não existe tela em Configurações para isso ainda. Sem a chave configurada, US2/US3 respondem
+  "indisponível" e a revisão humana continua funcionando (FR-011) — não é um buraco de segurança,
+  é lacuna de produto. Fecha com a tela de configuração (mesmo padrão de `CanalEvolutionPainel`).
+- **E07-S05 — `objetivoRequisito` do cruzamento é o `tipo` do documento, não o texto rico do
+  catálogo do programa.** `documento-cruzamento.ts` não navega `programas.programas.fases_template`
+  por `requisito_id` para achar `RequisitoDocumento.objetivo` — usa só o tipo (ex.: "carta_experiencia")
+  como contexto do prompt. Parecer da IA fica mais genérico que o que o mock já produzia. Não é
+  risco de segurança; é qualidade de produto a melhorar.
+
+- **E04-S17 — cópia de arquivo para a pasta do advogado é manual.** Vínculo e marcação existem;
+  a cópia via Microsoft Graph entre pastas não foi implementada (sem método de cópia validado
+  nesta sessão). Equipe copia manualmente pelo OneDrive até a automação existir.
+- **E08-S05 — canal privado (exceção à visibilidade de equipe) não implementado.** A spec pede um
+  canal reservado entre cliente e uma pessoa específica da equipe; decisão de produto pendente
+  (quem é "a pessoa" — case manager do caso, ou escolha do cliente?) impediu implementar sem
+  resposta. Hoje todo chat do portal é visível a toda a equipe (comportamento igual a E08-S04).
+- **E10-S05 — só detecção/registro do lembrete de vencimento, sem envio real.** Não existe
+  mecanismo de envio proativo de WhatsApp no repositório (só resposta dentro de webhook) nem
+  provedor de e-mail configurado; link de pagamento depende de E10-S03 (não implementada — API
+  QuickBooks/Global Pays não confirmada). `pagamentos.gerar_lembretes_vencimento()` (cron diário)
+  só grava o alerta em `comunicacao.eventos`, a equipe ainda avisa o cliente manualmente.
+
 ## Referências
 - `seguranca/baseline-minimo.md`, `seguranca/os-grade.md` — checklists que geraram estas entradas.
 - `docs/epics/ROADMAP.md` — perguntas abertas de produto (nº 6, 8) espelhadas aqui do ângulo de

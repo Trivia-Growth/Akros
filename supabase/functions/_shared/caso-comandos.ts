@@ -152,6 +152,37 @@ export const CadastrarCobrancaSchema = z
   })
   .strict();
 
+// E07-S05 (FR-010) — liga/desliga a IA de apoio ao processo por caso.
+export const DefinirIaApoioSchema = z
+  .object({
+    acao: z.literal("definir_ia_apoio"),
+    clienteId: z.string().uuid(),
+    ativa: z.boolean(),
+    idempotencyKey: z.string().min(1),
+  })
+  .strict();
+
+// E04-S17 — pasta do advogado, mesma validação de ancestralidade de `vincular_pasta` (abaixo).
+export const VincularPastaAdvogadoSchema = z
+  .object({
+    acao: z.literal("vincular_pasta_advogado"),
+    clienteId: z.string().uuid(),
+    integracaoId: z.string().uuid(),
+    folderItemId: z.string().min(1),
+    caminhoExibicao: z.string().max(500).optional(),
+    idempotencyKey: z.string().min(1),
+  })
+  .strict();
+
+export const MarcarCompartilhavelAdvogadoSchema = z
+  .object({
+    acao: z.literal("marcar_compartilhavel_advogado"),
+    documentoId: z.string().uuid(),
+    compartilhavel: z.boolean(),
+    idempotencyKey: z.string().min(1),
+  })
+  .strict();
+
 // União discriminada por `acao` — novas ações futuras entram como mais um elemento desta
 // lista, sem tocar nos `case` já implementados no switch abaixo.
 const UniaoCasoComandos = z.discriminatedUnion("acao", [
@@ -162,6 +193,9 @@ const UniaoCasoComandos = z.discriminatedUnion("acao", [
   SolicitarDocumentoSchema,
   VincularPastaSchema,
   CadastrarCobrancaSchema,
+  DefinirIaApoioSchema,
+  VincularPastaAdvogadoSchema,
+  MarcarCompartilhavelAdvogadoSchema,
 ]);
 
 // Validação cruzada `sujeitoTipo` ↔ campo companheiro, ANTES de a requisição chegar na RPC —
@@ -243,7 +277,10 @@ export interface IOCasoComandos {
       | "revogar_participante"
       | "solicitar_documento"
       | "vincular_pasta"
-      | "cadastrar_cobranca",
+      | "cadastrar_cobranca"
+      | "definir_ia_apoio"
+      | "vincular_pasta_advogado"
+      | "marcar_compartilhavel_advogado",
     params: Record<string, unknown>,
   ): Promise<RespostaRpc<unknown>>;
 }
@@ -283,7 +320,8 @@ function statusDeSucesso(acao: EntradaCasoComandos["acao"]): number {
     acao === "convidar_participante" ||
     acao === "solicitar_documento" ||
     acao === "vincular_pasta" ||
-    acao === "cadastrar_cobranca"
+    acao === "cadastrar_cobranca" ||
+    acao === "vincular_pasta_advogado"
   ) {
     return 201;
   }
@@ -441,9 +479,61 @@ export function criarManipuladorCasoComandos(io: IOCasoComandos) {
               if (error) throw erroDeNegocio(error);
               return data;
             }
+            case "vincular_pasta_advogado": {
+              // Mesma validação de ancestralidade de "vincular_pasta" — pasta do advogado
+              // também tem que estar dentro da raiz autorizada da integração (E04-S17).
+              const acesso = await io.prepararAcessoMicrosoft(entrada.integracaoId);
+              if (!acesso) throw new HttpError(422, "Integração Microsoft inexistente");
+
+              let ancestrais: string[];
+              try {
+                ancestrais = await io.graph.listarAncestrais({
+                  accessToken: acesso.accessToken,
+                  driveId: acesso.driveId,
+                  itemId: entrada.folderItemId,
+                });
+              } catch {
+                throw new HttpError(422, "Pasta inexistente ou inacessível no OneDrive");
+              }
+
+              const dentroDaRaiz =
+                entrada.folderItemId === acesso.pastaRaizItemId ||
+                ancestrais.includes(acesso.pastaRaizItemId);
+              if (!dentroDaRaiz) {
+                throw new HttpError(422, "Pasta fora da raiz autorizada para esta integração");
+              }
+
+              const { data, error } = await io.rpc("vincular_pasta_advogado", {
+                p_cliente_id: entrada.clienteId,
+                p_integracao_id: entrada.integracaoId,
+                p_folder_item_id: entrada.folderItemId,
+                p_caminho_exibicao: entrada.caminhoExibicao ?? null,
+                p_autor_id: userId,
+              });
+              if (error) throw erroDeNegocio(error);
+              return data;
+            }
+            case "marcar_compartilhavel_advogado": {
+              const { data, error } = await io.rpc("marcar_compartilhavel_advogado", {
+                p_documento_id: entrada.documentoId,
+                p_compartilhavel: entrada.compartilhavel,
+                p_autor_id: userId,
+              });
+              if (error) throw erroDeNegocio(error);
+              return data;
+            }
             case "cadastrar_cobranca": {
               const { data, error } = await io.rpc("cadastrar_cobranca", {
                 p_contrato_condicao_id: entrada.contratoCondicaoId,
+                p_autor_id: userId,
+              });
+              if (error) throw erroDeNegocio(error);
+              return data;
+            }
+            case "definir_ia_apoio": {
+              const { data, error } = await io.rpc("definir_ia_apoio", {
+                p_cliente_id: entrada.clienteId,
+                p_ativa: entrada.ativa,
                 p_autor_id: userId,
               });
               if (error) throw erroDeNegocio(error);

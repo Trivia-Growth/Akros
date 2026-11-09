@@ -219,6 +219,11 @@
       "confidence": "confiança {{value}}%"
     }
   },
+  "aiSupport": {
+    "analyzeButton": "Analisar com IA",
+    "draftButton": "Gerar rascunho de resposta",
+    "draftLabel": "Rascunho sugerido (revise antes de enviar)"
+  },
   "docQueue": {
     "title": "Revisão de documentos",
     "subtitle": "Fila priorizada por tempo de espera. O parecer da IA é um insumo; a decisão é sempre humana.",

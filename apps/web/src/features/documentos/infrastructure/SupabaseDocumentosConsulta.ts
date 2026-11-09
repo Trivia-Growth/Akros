@@ -24,6 +24,7 @@ interface LinhaDocumento {
   enviado_apesar_do_alerta: boolean | null;
   decisao: unknown;
   revisao?: number;
+  compartilhavel_advogado?: boolean;
 }
 
 interface LinhaAssinatura {
@@ -119,6 +120,7 @@ export function paraDocumento(linha: LinhaDocumento): Documento {
     ...(linha.enviado_apesar_do_alerta ? { enviadoApesarDoAlerta: true } : {}),
     ...(decisao ? { decisao } : {}),
     ...(typeof linha.revisao === "number" ? { revisao: linha.revisao } : {}),
+    ...(linha.compartilhavel_advogado ? { compartilhavelAdvogado: true } : {}),
   };
 }
 

@@ -42,6 +42,7 @@ import { SupabasePerfilClienteConsulta } from "@/features/crm/infrastructure/Sup
 import { SupabasePropostasConsulta } from "@/features/crm/infrastructure/SupabasePropostasConsulta";
 import { SupabaseVinculoPastaConsulta } from "@/features/crm/infrastructure/SupabaseVinculoPastaConsulta";
 import type {
+  AnalisadorDocumentoPort,
   ArquivoDownloadPort,
   DocumentosAdminConsulta,
   DocumentosConsulta,
@@ -50,6 +51,7 @@ import type {
   RevisaoDocumentoComandos,
   VersoesConsulta,
 } from "@/features/documentos/application/ports";
+import { SupabaseAnalisadorDocumentoReal } from "@/features/documentos/infrastructure/SupabaseAnalisadorDocumentoReal";
 import { SupabaseArquivoDownload } from "@/features/documentos/infrastructure/SupabaseArquivoDownload";
 import { SupabaseDocumentosAdminConsulta } from "@/features/documentos/infrastructure/SupabaseDocumentosAdminConsulta";
 import { SupabaseDocumentosConsulta } from "@/features/documentos/infrastructure/SupabaseDocumentosConsulta";
@@ -104,6 +106,7 @@ let jornadaComandosReal: JornadaComandos | undefined;
 let versoesDocumentoReal: VersoesConsulta | undefined;
 let envioArquivoReal: EnvioArquivoPort | undefined;
 let arquivoDownloadReal: ArquivoDownloadPort | undefined;
+let analisadorDocumentoReal: AnalisadorDocumentoPort | undefined;
 let pagamentosReal: PagamentosConsulta | undefined;
 let comunicacaoReal: ComunicacaoConsulta | undefined;
 let comunicacaoAdminReal: ComunicacaoAdminConsulta | undefined;
@@ -210,6 +213,12 @@ export function obterConsultaVersoesDocumento(): VersoesConsulta {
 export function obterArquivoDownloadReal(): ArquivoDownloadPort {
   if (!arquivoDownloadReal) arquivoDownloadReal = new SupabaseArquivoDownload();
   return arquivoDownloadReal;
+}
+
+/** E07-S05 — pré-análise local, cruzamento com requisito (OpenRouter) e rascunho de resposta. */
+export function obterAnalisadorDocumentoReal(): AnalisadorDocumentoPort {
+  if (!analisadorDocumentoReal) analisadorDocumentoReal = new SupabaseAnalisadorDocumentoReal();
+  return analisadorDocumentoReal;
 }
 
 export function obterEnvioArquivoReal(): EnvioArquivoPort {

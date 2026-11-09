@@ -1,7 +1,8 @@
 import { Badge, Button, Card, Textarea } from "@/shared/ui";
-import { AlertTriangle, CircleAlert, FileSearch } from "lucide-react";
+import { AlertTriangle, CircleAlert, FileSearch, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useAnaliseIA } from "../application/useAnaliseIA";
 import { useDocumentosAdminSupabase } from "../application/useDocumentosAdminSupabase";
 import { useRevisaoComandos } from "../application/useRevisaoComandos";
 import type { Documento } from "../domain/types";
@@ -22,6 +23,12 @@ export function FilaRevisaoRealPage() {
   const { t } = useTranslation("admin");
   const { documentos, nomesClientes, carregando, erro, refetch } = useDocumentosAdminSupabase();
   const { revisar, processandoId, erro: erroRevisao } = useRevisaoComandos();
+  const {
+    analisarComIa,
+    gerarRascunho,
+    rascunhos,
+    processandoId: processandoIaId,
+  } = useAnaliseIA();
   const [devolvendoId, setDevolvendoId] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("");
 
@@ -99,6 +106,27 @@ export function FilaRevisaoRealPage() {
               <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
                 <Button
                   size="sm"
+                  variant="secondary"
+                  onClick={() => void analisarComIa(documento.id, documento.tipo)}
+                  loading={processandoIaId === documento.id}
+                  disabled={processandoIaId === documento.id}
+                >
+                  <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                  {t("aiSupport.analyzeButton")}
+                </Button>
+                {documento.analise && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => void gerarRascunho(documento.id)}
+                    loading={processandoIaId === documento.id}
+                    disabled={processandoIaId === documento.id}
+                  >
+                    {t("aiSupport.draftButton")}
+                  </Button>
+                )}
+                <Button
+                  size="sm"
                   variant="gold"
                   onClick={() => void aprovar(documento)}
                   loading={processandoId === documento.id}
@@ -139,6 +167,14 @@ export function FilaRevisaoRealPage() {
                   </Button>
                 )}
               </div>
+              {rascunhos[documento.id] && (
+                <div className="rounded-md border border-gold-200 bg-gold-50/40 p-3 text-sm text-ink-soft">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-label text-gold-700">
+                    {t("aiSupport.draftLabel")}
+                  </p>
+                  <p>{rascunhos[documento.id].texto}</p>
+                </div>
+              )}
             </Card>
           ))}
         </div>

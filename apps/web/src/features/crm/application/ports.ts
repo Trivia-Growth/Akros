@@ -170,6 +170,29 @@ export interface CasoComandos {
     contratoCondicaoId: string;
     idempotencyKey: string;
   }): Promise<Pagamento>;
+
+  /** E07-S05 (FR-010) — liga/desliga a IA de apoio ao processo para o caso. */
+  definirIaApoio(input: {
+    clienteId: string;
+    ativa: boolean;
+    idempotencyKey: string;
+  }): Promise<{ id: string; iaApoioAtiva: boolean }>;
+
+  /** E04-S17 — vincula a pasta do advogado (separada da pasta operacional). */
+  vincularPastaAdvogado(input: {
+    clienteId: string;
+    integracaoId: string;
+    folderItemId: string;
+    caminhoExibicao?: string;
+    idempotencyKey: string;
+  }): Promise<{ id: string }>;
+
+  /** E04-S17 (FR-001) — marca/desmarca um documento como compartilhável com o advogado. */
+  marcarCompartilhavelAdvogado(input: {
+    documentoId: string;
+    compartilhavel: boolean;
+    idempotencyKey: string;
+  }): Promise<{ id: string; compartilhavelAdvogado: boolean }>;
 }
 
 /** E03-S07 (Fase 8/US5) — uma linha da carteira (`crm.carteira_casos`). `responsavel` ausente

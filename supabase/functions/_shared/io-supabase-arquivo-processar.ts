@@ -219,5 +219,22 @@ export function criarIOArquivoProcessar(clienteOverride?: SupabaseClient): IOArq
         .eq("id", trabalhoId);
       if (error) throw new Error("falha ao marcar trabalho como bloqueado");
     },
+
+    async gravarPreAnalise({ versaoId, resultado }) {
+      const { error } = await api()
+        .schema("documentos")
+        .from("pre_analises")
+        .upsert(
+          {
+            versao_id: versaoId,
+            pagina_completa: resultado.paginaCompleta,
+            resolucao_suficiente: resultado.resolucaoSuficiente,
+            tipo_conteudo: resultado.tipoConteudo,
+            motivo_problema: resultado.motivoProblema ?? null,
+          },
+          { onConflict: "versao_id" },
+        );
+      if (error) throw new Error("falha ao gravar pré-análise");
+    },
   };
 }

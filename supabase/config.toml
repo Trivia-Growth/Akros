@@ -472,6 +472,22 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
+# documento-ocr-cruzamento / documento-rascunho-resposta (E07-S05): admin-only (requireAdmin),
+# mesmo critério de caso-comandos — disparo manual pela equipe, nunca automático.
+[functions.documento-ocr-cruzamento]
+enabled = true
+verify_jwt = false
+
+[functions.documento-rascunho-resposta]
+enabled = true
+verify_jwt = false
+
+# comunicacao-chat-portal (E08-S05): participante ou admin, validado dentro da função
+# (requireAuth), mesmo critério de envio-comandos.
+[functions.comunicacao-chat-portal]
+enabled = true
+verify_jwt = false
+
 # onedrive-oauth (E03-S07, ADR-0019): admin é validado dentro da função (requireAdmin). `GET
 # /callback` é redirecionamento do consentimento da Microsoft, não pode carregar Bearer do
 # Supabase — por isso o gateway fica aberto, mesmo critério de caso-comandos.

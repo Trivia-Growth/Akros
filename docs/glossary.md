@@ -243,6 +243,19 @@ erros"; se falhar, o áudio fica guardado e o cliente recebe o encaminhamento (A
 **Smoke de contrato:** execução manual de `scripts/evolution-contract-smoke.ts` contra o servidor real:
 cria uma instância efêmera, prova as capacidades e a apaga. Sua evidência registra a versão na matriz.
 
+**Pré-análise (de documento):** checagem de legibilidade/qualidade de um arquivo recebido, feita
+inteiramente dentro da infraestrutura da Akros — nunca envolve provedor de IA externo (E07-S05).
+
+**Parecer de cruzamento:** aderência do conteúdo de um documento ao requisito do visto esperado,
+gerado a partir de texto com PII mascarada, nunca sobre a imagem/arquivo original (E07-S05).
+
+**Rascunho de resposta:** texto de resposta ao cliente sugerido pela IA de apoio, calibrado pelo
+prazo/prioridade do contrato do caso; existe em estado de rascunho até edição/envio humano — nunca
+enviado automaticamente (E07-S05).
+
+**IA de apoio ao processo:** conjunto de pré-análise, parecer de cruzamento e rascunho de resposta
+desta feature; pode ser desligada por caso individual (`crm.clientes.ia_apoio_ativa`).
+
 ---
 
 ## Como manter este doc atualizado

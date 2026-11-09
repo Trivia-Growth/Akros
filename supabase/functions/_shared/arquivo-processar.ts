@@ -20,6 +20,7 @@ import { corsHeaders } from "./cors.ts";
 import { HttpError } from "./auth.ts";
 import { BACKOFF_MAXIMO_MINUTOS, FRAGMENTO_TRANSFERENCIA_BYTES } from "./limites.ts";
 import { GraphError, type IOGraphMicrosoftTransferencia, type SegredoMicrosoftGraph } from "./graph-microsoft.ts";
+import { preAnalisarPdf, type ResultadoPreAnalise } from "./pre-analise-pdf.ts";
 
 export const MOTIVO_RECONECTAR = "reconectar conta Microsoft";
 export const MOTIVO_QUOTA = "quota do OneDrive excedida";
@@ -70,6 +71,10 @@ export interface IOArquivoProcessar {
   marcarConcluido(args: { trabalhoId: string; versaoId: string; itemId: string; driveId: string }): Promise<void>;
   marcarFalhaTransitoria(args: { trabalhoId: string; tentativas: number; proximaTentativaEm: Date }): Promise<void>;
   marcarBloqueado(args: { trabalhoId: string; motivo: string }): Promise<void>;
+  /** E07-S05 (US1) — grava o resultado das checagens locais de legibilidade. Nunca falha o
+   *  processamento do arquivo em si: erro aqui é só logado (melhor esforço, mesmo critério de
+   *  `descartarSegredoSessao`). */
+  gravarPreAnalise(args: { versaoId: string; resultado: ResultadoPreAnalise }): Promise<void>;
 }
 
 export interface ResultadoProcessamento {
@@ -214,6 +219,19 @@ export async function processarUmTrabalho({
     const bytes = await io.baixarObjetoTemporario(contexto.objetoTemporario);
     if (bytes.byteLength !== contexto.tamanhoBytes) {
       throw new Error("tamanho do objeto temporário diverge do declarado em arquivos.versoes");
+    }
+
+    // E07-S05 (US1) — pré-análise local, só para documento (não comprovante de pagamento).
+    // Roda aqui porque os bytes já estão em memória e a checagem nunca sai da Akros (FR-001) —
+    // não depende do upload ao OneDrive terminar. Melhor esforço: nunca derruba o processamento
+    // do arquivo em si (ver comentário de `gravarPreAnalise`).
+    if (contexto.documentoId) {
+      try {
+        const resultado = await preAnalisarPdf(bytes);
+        await io.gravarPreAnalise({ versaoId: contexto.versaoId, resultado });
+      } catch {
+        // melhor esforço — segue o processamento do arquivo normalmente.
+      }
     }
 
     // Passo 5 — fragmentos de 5 MiB, checkpoint a cada um.

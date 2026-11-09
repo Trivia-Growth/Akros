@@ -233,4 +233,10 @@ export const TETOS = {
   // Processador interno (Cron + segredo, nunca chamado por sessão de usuário): teto alto só como
   // cinto-e-suspensório contra reentrância/loop de retry, fail-closed.
   "arquivo-processar": { teto: 600, janelaSegundos: 60 },
+  // E07-S05: ação manual da equipe, gasta crédito OpenRouter — teto por hora, fail-closed.
+  "documento-ocr-cruzamento": { teto: 60, janelaSegundos: 3600 },
+  "documento-rascunho-resposta": { teto: 60, janelaSegundos: 3600 },
+  // E08-S05: chat do portal, participante pode mandar várias mensagens em sequência — teto
+  // mais largo que escrita administrativa, ainda fail-closed.
+  "comunicacao-chat-portal": { teto: 120, janelaSegundos: 3600 },
 } as const;
