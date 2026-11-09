@@ -43,6 +43,7 @@ interface Espiao {
   segredosSalvos: Array<{ escopo: string; valor: Record<string, string> }>;
   segredoSessaoDescartado: string[];
   progresso: Array<{ trabalhoId: string; bytesEnviados: number; sessaoReferencia: string | null }>;
+  preAnalises: Array<{ versaoId: string; resultado: unknown }>;
 }
 
 function montarIO(a: {
@@ -51,7 +52,13 @@ function montarIO(a: {
   segredoGraph?: SegredoMicrosoftGraph | null;
   bytesObjeto?: Uint8Array;
 } = {}): { io: IOArquivoProcessar; e: Espiao } {
-  const e: Espiao = { marcados: [], segredosSalvos: [], segredoSessaoDescartado: [], progresso: [] };
+  const e: Espiao = {
+    marcados: [],
+    segredosSalvos: [],
+    segredoSessaoDescartado: [],
+    progresso: [],
+    preAnalises: [],
+  };
   const trabalho = a.trabalho === undefined ? TRABALHO : a.trabalho;
   const resultadoContexto =
     a.contexto === undefined
@@ -87,6 +94,11 @@ function montarIO(a: {
     },
     marcarBloqueado: (args) => {
       e.marcados.push({ tipo: "bloqueado", args });
+      return Promise.resolve();
+    },
+    // E07-S05 (US1) — pré-análise local, melhor esforço; fake só registra a chamada.
+    gravarPreAnalise: (args) => {
+      e.preAnalises.push(args);
       return Promise.resolve();
     },
   };
