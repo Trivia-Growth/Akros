@@ -14,6 +14,8 @@ export interface NotificationItem {
 interface NotificationCenterProps {
   items: NotificationItem[];
   label?: string;
+  /** Chamado na primeira abertura do painel (não em toda renderização). */
+  onOpen?: () => void;
 }
 
 const dotClasses = {
@@ -23,11 +25,22 @@ const dotClasses = {
 };
 
 /** Caixa de entrada curta para ações relevantes, sem disputar espaço com a tela de trabalho. */
-export function NotificationCenter({ items, label = "Notificações" }: NotificationCenterProps) {
+export function NotificationCenter({
+  items,
+  label = "Notificações",
+  onOpen,
+}: NotificationCenterProps) {
   const [open, setOpen] = useState(false);
   const [readIds, setReadIds] = useState<string[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
   const unread = items.filter((item) => !readIds.includes(item.id));
+
+  function abrir() {
+    setOpen((value) => {
+      if (!value) onOpen?.();
+      return !value;
+    });
+  }
 
   useEffect(() => {
     function closeOnOutside(event: MouseEvent) {
@@ -41,7 +54,7 @@ export function NotificationCenter({ items, label = "Notificações" }: Notifica
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={abrir}
         aria-expanded={open}
         aria-label={`${label}${unread.length ? `, ${unread.length} pendentes` : ""}`}
         className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-navy transition-all duration-200 hover:-translate-y-0.5 hover:border-gold-300 hover:shadow-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"

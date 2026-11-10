@@ -130,6 +130,7 @@ const NAV_ITEMS: {
 ];
 
 const AdminDemoNotifications = lazy(() => import("./AdminDemoNotifications"));
+const AdminRealNotifications = lazy(() => import("./AdminRealNotifications"));
 const DemoBar = lazy(() =>
   import("@/features/demo/interfaces/DemoBar").then((modulo) => ({ default: modulo.DemoBar })),
 );
@@ -249,7 +250,9 @@ export function AdminLayout() {
                   <AdminDemoNotifications />
                 </Suspense>
               ) : (
-                <NotificationCenter items={[]} label="Fila de atenção" />
+                <Suspense fallback={<NotificationCenter items={[]} label="Mensagens" />}>
+                  <AdminRealNotifications />
+                </Suspense>
               )}
               {!isDemoMode && (
                 <button

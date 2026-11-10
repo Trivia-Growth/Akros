@@ -44,6 +44,7 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { useCliente360AdminSupabase } from "../application/useCliente360AdminSupabase";
 import { type SituacaoCaso, calcularProximaAcao } from "../domain/caso";
 import type { Contrato } from "../domain/contrato";
@@ -75,7 +76,10 @@ export function Clientes360RealPage() {
   const { dados, carregando, erro, refetch } = useCliente360AdminSupabase();
   const [busca, setBusca] = useState("");
   const [filtroSaude, setFiltroSaude] = useState<"todos" | keyof typeof SAUDE_VARIANT>("todos");
-  const [clienteId, setClienteId] = useState<string>();
+  const [searchParams] = useSearchParams();
+  const [clienteId, setClienteId] = useState<string | undefined>(
+    () => searchParams.get("cliente") ?? undefined,
+  );
 
   if (carregando) return <EstadoClientes mensagem="Carregando carteira real…" />;
   if (erro || !dados)
