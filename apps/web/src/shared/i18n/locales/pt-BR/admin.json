@@ -482,6 +482,16 @@
     "errorStartFailed": "Não foi possível iniciar a conexão com a Microsoft.",
     "errorLoadFailed": "Não foi possível carregar a conexão com o OneDrive."
   },
+  "iaApoio": {
+    "title": "IA de apoio ao processo",
+    "description": "Chave OpenRouter única da pré-análise de documento e do rascunho de resposta (E07-S05) — separada da chave do agente de atendimento. Fica desligada em cada caso até alguém ligar o apoio pela aba do cliente.",
+    "label": "Chave OpenRouter",
+    "placeholder": "sk-or-...",
+    "hint": "Cole aqui a chave de uma conta OpenRouter com saldo. Nunca volta para esta tela depois de salva.",
+    "save": "Salvar chave",
+    "success": "Chave da IA de apoio salva.",
+    "error": "Não foi possível salvar a chave."
+  },
   "canalEvolution": {
     "titulo": "Canal WhatsApp · Evolution",
     "descricao": "Conecte um número do WhatsApp pelo servidor Evolution da Akros. O número é pareado por QR Code aqui mesmo e só é marcado como conectado quando for o número cadastrado. A chave do servidor é enviada uma vez e nunca volta para esta tela.",

@@ -1,9 +1,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { clienteServico, escopoOpenRouter, obterSegredo } from "./integracoes.ts";
-import type { SegredoOpenRouter } from "./segredos.ts";
+import { ESCOPO_IA_APOIO, type SegredoOpenRouter } from "./segredos.ts";
 import type { ContratoDoCaso, DocumentoComParecer, IODocumentoRascunho } from "./documento-rascunho.ts";
-
-const ESCOPO_IA_APOIO = "ia-apoio-processo";
 
 export function criarIODocumentoRascunho(clienteOverride?: SupabaseClient): IODocumentoRascunho {
   const sb = () => clienteOverride ?? clienteServico();

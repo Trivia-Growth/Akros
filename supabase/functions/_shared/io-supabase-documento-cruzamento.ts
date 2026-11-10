@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { clienteServico, escopoOpenRouter, obterSegredo } from "./integracoes.ts";
-import type { SegredoOpenRouter } from "./segredos.ts";
+import { ESCOPO_IA_APOIO, type SegredoOpenRouter } from "./segredos.ts";
 import type {
   DocumentoParaCruzamento,
   IODocumentoCruzamento,
@@ -10,8 +10,6 @@ import type {
 import { baixarBytesDoGraph } from "./arquivo-baixar.ts";
 import { criarIOGraphMicrosoft, type SegredoMicrosoftGraph } from "./graph-microsoft.ts";
 import type { ValorConhecido } from "./mascaramento-pii.ts";
-
-const ESCOPO_IA_APOIO = "ia-apoio-processo";
 
 export function criarIODocumentoCruzamento(clienteOverride?: SupabaseClient): IODocumentoCruzamento {
   const sb = () => clienteOverride ?? clienteServico();

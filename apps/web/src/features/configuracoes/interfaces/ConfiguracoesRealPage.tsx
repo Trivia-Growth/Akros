@@ -137,6 +137,7 @@ export function ConfiguracoesRealPage() {
       <TranscricaoAudioPainel />
       <IntegracaoAgentes contasCanal={contasCanal} agentesIA={agentesIA} aoSalvar={refetch} />
       <IntegracaoMicrosoftCard />
+      <IaApoioProcessoCard />
     </div>
   );
 }
@@ -836,6 +837,55 @@ function IntegracaoMicrosoftCard() {
           </div>
         </form>
       </Modal>
+    </Secao>
+  );
+}
+
+/** E07-S05 — chave OpenRouter única da IA de apoio ao processo (escopo fixo, não por agente). Até
+ *  esta tela só dava pra configurar por SQL/RPC direto (ROADMAP, "Pendente"). */
+function IaApoioProcessoCard() {
+  const { t } = useTranslation("admin");
+  const [chave, setChave] = useState("");
+  const [enviando, setEnviando] = useState(false);
+
+  async function salvar(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    setEnviando(true);
+    try {
+      const { error } = await getSupabase().functions.invoke("ia-apoio-configurar", {
+        headers: { "x-akros-csrf": "1" },
+        body: { apiKeyOpenRouter: chave },
+      });
+      if (error) throw error;
+      toast.success(t("iaApoio.success"));
+      setChave("");
+    } catch {
+      toast.error(t("iaApoio.error"));
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <Secao titulo={t("iaApoio.title")} icone={KeyRound}>
+      <form className="flex flex-col gap-4 px-5 py-5" onSubmit={salvar}>
+        <p className="max-w-2xl text-sm text-ink-soft">{t("iaApoio.description")}</p>
+        <Input
+          required
+          type="password"
+          autoComplete="off"
+          label={t("iaApoio.label")}
+          placeholder={t("iaApoio.placeholder")}
+          hint={t("iaApoio.hint")}
+          value={chave}
+          onChange={(evento) => setChave(evento.target.value)}
+        />
+        <div className="flex justify-end">
+          <Button type="submit" loading={enviando}>
+            {t("iaApoio.save")}
+          </Button>
+        </div>
+      </form>
     </Secao>
   );
 }

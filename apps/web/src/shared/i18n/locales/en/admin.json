@@ -482,6 +482,16 @@
     "errorStartFailed": "Could not start the connection with Microsoft.",
     "errorLoadFailed": "Could not load the OneDrive connection."
   },
+  "iaApoio": {
+    "title": "AI process support",
+    "description": "Single OpenRouter key for document pre-analysis and response drafting (E07-S05) — separate from the attendance agent's key. Stays off per case until someone turns support on from the client's tab.",
+    "label": "OpenRouter key",
+    "placeholder": "sk-or-...",
+    "hint": "Paste the key of an OpenRouter account with balance. Never comes back to this screen once saved.",
+    "save": "Save key",
+    "success": "AI support key saved.",
+    "error": "Could not save the key."
+  },
   "canalEvolution": {
     "titulo": "WhatsApp channel · Evolution",
     "descricao": "Connect a WhatsApp number through Akros's Evolution server. The number is paired by QR code right here and is only marked as connected when it is the registered number. The server key is sent once and never comes back to this screen.",

@@ -193,6 +193,8 @@ export const TETOS = {
   "lead-capturar": { teto: 5, janelaSegundos: 3600 },
   // Painel administrativo: poucas gravações, mas sempre fail-closed pois troca chaves e webhook.
   "integracoes-ia-salvar": { teto: 10, janelaSegundos: 3600 },
+  // Mesmo perfil: troca a chave OpenRouter única da IA de apoio ao processo (E07-S05).
+  "ia-apoio-configurar": { teto: 10, janelaSegundos: 3600 },
   // Canal Evolution (E13-S15): configuração é rara, mas a tela consulta o estado a cada poucos
   // segundos enquanto o QR está aberto — teto por hora folgado para isso, ainda fail-closed (a
   // função troca chaves e instala webhook).

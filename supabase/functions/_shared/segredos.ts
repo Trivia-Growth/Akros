@@ -52,6 +52,10 @@ export function escopoOpenRouter(agenteId: string): string {
   return `openrouter:${agenteId}`;
 }
 
+/** Escopo fixo (não por agente) da chave OpenRouter da IA de apoio ao processo (E07-S05): uma
+ *  só para a instalação inteira, separada da do agente de atendimento por decisão do usuário. */
+export const ESCOPO_IA_APOIO = "ia-apoio-processo";
+
 export function escopoTranscricao(configId: string): string {
   return `transcricao:${configId}`;
 }
