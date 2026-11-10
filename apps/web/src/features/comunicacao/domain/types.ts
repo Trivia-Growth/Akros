@@ -175,3 +175,10 @@ export interface ConfiguracaoMemoria {
   retencao: string;
   campos: string[];
 }
+
+/** E08-S06 — mensagem de cliente no chat do portal ainda não vista pelo admin que consulta. */
+export interface MensagemNaoVista {
+  clienteId: string;
+  nomeCliente: string;
+  ocorridoEm: string;
+}

@@ -1,10 +1,6 @@
 import { getSupabase } from "@/shared/supabase/client";
-
-export interface MensagemNaoVista {
-  clienteId: string;
-  nomeCliente: string;
-  ocorridoEm: string;
-}
+import type { NotificacoesConsulta } from "../application/ports";
+import type { MensagemNaoVista } from "../domain/types";
 
 interface LinhaEvento {
   cliente_id: string | null;
@@ -15,7 +11,7 @@ interface LinhaEvento {
  *  leitura vive em `comunicacao.visto_admin`, uma linha por admin (0052, E08-S06). */
 const SEM_CURSOR = "1970-01-01T00:00:00Z";
 
-export class SupabaseNotificacoesConsulta {
+export class SupabaseNotificacoesConsulta implements NotificacoesConsulta {
   async naoVistas(): Promise<MensagemNaoVista[]> {
     const supabase = getSupabase();
     const { data: cursor, error: erroCursor } = await supabase

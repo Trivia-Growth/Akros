@@ -1,11 +1,9 @@
+import { obterNotificacoesAdminReal } from "@/app/real-repositories";
 import { useCallback, useEffect, useState } from "react";
-import {
-  type MensagemNaoVista,
-  SupabaseNotificacoesConsulta,
-} from "../infrastructure/SupabaseNotificacoesConsulta";
+import type { MensagemNaoVista } from "../domain/types";
 
 const INTERVALO_MS = 30_000;
-const consulta = new SupabaseNotificacoesConsulta();
+const consulta = obterNotificacoesAdminReal();
 
 /** E08-S06 — badge do sininho do admin: mensagem de cliente no chat do portal que ainda não foi
  *  vista. Sondagem por intervalo (sem realtime nesta entrega). */

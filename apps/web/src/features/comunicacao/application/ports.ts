@@ -4,6 +4,7 @@ import type {
   EventoComunicacao,
   FonteConhecimento,
   Mensagem,
+  MensagemNaoVista,
   RegraAtendimentoIA,
 } from "../domain/types";
 
@@ -58,6 +59,12 @@ export interface ComunicacaoAdminConsulta {
   }>;
   /** Link temporário para abrir um anexo de conversa (E13-S15). Só admin; expira em instantes. */
   urlDoAnexo(caminho: string): Promise<string>;
+}
+
+/** E08-S06 — badge do admin. Cursor de leitura mora em `comunicacao.visto_admin`. */
+export interface NotificacoesConsulta {
+  naoVistas(): Promise<MensagemNaoVista[]>;
+  marcarVisto(): Promise<void>;
 }
 
 export interface AgenteService {

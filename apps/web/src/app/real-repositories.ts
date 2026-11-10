@@ -8,9 +8,11 @@ import { SupabaseAgendaConsulta } from "@/features/agenda/infrastructure/Supabas
 import type {
   ComunicacaoAdminConsulta,
   ComunicacaoConsulta,
+  NotificacoesConsulta,
 } from "@/features/comunicacao/application/ports";
 import { SupabaseComunicacaoAdminConsulta } from "@/features/comunicacao/infrastructure/SupabaseComunicacaoAdminConsulta";
 import { SupabaseComunicacaoConsulta } from "@/features/comunicacao/infrastructure/SupabaseComunicacaoConsulta";
+import { SupabaseNotificacoesConsulta } from "@/features/comunicacao/infrastructure/SupabaseNotificacoesConsulta";
 import type {
   ConfiguracoesConsulta,
   EvolutionCanalPort,
@@ -110,6 +112,7 @@ let analisadorDocumentoReal: AnalisadorDocumentoPort | undefined;
 let pagamentosReal: PagamentosConsulta | undefined;
 let comunicacaoReal: ComunicacaoConsulta | undefined;
 let comunicacaoAdminReal: ComunicacaoAdminConsulta | undefined;
+let notificacoesAdminReal: NotificacoesConsulta | undefined;
 let propostasReal: PropostasConsulta | undefined;
 let dashboardAdminReal: DashboardAdminConsulta | undefined;
 let operacaoAdminReal: OperacaoAdminConsulta | undefined;
@@ -263,6 +266,11 @@ export function obterConsultaComunicacaoReal(): ComunicacaoConsulta {
 export function obterConsultaComunicacaoAdminReal(): ComunicacaoAdminConsulta {
   if (!comunicacaoAdminReal) comunicacaoAdminReal = new SupabaseComunicacaoAdminConsulta();
   return comunicacaoAdminReal;
+}
+
+export function obterNotificacoesAdminReal(): NotificacoesConsulta {
+  if (!notificacoesAdminReal) notificacoesAdminReal = new SupabaseNotificacoesConsulta();
+  return notificacoesAdminReal;
 }
 
 export function obterConsultaPropostasReal(): PropostasConsulta {
